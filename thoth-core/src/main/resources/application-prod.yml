@@ -1,0 +1,29 @@
+﻿spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/thoth_core
+    username: postgres
+    password: root
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        jdbc:
+          batch_size: 20
+
+logging:
+  level:
+    root: WARN
+    com.thoth: INFO
+  file:
+    name: logs/thoth-core.log
+    max-size: 10MB
+    max-history: 30
