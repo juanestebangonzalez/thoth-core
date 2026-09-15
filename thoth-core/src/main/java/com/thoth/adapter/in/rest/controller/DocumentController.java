@@ -11,6 +11,7 @@ import org.apache.tika.Tika;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
+import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +19,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -118,9 +120,16 @@ public class DocumentController {
                 if (!resource.exists()) {
                     return ResponseEntity.notFound().build();
                 }
+                // SEC-015: build Content-Disposition via Spring's RFC 6266 encoder
+                // instead of string concatenation - doc.getOriginalName() is
+                // client-controlled at upload time and must not be interpolated
+                // raw into a response header.
+                ContentDisposition disposition = ContentDisposition.attachment()
+                    .filename(doc.getOriginalName() != null ? doc.getOriginalName() : "download", StandardCharsets.UTF_8)
+                    .build();
                 return ResponseEntity.ok()
                     .contentType(MediaType.parseMediaType(doc.getContentType() != null ? doc.getContentType() : "application/octet-stream"))
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + doc.getOriginalName() + "\"")
+                    .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
                     .body((Object) resource);
             } catch (Exception e) {
                 return ResponseEntity.internalServerError().build();

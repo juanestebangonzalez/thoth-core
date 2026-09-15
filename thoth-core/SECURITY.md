@@ -158,7 +158,7 @@ inventa controles que no existan.
   `equipmentId`) exige permiso `MAINTENANCE:VIEW` — antes cualquier
   autenticado veía el historial de cualquier equipo.
 
-## 11. File Security (SEC-005, SEC-012)
+## 11. File Security (SEC-005, SEC-012, SEC-015)
 
 - Descarga de documentos requiere autenticación + permiso `DOCUMENTS:VIEW`
   (antes era pública).
@@ -172,6 +172,14 @@ inventa controles que no existan.
   `originalName` pero **no** `fileName` (el nombre interno con el que el
   archivo se guarda en disco, con prefijo UUID) — antes se devolvía la
   entidad JPA completa, filtrando ese detalle de implementación.
+- **SEC-015 (LOW, encontrado en auditoría final)**: el header
+  `Content-Disposition` de la descarga se construía concatenando
+  `originalName` (controlado por el cliente al subir el archivo) crudo
+  dentro del valor del header (`"attachment; filename=\"" + name + "\""`).
+  Un nombre de archivo con una comilla doble podía cerrar el valor
+  entrecomillado anticipadamente e inyectar parámetros adicionales en el
+  header. Corregido usando `ContentDisposition` de Spring, que codifica el
+  valor según RFC 6266 en vez de concatenar strings.
 
 ## 12. Security headers
 
@@ -230,7 +238,7 @@ Ver `SECURITY_TESTS.md` para el detalle de qué prueba cada test.
   localmente por el equipo.
 - **Quality Gate**: no hay un Quality Gate de SonarQube real evaluado (por
   lo anterior). El gate local equivalente es `./gradlew check`, que exige:
-  compilación limpia + 84 tests en verde + reglas ArchUnit + piso de
+  compilación limpia + 85 tests en verde + reglas ArchUnit + piso de
   cobertura JaCoCo.
 
 ## 18. Riesgos residuales conocidos
@@ -250,4 +258,6 @@ devueltas directamente en `SedeController`/`DocumentController`; casos de
 uso de Equipment dependiendo del repositorio JPA en vez del puerto; DTOs
 duplicados en `application.dto` confirmados como código muerto y eliminados;
 **SEC-013** (`/api/v1/alerts/**` público, dump completo del inventario);
-**SEC-014** (`/api/v1/ai/**` público, análisis de IA sin autenticar).
+**SEC-014** (`/api/v1/ai/**` público, análisis de IA sin autenticar);
+**SEC-015** (Content-Disposition de descarga construido por concatenación
+de string con el nombre de archivo controlado por el cliente).

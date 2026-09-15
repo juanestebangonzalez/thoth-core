@@ -7,7 +7,7 @@ para el contexto de cada control.
 ## Cómo ejecutar
 
 ```bash
-./gradlew test                          # toda la suite (84 tests)
+./gradlew test                          # toda la suite (85 tests)
 ./gradlew check                         # test + ArchUnit + piso de cobertura JaCoCo
 ./gradlew jacocoTestReport               # reporte HTML en build/reports/jacoco/test/html/index.html
 ```
@@ -67,6 +67,7 @@ para el contexto de cada control.
 | `upload_withContentTypeMismatchingRealBytes_isRejected` | Un archivo cuyo contenido real no coincide con el `Content-Type` declarado (magic bytes vía Tika) es rechazado. |
 | `upload_withContentMatchingDeclaredType_isAccepted` | Caso positivo: contenido real coincide con el tipo declarado → aceptado. |
 | `upload_response_doesNotLeakInternalStorageFileName` | Arquitectura/seguridad: la respuesta de `upload` (`DocumentResponseDTO`) no incluye `fileName` (nombre interno en disco); antes se devolvía la entidad JPA completa. |
+| `download_withQuoteInOriginalFilename_doesNotBreakContentDispositionHeader` | SEC-015 (encontrado en auditoría final): un nombre de archivo con comillas ya no puede inyectar parámetros extra en el header `Content-Disposition` de la descarga — se usa `ContentDisposition` de Spring (RFC 6266) en vez de concatenar strings. |
 
 ## Historial de mantenimiento / SEC-009 — `MaintenanceHistoryControllerSecurityTest`
 
@@ -159,8 +160,8 @@ ejecutar la suite completa para validar los fixes de seguridad.
 | Vulnerabilidades CRITICAL abiertas | 3 (SEC-001, 002, 003) | 0 |
 | Vulnerabilidades HIGH abiertas | 3 (SEC-004, 005, 006) + 2 encontradas después (SEC-013, 014) = 5 | 0 |
 | Vulnerabilidades MEDIUM abiertas | 3 (SEC-007, 008, 009) | 0 (SEC-007 mitigado y documentado, no "oculto") |
-| Vulnerabilidades LOW abiertas | 3 (SEC-010, 011, 012) | 0 |
-| Tests totales | 0 ejecutables (5 archivos no compilaban) | 84, 0 fallos |
+| Vulnerabilidades LOW abiertas | 3 (SEC-010, 011, 012) + 1 encontrada después (SEC-015) = 4 | 0 |
+| Tests totales | 0 ejecutables (5 archivos no compilaban) | 85, 0 fallos |
 | ArchUnit | No existía | 6 reglas activas |
 | JaCoCo | No configurado | Configurado, piso 35% (medido ~36%) |
 | SonarQube | No configurado | Plugin configurado; análisis real pendiente de servidor/token |

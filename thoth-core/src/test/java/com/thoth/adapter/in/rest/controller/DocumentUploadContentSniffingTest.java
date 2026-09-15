@@ -139,4 +139,44 @@ class DocumentUploadContentSniffingTest {
         org.junit.jupiter.api.Assertions.assertFalse(list.get(0).has("fileName"));
         org.junit.jupiter.api.Assertions.assertEquals("invoice.pdf", list.get(0).get("originalName").asText());
     }
+
+    /**
+     * Regression test for SEC-015: the Content-Disposition header on download
+     * used to be built by concatenating the client-controlled original
+     * filename straight into the header value ("attachment; filename=\"" +
+     * name + "\""), so a filename containing a double quote could break out
+     * of the quoted value. It's now built via Spring's ContentDisposition,
+     * which RFC 6266-encodes the value.
+     */
+    @Test
+    void download_withQuoteInOriginalFilename_doesNotBreakContentDispositionHeader() throws Exception {
+        String token = registerAndGetToken("s15cd_" + shortId());
+        UUID equipmentId = UUID.randomUUID();
+
+        MockMultipartFile trickyPdf = new MockMultipartFile(
+            "file", "evil\".pdf\"; foo=bar", "application/pdf",
+            "%PDF-1.4\n%useless comment to pad the header\n".getBytes(StandardCharsets.UTF_8));
+
+        String body = mockMvc.perform(multipart("/api/v1/documents/upload")
+                .file(trickyPdf)
+                .param("equipmentId", equipmentId.toString())
+                .param("documentType", "INVOICE")
+                .header("Authorization", "Bearer " + token))
+            .andExpect(status().isOk())
+            .andReturn().getResponse().getContentAsString();
+
+        UUID documentId = UUID.fromString(objectMapper.readTree(body).get("id").asText());
+
+        String contentDisposition = mockMvc.perform(get("/api/v1/documents/" + documentId + "/download")
+                .header("Authorization", "Bearer " + token))
+            .andExpect(status().isOk())
+            .andReturn().getResponse().getHeader("Content-Disposition");
+
+        org.junit.jupiter.api.Assertions.assertNotNull(contentDisposition);
+        // The raw double quote from the filename must not terminate the
+        // quoted-string early - it must be escaped or percent-encoded.
+        org.junit.jupiter.api.Assertions.assertFalse(
+            contentDisposition.matches(".*filename=\"[^\"\\\\]*\"; foo=bar.*"),
+            "attacker-controlled filename must not be able to inject extra Content-Disposition parameters: " + contentDisposition);
+    }
 }
