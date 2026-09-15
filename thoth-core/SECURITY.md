@@ -101,6 +101,25 @@ inventa controles que no existan.
   firma incluida. Corregido exigiendo permiso `MAINTENANCE:CREATE`
   (coherente con los defaults ya existentes: `ADMIN`/`TECHNICIAN` lo tienen,
   `USER`/`VIEWER` no).
+- **SEC-017 (LOW-MEDIUM, ya mencionado en el resumen de arquitectura de la
+  Fase 1 pero nunca corregido hasta ahora)**: Swagger UI y `/v3/api-docs`
+  son `permitAll()` en **todos** los perfiles, incluido prod — cualquiera
+  sin autenticar puede ver la superficie completa de la API (cada endpoint,
+  cada esquema de request/response), facilitando el reconocimiento para un
+  atacante. Corregido con `springdoc.api-docs.enabled: false` /
+  `springdoc.swagger-ui.enabled: false` en `application-prod.yml` (se
+  mantiene habilitado en `dev`/`test` para el equipo de desarrollo).
+- **Observación (no corregida, decisión de producto pendiente)**:
+  `UserController.deleteUser` solo protege al usuario literal `"admin"` de
+  ser borrado — un `ADMIN` puede borrar cualquier otra cuenta `ADMIN`
+  (incluida potencialmente la última), o des-habilitarse/degradarse a sí
+  mismo vía `toggleEnabled`/`changeRole`, sin ninguna guarda. No es una
+  vulnerabilidad de autorización (solo `ADMIN` puede hacerlo), pero sí un
+  riesgo de bloqueo administrativo (quedarse sin ningún `ADMIN` activo). No
+  se implementó una guarda porque el comportamiento deseado (¿bloquear
+  auto-degradación? ¿proteger al último ADMIN activo en vez del username
+  literal `"admin"`?) es una decisión de producto, no algo que debiera
+  inventarse sin confirmar.
 - Permisos granulares por módulo/acción viven en `PermissionService` +
   `UserPermissionEntity`. `PermissionService.requireModulePermission(...)`
   es el guard reutilizable para controllers; lanza `AccessDeniedException`
@@ -240,10 +259,20 @@ inventa controles que no existan.
 
 ## 16. Dependencias
 
-- Sin hallazgos de versiones con vulnerabilidades conocidas verificadas en
-  esta pasada (no se ejecutó un scanner de CVEs tipo OWASP Dependency-Check
-  / Snyk — no disponible en este entorno). **Recomendado como seguimiento**:
-  correr un scanner de dependencias en CI.
+- **No se ejecutó un scanner real** (OWASP Dependency-Check, Snyk, GitHub
+  Dependabot) — no disponible en este entorno. Lo que sigue es una revisión
+  manual basada en conocimiento del modelo sobre las versiones resueltas,
+  **no un escaneo verificado contra una base de CVEs en vivo** — no debe
+  tratarse como equivalente. Recomendado como seguimiento real: correr un
+  scanner de dependencias en CI.
+- Versiones resueltas revisadas (`./gradlew dependencies`): `org.postgresql:postgresql:42.7.13`
+  (posterior a 42.7.2, donde se corrigió CVE-2024-1597 de SQLi en el driver
+  — no aplica aquí), `io.jsonwebtoken:jjwt-*:0.12.6`, `org.apache.tika:tika-core:2.9.2`
+  (solo el módulo `tika-core` para `detect()`, sin `tika-parsers` — reduce
+  la superficie de los CVEs de XXE/parsers que históricamente afectaron a
+  Tika), `com.google.zxing:core/javase:3.5.3`, `org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.0`.
+  Ninguna saltó como obviamente desactualizada o vulnerable, pero esto **no
+  reemplaza** un scanner real.
 
 ## 17. Testing / JaCoCo / ArchUnit / SonarQube / Quality Gate
 
@@ -266,7 +295,7 @@ Ver `SECURITY_TESTS.md` para el detalle de qué prueba cada test.
   localmente por el equipo.
 - **Quality Gate**: no hay un Quality Gate de SonarQube real evaluado (por
   lo anterior). El gate local equivalente es `./gradlew check`, que exige:
-  compilación limpia + 89 tests en verde + reglas ArchUnit + piso de
+  compilación limpia + 90 tests en verde + reglas ArchUnit + piso de
   cobertura JaCoCo.
 
 ## 18. Riesgos residuales conocidos
@@ -280,6 +309,7 @@ Ver `SECURITY_TESTS.md` para el detalle de qué prueba cada test.
 | 5 | SonarQube no ejecutado | Medio (proceso) | Requiere servidor/token que no están disponibles aquí |
 | 6 | `MaintenanceController` es un stub sin implementación real | Ninguno (no hay dato que proteger) | Preexistente, fuera del alcance de esta auditoría de seguridad |
 | 7 | (informativo, no es un riesgo) `ReportsController`/`QrCodeController` revisados en la auditoría final | N/A | `ReportsController` (`/api/v1/reports/dashboard`, agrega KPIs de todo el inventario) cae bajo `anyRequest().authenticated()` — **no es público**, ya requiere login, confirmado leyendo el controlador completo. `QrCodeController` es `permitAll()` deliberado (códigos QR pensados para escanearse sin login) y solo genera una imagen con una URL — no expone datos sensibles. Ninguno de los dos necesitó corrección. |
+| 8 | `UserController` no protege contra quedarse sin ningún `ADMIN` activo (auto-degradación, auto-deshabilitación, borrado de otros admins) | Bajo (disponibilidad, no autorización) | El comportamiento deseado es una decisión de producto no confirmada — ver §3 |
 
 **Corregidos en esta pasada** (ya no son riesgos residuales): entidades JPA
 devueltas directamente en `SedeController`/`DocumentController`; casos de
@@ -289,4 +319,5 @@ duplicados en `application.dto` confirmados como código muerto y eliminados;
 **SEC-014** (`/api/v1/ai/**` público, análisis de IA sin autenticar);
 **SEC-015** (Content-Disposition de descarga construido por concatenación
 de string con el nombre de archivo controlado por el cliente); **SEC-016**
-(creación de historial de mantenimiento sin ningún chequeo de permiso).
+(creación de historial de mantenimiento sin ningún chequeo de permiso);
+**SEC-017** (Swagger UI/`api-docs` públicos también en producción).

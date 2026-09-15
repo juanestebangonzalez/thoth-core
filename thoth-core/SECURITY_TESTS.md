@@ -7,7 +7,7 @@ para el contexto de cada control.
 ## Cómo ejecutar
 
 ```bash
-./gradlew test                          # toda la suite (89 tests)
+./gradlew test                          # toda la suite (90 tests)
 ./gradlew check                         # test + ArchUnit + piso de cobertura JaCoCo
 ./gradlew jacocoTestReport               # reporte HTML en build/reports/jacoco/test/html/index.html
 ```
@@ -82,11 +82,12 @@ para el contexto de cada control.
 | `create_withUserRole_returns403` | SEC-016: `USER` tiene `MAINTENANCE:VIEW` pero no `CREATE` → 403. |
 | `create_withTechnicianRole_returns201` | Caso positivo: `TECHNICIAN` sí tiene `MAINTENANCE:CREATE` → 201. |
 
-## Configuración / SEC-010 — `ProdHealthExposureConfigTest`
+## Configuración / SEC-010, SEC-017 — `ProdHealthExposureConfigTest`
 
 | Test | Cubre |
 |---|---|
 | `prodProfile_explicitlyDisablesHealthDetailExposure` | `application-prod.yml` fija explícitamente `management.endpoint.health.show-details: never` (antes heredaba `always` del perfil base, exponiendo detalles internos en `/actuator/health` sin autenticación). |
+| `prodProfile_explicitlyDisablesSwaggerUiAndApiDocs` | SEC-017 (encontrado en auditoría final, ya mencionado sin corregir en el resumen de la Fase 1): `application-prod.yml` desactiva `springdoc.api-docs`/`swagger-ui` — antes quedaban públicos también en producción, exponiendo la superficie completa de la API. |
 
 ## Dominio / SEC-011 — `EquipmentTest`
 
@@ -164,8 +165,8 @@ ejecutar la suite completa para validar los fixes de seguridad.
 | Vulnerabilidades CRITICAL abiertas | 3 (SEC-001, 002, 003) | 0 |
 | Vulnerabilidades HIGH abiertas | 3 (SEC-004, 005, 006) + 2 encontradas después (SEC-013, 014) = 5 | 0 |
 | Vulnerabilidades MEDIUM abiertas | 3 (SEC-007, 008, 009) + 1 encontrada después (SEC-016) = 4 | 0 (SEC-007 mitigado y documentado, no "oculto") |
-| Vulnerabilidades LOW abiertas | 3 (SEC-010, 011, 012) + 1 encontrada después (SEC-015) = 4 | 0 |
-| Tests totales | 0 ejecutables (5 archivos no compilaban) | 89, 0 fallos |
+| Vulnerabilidades LOW abiertas | 3 (SEC-010, 011, 012) + 2 encontradas después (SEC-015, 017) = 5 | 0 |
+| Tests totales | 0 ejecutables (5 archivos no compilaban) | 90, 0 fallos |
 | ArchUnit | No existía | 6 reglas activas |
 | JaCoCo | No configurado | Configurado, piso 35% (medido ~36%) |
 | SonarQube | No configurado | Plugin configurado; análisis real pendiente de servidor/token |

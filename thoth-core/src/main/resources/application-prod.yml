@@ -32,3 +32,12 @@ management:
   endpoint:
     health:
       show-details: never
+
+# SEC-017: Swagger UI / OpenAPI docs expose the entire API surface (every
+# endpoint, request/response schema) and are permitAll() in SecurityConfig -
+# fine for dev, but unnecessary reconnaissance surface in production.
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
