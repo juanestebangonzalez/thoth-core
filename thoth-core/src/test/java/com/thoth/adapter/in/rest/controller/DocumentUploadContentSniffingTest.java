@@ -13,6 +13,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
@@ -35,12 +36,18 @@ class DocumentUploadContentSniffingTest {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    // Each call uses its own random fake source IP so this test's
+    // /auth/register traffic never shares RateLimitingFilter's per-IP
+    // bucket with the dozens of other registrations the rest of the suite
+    // performs (from the default MockMvc client address, or from another
+    // test class's own fake IPs).
     private String registerAndGetToken(String username) throws Exception {
         String payload = """
             {"username":"%s","password":"Sup3rSecret!","email":"%s@example.com"}
             """.formatted(username, username);
 
         String body = mockMvc.perform(post("/api/v1/auth/register")
+                .header("X-Forwarded-For", randomFakeIp())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(payload))
             .andExpect(status().isCreated())
@@ -51,6 +58,11 @@ class DocumentUploadContentSniffingTest {
 
     private String shortId() {
         return UUID.randomUUID().toString().substring(0, 8);
+    }
+
+    private String randomFakeIp() {
+        ThreadLocalRandom r = ThreadLocalRandom.current();
+        return "10." + r.nextInt(1, 255) + "." + r.nextInt(1, 255) + "." + r.nextInt(1, 255);
     }
 
     @Test

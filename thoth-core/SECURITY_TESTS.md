@@ -7,7 +7,7 @@ para el contexto de cada control.
 ## Cómo ejecutar
 
 ```bash
-./gradlew test                          # toda la suite (85 tests)
+./gradlew test                          # toda la suite (89 tests)
 ./gradlew check                         # test + ArchUnit + piso de cobertura JaCoCo
 ./gradlew jacocoTestReport               # reporte HTML en build/reports/jacoco/test/html/index.html
 ```
@@ -69,7 +69,7 @@ para el contexto de cada control.
 | `upload_response_doesNotLeakInternalStorageFileName` | Arquitectura/seguridad: la respuesta de `upload` (`DocumentResponseDTO`) no incluye `fileName` (nombre interno en disco); antes se devolvía la entidad JPA completa. |
 | `download_withQuoteInOriginalFilename_doesNotBreakContentDispositionHeader` | SEC-015 (encontrado en auditoría final): un nombre de archivo con comillas ya no puede inyectar parámetros extra en el header `Content-Disposition` de la descarga — se usa `ContentDisposition` de Spring (RFC 6266) en vez de concatenar strings. |
 
-## Historial de mantenimiento / SEC-009 — `MaintenanceHistoryControllerSecurityTest`
+## Historial de mantenimiento / SEC-009, SEC-016 — `MaintenanceHistoryControllerSecurityTest`
 
 | Test | Cubre |
 |---|---|
@@ -77,6 +77,10 @@ para el contexto de cada control.
 | `getByEquipment_withViewerRole_returns403` | Rol sin permiso `MAINTENANCE:VIEW` (`VIEWER`) → 403 (antes cualquier autenticado veía cualquier historial — IDOR). |
 | `getByEquipment_withUserRole_returns200` | Rol con permiso → 200. |
 | `getById_withViewerRole_returns403` | Mismo control aplicado también al endpoint por ID de mantenimiento individual. |
+| `create_withoutAuthentication_returns401` | SEC-016: `POST` (crear registro de mantenimiento) sin JWT → 401. |
+| `create_withViewerRole_returns403` | SEC-016: antes cualquier autenticado podía crear registros; ahora `VIEWER` (sin permiso `MAINTENANCE:CREATE`) → 403. |
+| `create_withUserRole_returns403` | SEC-016: `USER` tiene `MAINTENANCE:VIEW` pero no `CREATE` → 403. |
+| `create_withTechnicianRole_returns201` | Caso positivo: `TECHNICIAN` sí tiene `MAINTENANCE:CREATE` → 201. |
 
 ## Configuración / SEC-010 — `ProdHealthExposureConfigTest`
 
@@ -131,7 +135,7 @@ agregado `Equipment`, no solo la parte de seguridad.)
 
 | Test | Cubre |
 |---|---|
-| `analyzeMaintenance_withoutAuthentication_returns401` | Antes público: cualquiera podía disparar un análisis de IA (costo por llamada externa) sobre cualquier equipo. |
+| `analyzeMaintenance_withoutAuthentication_returns401` | Antes público: cualquiera podía obtener, sin autenticar, nombre/hardware/valor financiero de cualquier equipo vía el endpoint de análisis (ver nota de corrección en `SECURITY.md` §3: `AIAgentAdapter` es lógica local, no una llamada a un LLM externo). |
 | `predictFailure_withoutAuthentication_returns401` | Mismo control sobre el endpoint de predicción de fallas. |
 | `recommendReplacement_withoutAuthentication_returns401` | Mismo control sobre el endpoint de recomendación de reemplazo. |
 
@@ -159,9 +163,9 @@ ejecutar la suite completa para validar los fixes de seguridad.
 |---|---|---|
 | Vulnerabilidades CRITICAL abiertas | 3 (SEC-001, 002, 003) | 0 |
 | Vulnerabilidades HIGH abiertas | 3 (SEC-004, 005, 006) + 2 encontradas después (SEC-013, 014) = 5 | 0 |
-| Vulnerabilidades MEDIUM abiertas | 3 (SEC-007, 008, 009) | 0 (SEC-007 mitigado y documentado, no "oculto") |
+| Vulnerabilidades MEDIUM abiertas | 3 (SEC-007, 008, 009) + 1 encontrada después (SEC-016) = 4 | 0 (SEC-007 mitigado y documentado, no "oculto") |
 | Vulnerabilidades LOW abiertas | 3 (SEC-010, 011, 012) + 1 encontrada después (SEC-015) = 4 | 0 |
-| Tests totales | 0 ejecutables (5 archivos no compilaban) | 85, 0 fallos |
+| Tests totales | 0 ejecutables (5 archivos no compilaban) | 89, 0 fallos |
 | ArchUnit | No existía | 6 reglas activas |
 | JaCoCo | No configurado | Configurado, piso 35% (medido ~36%) |
 | SonarQube | No configurado | Plugin configurado; análisis real pendiente de servidor/token |

@@ -41,6 +41,7 @@ class AuthControllerTest {
             """;
 
         mockMvc.perform(post("/api/v1/auth/register")
+                .header("X-Forwarded-For", "198.51.100.10")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(payload))
             .andExpect(status().isCreated())
@@ -62,11 +63,13 @@ class AuthControllerTest {
             """;
 
         mockMvc.perform(post("/api/v1/auth/register")
+                .header("X-Forwarded-For", "198.51.100.11")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(payload))
             .andExpect(status().isCreated());
 
         mockMvc.perform(post("/api/v1/auth/register")
+                .header("X-Forwarded-For", "198.51.100.11")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(payload))
             .andExpect(status().isBadRequest());
@@ -89,11 +92,13 @@ class AuthControllerTest {
             """;
 
         mockMvc.perform(post("/api/v1/auth/register")
+                .header("X-Forwarded-For", "198.51.100.12")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(payload))
             .andExpect(status().isCreated());
 
         mockMvc.perform(post("/api/v1/auth/register")
+                .header("X-Forwarded-For", "198.51.100.12")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(payload))
             .andExpect(status().isBadRequest())

@@ -29,7 +29,9 @@ public class MaintenanceHistoryController {
 
     @PostMapping
     @Operation(summary = "Registrar mantenimiento en la HV del equipo")
-    public ResponseEntity<MaintenanceHistoryDTO> create(@Valid @RequestBody CreateMaintenanceHistoryRequest request) {
+    public ResponseEntity<MaintenanceHistoryDTO> create(
+            @Valid @RequestBody CreateMaintenanceHistoryRequest request, Authentication authentication) {
+        permissionService.requireModulePermission(authentication.getName(), "MAINTENANCE", "CREATE");
         List<CreateMaintenanceHistoryCommand.PartCommand> parts = null;
         if (request.getPartsReplaced() != null) {
             parts = request.getPartsReplaced().stream()

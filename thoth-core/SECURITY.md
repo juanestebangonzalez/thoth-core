@@ -78,10 +78,29 @@ inventa controles que no existan.
   `/api/v1/equipment/**`, ya que consultaba el mismo dato por otra ruta.
   Corregido exigiendo autenticación.
 - **SEC-014 (HIGH, encontrado en auditoría final)**: `AIController` permitía
-  a cualquiera, sin autenticar, disparar análisis de IA (con costo probable
-  por llamada a un LLM externo vía `AIAgentPort`) sobre cualquier
-  `equipmentId`, filtrando indirectamente datos del equipo y habilitando
-  abuso de costos/DoS. Corregido exigiendo autenticación.
+  a cualquiera, sin autenticar, invocar análisis sobre cualquier
+  `equipmentId` y recibir de vuelta nombre, categoría, hardware completo
+  (procesador, RAM, salud/temperatura de disco) y estimaciones financieras
+  (valor de compra, depreciación, costo de reemplazo) — evadiendo el
+  requisito de autenticación de SEC-001 por otra ruta, igual que SEC-013.
+  **Corrección respecto a la redacción original de este hallazgo**: la
+  implementación real de `AIAgentPort` (`AIAgentAdapter`) es lógica local
+  basada en reglas — no hace ninguna llamada a un LLM externo ni a ningún
+  servicio de red, así que hoy no hay componente de costo/DoS por llamada
+  externa; el riesgo real y ya corregido es la fuga de datos. Si en el
+  futuro `AIAgentPort` se reimplementa contra un LLM externo real, ese
+  mismo endpoint sin autenticar sí se volvería además un vector de
+  abuso de costos — algo a tener en cuenta si eso ocurre. Corregido
+  exigiendo autenticación.
+- **SEC-016 (MEDIUM, encontrado en auditoría final)**: `MaintenanceHistoryController.create`
+  (`POST /api/v1/maintenance-history`) no tenía ningún chequeo de permiso —
+  a diferencia de los 3 endpoints `GET` del mismo controller, que sí exigen
+  `MAINTENANCE:VIEW`. Cualquier usuario autenticado, incluido `VIEWER` (que
+  por diseño no tiene ningún permiso de `MAINTENANCE`), podía fabricar
+  registros de mantenimiento para cualquier equipo — nombre/ID de técnico,
+  firma incluida. Corregido exigiendo permiso `MAINTENANCE:CREATE`
+  (coherente con los defaults ya existentes: `ADMIN`/`TECHNICIAN` lo tienen,
+  `USER`/`VIEWER` no).
 - Permisos granulares por módulo/acción viven en `PermissionService` +
   `UserPermissionEntity`. `PermissionService.requireModulePermission(...)`
   es el guard reutilizable para controllers; lanza `AccessDeniedException`
@@ -119,6 +138,15 @@ inventa controles que no existan.
   despliegue con múltiples réplicas cada instancia lleva su propio contador.
   Para multi-instancia real, migrar a un backend compartido (Redis) es la
   mejora recomendada.
+- **Nota de mantenimiento de tests**: como el bucket del rate limiter es por
+  IP+ruta y la mayoría de tests MockMvc comparten la IP por defecto de la
+  petición simulada, el volumen acumulado de registros (`/auth/register`)
+  de toda la suite llegó a superar el umbral y provocar fallos `429`
+  espurios en tests sin relación con SEC-008. Se corrigió haciendo que cada
+  test que registra un usuario use un `X-Forwarded-For` aleatorio propio
+  (`ThreadLocalRandom`, rango `10.x.x.x`), en vez de subir el umbral
+  global — así la suite es robusta sin importar cuántos tests más se
+  agreguen, y sin debilitar la protección real de SEC-008 en producción.
 
 ## 7. Secretos (SEC-004, SEC-006)
 
@@ -238,7 +266,7 @@ Ver `SECURITY_TESTS.md` para el detalle de qué prueba cada test.
   localmente por el equipo.
 - **Quality Gate**: no hay un Quality Gate de SonarQube real evaluado (por
   lo anterior). El gate local equivalente es `./gradlew check`, que exige:
-  compilación limpia + 85 tests en verde + reglas ArchUnit + piso de
+  compilación limpia + 89 tests en verde + reglas ArchUnit + piso de
   cobertura JaCoCo.
 
 ## 18. Riesgos residuales conocidos
@@ -260,4 +288,5 @@ duplicados en `application.dto` confirmados como código muerto y eliminados;
 **SEC-013** (`/api/v1/alerts/**` público, dump completo del inventario);
 **SEC-014** (`/api/v1/ai/**` público, análisis de IA sin autenticar);
 **SEC-015** (Content-Disposition de descarga construido por concatenación
-de string con el nombre de archivo controlado por el cliente).
+de string con el nombre de archivo controlado por el cliente); **SEC-016**
+(creación de historial de mantenimiento sin ningún chequeo de permiso).
