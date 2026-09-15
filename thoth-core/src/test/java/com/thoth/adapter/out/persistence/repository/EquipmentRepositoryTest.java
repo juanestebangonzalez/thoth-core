@@ -1,6 +1,8 @@
 package com.thoth.adapter.out.persistence.repository;
 
 import com.thoth.adapter.out.persistence.entity.EquipmentEntity;
+import com.thoth.domain.valueobject.EquipmentCategory;
+import com.thoth.domain.valueobject.EquipmentStatus;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
@@ -25,10 +27,10 @@ class EquipmentRepositoryTest {
         EquipmentEntity entity = EquipmentEntity.builder()
             .equipmentId(UUID.randomUUID())
             .name("Dell Precision 7550")
-            .category("LAPTOP")
+            .category(EquipmentCategory.LAPTOP)
             .serialNumber("ABC123456")
             .brand("Dell")
-            .status("ACTIVE")
+            .status(EquipmentStatus.ACTIVE)
             .locationBuilding("Tower A")
             .purchaseDate(LocalDate.of(2022, 1, 15))
             .purchaseValue(BigDecimal.valueOf(1500.00))
@@ -47,9 +49,9 @@ class EquipmentRepositoryTest {
         EquipmentEntity entity = EquipmentEntity.builder()
             .equipmentId(UUID.randomUUID())
             .name("HP ProDesk 600")
-            .category("DESKTOP_PC")
+            .category(EquipmentCategory.DESKTOP)
             .serialNumber(serialNumber)
-            .status("ACTIVE")
+            .status(EquipmentStatus.ACTIVE)
             .locationBuilding("Tower B")
             .purchaseDate(LocalDate.of(2021, 6, 20))
             .purchaseValue(BigDecimal.valueOf(800.00))
@@ -68,9 +70,9 @@ class EquipmentRepositoryTest {
         EquipmentEntity entity = EquipmentEntity.builder()
             .equipmentId(UUID.randomUUID())
             .name("Lenovo ThinkPad")
-            .category("LAPTOP")
+            .category(EquipmentCategory.LAPTOP)
             .serialNumber("LEN123456")
-            .status("MAINTENANCE")
+            .status(EquipmentStatus.MAINTENANCE)
             .locationBuilding("Tower C")
             .purchaseDate(LocalDate.of(2020, 3, 10))
             .purchaseValue(BigDecimal.valueOf(1200.00))
@@ -78,7 +80,7 @@ class EquipmentRepositoryTest {
             .build();
         repository.save(entity);
         
-        var result = repository.findByStatus("MAINTENANCE");
+        var result = repository.findByStatus(EquipmentStatus.MAINTENANCE);
         
         assertNotNull(result);
         assertTrue(result.stream().anyMatch(e -> e.getSerialNumber().equals("LEN123456")));

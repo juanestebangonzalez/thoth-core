@@ -1,13 +1,13 @@
-﻿spring:
+spring:
   application:
     name: thoth-core
+  profiles:
+    active: dev
   jpa:
     open-in-view: false
 
 server:
   port: 8080
-  servlet:
-    context-path: /api
   error:
     include-message: always
     include-binding-errors: always
@@ -36,3 +36,9 @@ springdoc:
 app:
   name: THOTH C.O.R.E
   version: 1.0.0
+
+spring.servlet.multipart:
+  max-file-size: 10MB
+  max-request-size: 10MB
+
+app.upload.dir: uploads

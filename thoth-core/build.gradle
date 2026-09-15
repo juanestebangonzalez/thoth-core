@@ -2,6 +2,8 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '4.1.1'
     id 'io.spring.dependency-management' version '1.1.7'
+    id 'jacoco'
+    id 'org.sonarqube' version '5.1.0.4882'
 }
 
 group = 'com.thoth'
@@ -20,7 +22,7 @@ repositories {
 dependencies {
 
     // =========================
-    // PRODUCCIÓN
+    // PRODUCCIÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“N
     // =========================
 
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
@@ -29,10 +31,18 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-webmvc'
 
+    implementation 'com.google.zxing:core:3.5.3'
+    implementation 'com.google.zxing:javase:3.5.3'
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.0'
+
+    // SEC-012: sniff real file content (magic bytes) instead of trusting the client's Content-Type
+    implementation 'org.apache.tika:tika-core:2.9.2'
 
     // PostgreSQL
     runtimeOnly 'org.postgresql:postgresql'
+    implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
 
     // Lombok
     compileOnly 'org.projectlombok:lombok'
@@ -47,18 +57,20 @@ dependencies {
     // TEST
     // =========================
 
+    // Incluye JUnit 5, Mockito, AssertJ, Spring Test, MockMvc
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
-
-    testImplementation 'org.springframework.boot:spring-boot-starter-actuator-test'
-    testImplementation 'org.springframework.boot:spring-boot-starter-security-test'
-    testImplementation 'org.springframework.boot:spring-boot-starter-validation-test'
-    testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
-
-    // Spring Data JPA testing - Spring Boot 4
     testImplementation 'org.springframework.boot:spring-boot-data-jpa-test'
+    testImplementation 'org.springframework.boot:spring-boot-webmvc-test'
+
+    // Spring Security test support (MockMvc + @WithMockUser)
+    testImplementation 'org.springframework.security:spring-security-test'
+    testImplementation 'org.springframework.boot:spring-boot-security-test'
+
+    // Architecture rules (hexagonal boundaries)
+    testImplementation 'com.tngtech.archunit:archunit-junit5:1.3.0'
 
     // Base de datos en memoria para tests
-    testRuntimeOnly 'com.h2database:h2'
+    runtimeOnly 'com.h2database:h2'
 
     // JUnit
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
@@ -70,4 +82,39 @@ dependencies {
 
 tasks.named('test') {
     useJUnitPlatform()
+    finalizedBy jacocoTestReport
+}
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.required = true
+        html.required = true
+    }
+}
+
+jacocoTestCoverageVerification {
+    dependsOn jacocoTestReport
+    violationRules {
+        // Baseline floor at the current measured instruction coverage (~36%),
+        // not an aspirational target - raise this as coverage genuinely improves.
+        rule {
+            limit {
+                minimum = 0.35
+            }
+        }
+    }
+}
+
+check.dependsOn jacocoTestCoverageVerification
+
+// FASE 18: wired but not executable here - running `./gradlew sonar` requires
+// a real SonarQube/SonarCloud server plus -Dsonar.host.url and -Dsonar.token
+// (or SONAR_TOKEN env var), which this environment does not have.
+sonar {
+    properties {
+        property "sonar.projectKey", "thoth-core"
+        property "sonar.projectName", "THOTH C.O.R.E."
+        property "sonar.coverage.jacoco.xmlReportPaths", "build/reports/jacoco/test/jacocoTestReport.xml"
+    }
 }

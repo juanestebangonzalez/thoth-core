@@ -5,6 +5,7 @@ import com.thoth.adapter.out.persistence.repository.EquipmentJpaRepository;
 import com.thoth.adapter.out.persistence.mapper.EquipmentEntityMapper;
 import com.thoth.application.port.output.EquipmentRepositoryPort;
 import com.thoth.domain.model.Equipment;
+import com.thoth.domain.valueobject.EquipmentStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -46,12 +47,18 @@ public class EquipmentRepositoryAdapter implements EquipmentRepositoryPort {
     }
     
     @Override
-    public List<Equipment> findByStatus(String status) {
+    public List<Equipment> findByStatus(EquipmentStatus status) {
         return jpaRepository.findByStatus(status).stream()
             .map(mapper::toDomain)
             .toList();
     }
     
+    @Override
+    public Optional<Equipment> findByInventoryNumber(String inventoryNumber) {
+        return jpaRepository.findByInventoryNumber(inventoryNumber)
+            .map(mapper::toDomain);
+    }
+
     @Override
     public void deleteById(UUID equipmentId) {
         jpaRepository.deleteById(equipmentId);

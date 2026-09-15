@@ -1,13 +1,9 @@
-﻿spring:
+spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/thoth_core
-    username: postgres
-    password: root
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:thoth_core}
+    username: ${DB_USERNAME:thoth_app}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
-    hikari:
-      maximum-pool-size: 20
-      minimum-idle: 5
-
   jpa:
     hibernate:
       ddl-auto: validate
@@ -15,15 +11,24 @@
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
-        format_sql: true
-        jdbc:
-          batch_size: 20
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: 86400000
 
 logging:
   level:
     root: WARN
     com.thoth: INFO
-  file:
-    name: logs/thoth-core.log
-    max-size: 10MB
-    max-history: 30
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never

@@ -3,7 +3,6 @@ package com.thoth.application.usecase;
 import com.thoth.application.dto.EquipmentDTO;
 import com.thoth.application.exception.EquipmentNotFoundException;
 import com.thoth.application.mapper.EquipmentDtoMapper;
-import com.thoth.application.mapper.LocationDtoMapper;
 import com.thoth.application.port.output.EquipmentRepositoryPort;
 import com.thoth.application.usecase.impl.GetEquipmentUseCaseImpl;
 import com.thoth.domain.model.Equipment;
@@ -36,8 +35,7 @@ class GetEquipmentUseCaseTest {
     
     @BeforeEach
     void setUp() {
-        LocationDtoMapper locationMapper = new LocationDtoMapper();
-        equipmentMapper = new EquipmentDtoMapper(locationMapper);
+        equipmentMapper = new EquipmentDtoMapper();
         useCase = new GetEquipmentUseCaseImpl(equipmentRepository, equipmentMapper);
     }
     
@@ -48,7 +46,7 @@ class GetEquipmentUseCaseTest {
         Location location = Location.of("Edificio A", "2", "201", "");
         Equipment equipment = Equipment.create(
             "Dell OptiPlex",
-            EquipmentCategory.DESKTOP_PC,
+            EquipmentCategory.DESKTOP,
             "SN-2024-00001",
             "Dell",
             "OptiPlex",

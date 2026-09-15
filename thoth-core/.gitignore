@@ -1,6 +1,14 @@
 HELP.md
 .gradle
 build/
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Uploaded documents (SEC-005 scope): never commit real uploaded content
+uploads/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/

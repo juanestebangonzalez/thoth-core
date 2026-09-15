@@ -3,6 +3,7 @@ package com.thoth.application.usecase;
 import com.thoth.application.command.ChangeStatusCommand;
 import com.thoth.application.dto.EquipmentResponseDTO;
 import com.thoth.application.exception.EquipmentNotFoundException;
+import com.thoth.application.mapper.EquipmentDtoMapper;
 import com.thoth.application.port.output.EquipmentRepositoryPort;
 import com.thoth.application.usecase.impl.ChangeEquipmentStatusUseCaseImpl;
 import com.thoth.domain.model.Equipment;
@@ -32,10 +33,12 @@ class ChangeEquipmentStatusUseCaseTest {
     private EquipmentRepositoryPort equipmentRepository;
     
     private ChangeEquipmentStatusUseCaseImpl useCase;
-    
+    private EquipmentDtoMapper mapper;
+
     @BeforeEach
     void setUp() {
-        useCase = new ChangeEquipmentStatusUseCaseImpl(equipmentRepository);
+        mapper = new EquipmentDtoMapper();
+        useCase = new ChangeEquipmentStatusUseCaseImpl(equipmentRepository, mapper);
     }
     
     @Test
@@ -45,7 +48,7 @@ class ChangeEquipmentStatusUseCaseTest {
         Location location = Location.of("Edificio A", "2", "201", "");
         Equipment equipment = Equipment.create(
             "Dell OptiPlex",
-            EquipmentCategory.DESKTOP_PC,
+            EquipmentCategory.DESKTOP,
             "SN-2024-00001",
             "Dell",
             "OptiPlex",

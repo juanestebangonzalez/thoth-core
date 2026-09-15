@@ -2,25 +2,28 @@ package com.thoth.adapter.in.rest.controller;
 
 import com.thoth.adapter.in.rest.dto.request.ChangeStatusRequest;
 import com.thoth.adapter.in.rest.dto.request.CreateEquipmentRequest;
+import com.thoth.adapter.in.rest.dto.request.HardwareRequest;
+import com.thoth.adapter.in.rest.dto.request.RentalInfoRequest;
 import com.thoth.adapter.in.rest.dto.request.UpdateEquipmentRequest;
-import com.thoth.adapter.in.rest.dto.response.EquipmentResponseDTO;
+import com.thoth.application.command.ChangeStatusCommand;
+import com.thoth.application.command.ListEquipmentCommand;
+import com.thoth.application.command.RegisterEquipmentCommand;
+import com.thoth.application.command.UpdateEquipmentCommand;
+import com.thoth.application.dto.EquipmentDTO;
+import com.thoth.application.dto.EquipmentResponseDTO;
+import com.thoth.application.dto.PageResponseDTO;
+import com.thoth.application.port.input.ChangeEquipmentStatusUseCase;
+import com.thoth.application.port.input.GetEquipmentUseCase;
+import com.thoth.application.port.input.ListEquipmentUseCase;
+import com.thoth.application.port.input.RegisterEquipmentUseCase;
+import com.thoth.application.port.input.UpdateEquipmentUseCase;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RestController
@@ -28,48 +31,128 @@ import java.util.UUID;
 @Tag(name = "Equipment", description = "Equipment Management API")
 @RequiredArgsConstructor
 public class EquipmentController {
-    
+
+    private final RegisterEquipmentUseCase registerEquipmentUseCase;
+    private final GetEquipmentUseCase getEquipmentUseCase;
+    private final ListEquipmentUseCase listEquipmentUseCase;
+    private final UpdateEquipmentUseCase updateEquipmentUseCase;
+    private final ChangeEquipmentStatusUseCase changeEquipmentStatusUseCase;
+
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Create Equipment", description = "Register a new equipment")
-    public ResponseEntity<EquipmentResponseDTO> createEquipment(
-            @Valid @RequestBody CreateEquipmentRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+    public ResponseEntity<EquipmentResponseDTO> createEquipment(@Valid @RequestBody CreateEquipmentRequest request) {
+        HardwareRequest hw = request.getHardware();
+        RentalInfoRequest rental = request.getRentalInfo();
+
+        RegisterEquipmentCommand command = new RegisterEquipmentCommand(
+            request.getName(),
+            request.getCategory(),
+            request.getSerialNumber(),
+                request.getInventoryNumber(),
+            request.getBrand(),
+            request.getModel(),
+            request.getMacAddress(),
+            request.getPurchaseDate(),
+            request.getPurchaseValue(),
+            request.getLocation().getBuilding(),
+            request.getLocation().getFloor(),
+            request.getLocation().getOffice(),
+            request.getAssignedTo(),
+            "SYSTEM",
+            request.getOwnershipType(),
+            rental != null ? rental.getRentalCompany() : null,
+            rental != null ? rental.getContactName() : null,
+            rental != null ? rental.getContactPhone() : null,
+            rental != null ? rental.getContactEmail() : null,
+            rental != null ? rental.getStartDate() : null,
+            rental != null ? rental.getEndDate() : null,
+            rental != null ? rental.getContractNumber() : null,
+            rental != null ? rental.getContractFileUrl() : null,
+            rental != null ? rental.getNotes() : null,
+            hw != null ? hw.getProcessor() : null,
+            hw != null ? hw.getRamSizeGb() : null,
+            hw != null ? hw.getRamType() : null,
+            hw != null ? hw.getDiskType() : null,
+            hw != null ? hw.getDiskSizeGb() : null,
+            hw != null ? hw.getDiskHealthPercent() : null,
+            hw != null ? hw.getDiskTemperatureCelsius() : null
+        );
+        EquipmentResponseDTO response = registerEquipmentUseCase.register(command);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
-    
+
     @GetMapping("/{id}")
-    @Operation(summary = "Get Equipment", description = "Retrieve equipment by ID")
-    public ResponseEntity<EquipmentResponseDTO> getEquipment(@PathVariable UUID id) {
-        return ResponseEntity.ok().build();
+    @Operation(summary = "Get Equipment by ID")
+    public ResponseEntity<EquipmentDTO> getEquipment(@PathVariable UUID id) {
+        return ResponseEntity.ok(getEquipmentUseCase.getById(id));
     }
-    
+
     @GetMapping
-    @Operation(summary = "List Equipment", description = "Get all equipment with pagination")
-    public ResponseEntity<?> listEquipment(
+    @Operation(summary = "List Equipment")
+    public ResponseEntity<PageResponseDTO<EquipmentDTO>> listEquipment(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
-        return ResponseEntity.ok().build();
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String category) {
+        ListEquipmentCommand command = new ListEquipmentCommand(page, size, "name", status, category);
+        return ResponseEntity.ok(listEquipmentUseCase.listAll(command));
     }
-    
+
     @PutMapping("/{id}")
-    @Operation(summary = "Update Equipment", description = "Update equipment information")
+    @Operation(summary = "Update Equipment")
     public ResponseEntity<EquipmentResponseDTO> updateEquipment(
             @PathVariable UUID id,
             @Valid @RequestBody UpdateEquipmentRequest request) {
-        return ResponseEntity.ok().build();
+        HardwareRequest hw = request.getHardware();
+        RentalInfoRequest rental = request.getRentalInfo();
+
+        UpdateEquipmentCommand command = new UpdateEquipmentCommand(
+              id,
+              request.getName(),
+              request.getInventoryNumber(),
+              request.getAssignedTo(),
+              request.getLocation() != null ? request.getLocation().getBuilding() : null,
+              request.getLocation() != null ? request.getLocation().getFloor() : null,
+              request.getLocation() != null ? request.getLocation().getOffice() : null,
+              "SYSTEM",
+              request.getBrand(),
+              request.getModel(),
+              request.getMacAddress(),
+              request.getOwnershipType(),
+              rental != null ? rental.getRentalCompany() : null,
+              rental != null ? rental.getContactName() : null,
+              rental != null ? rental.getContactPhone() : null,
+              rental != null ? rental.getContactEmail() : null,
+              rental != null ? rental.getStartDate() : null,
+              rental != null ? rental.getEndDate() : null,
+              rental != null ? rental.getContractNumber() : null,
+              rental != null ? rental.getContractFileUrl() : null,
+              rental != null ? rental.getNotes() : null,
+              hw != null ? hw.getProcessor() : null,
+              hw != null ? hw.getRamSizeGb() : null,
+              hw != null ? hw.getRamType() : null,
+              hw != null ? hw.getDiskType() : null,
+              hw != null ? hw.getDiskSizeGb() : null,
+              hw != null ? hw.getDiskHealthPercent() : null,
+              hw != null ? hw.getDiskTemperatureCelsius() : null
+          );
+        return ResponseEntity.ok(updateEquipmentUseCase.update(command));
     }
-    
+
     @PatchMapping("/{id}/status")
-    @Operation(summary = "Change Equipment Status", description = "Update equipment status")
+    @Operation(summary = "Change Equipment Status")
     public ResponseEntity<EquipmentResponseDTO> changeEquipmentStatus(
             @PathVariable UUID id,
             @Valid @RequestBody ChangeStatusRequest request) {
-        return ResponseEntity.ok().build();
+        ChangeStatusCommand command = new ChangeStatusCommand(id, request.getStatus(), "SYSTEM");
+        return ResponseEntity.ok(changeEquipmentStatusUseCase.changeStatus(command));
     }
-    
+
     @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    @Operation(summary = "Delete Equipment", description = "Soft delete equipment")
-    public void deleteEquipment(@PathVariable UUID id) {
+    @Operation(summary = "Delete Equipment (soft)")
+    public ResponseEntity<Void> deleteEquipment(@PathVariable UUID id) {
+        ChangeStatusCommand command = new ChangeStatusCommand(id, "RETIRED", "SYSTEM");
+        changeEquipmentStatusUseCase.changeStatus(command);
+        return ResponseEntity.noContent().build();
     }
 }

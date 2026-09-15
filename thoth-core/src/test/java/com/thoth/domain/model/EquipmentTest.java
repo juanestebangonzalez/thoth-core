@@ -24,7 +24,7 @@ class EquipmentTest {
         
         equipment = Equipment.create(
             "Dell OptiPlex 7090",
-            EquipmentCategory.DESKTOP_PC,
+            EquipmentCategory.DESKTOP,
             "SN-2024-00001",
             "Dell",
             "OptiPlex 7090",
@@ -43,7 +43,7 @@ class EquipmentTest {
         assertNotNull(equipment.getEquipmentId());
         assertEquals(EquipmentStatus.ACTIVE, equipment.getStatus());
         assertEquals("Dell OptiPlex 7090", equipment.getName());
-        assertEquals(EquipmentCategory.DESKTOP_PC, equipment.getCategory());
+        assertEquals(EquipmentCategory.DESKTOP, equipment.getCategory());
         assertNotNull(equipment.getCreatedAt());
     }
     
@@ -95,6 +95,18 @@ class EquipmentTest {
     @DisplayName("Should mark equipment as retired")
     void testMarkAsRetired() {
         equipment.markAsRetired();
+        assertEquals(EquipmentStatus.RETIRED, equipment.getStatus());
+    }
+
+    @Test
+    @DisplayName("SEC-011: Should not allow reactivating a retired equipment")
+    void testMarkAsActiveThrowsWhenRetired() {
+        equipment.markAsRetired();
+        IllegalStateException exception = assertThrows(
+            IllegalStateException.class,
+            () -> equipment.markAsActive()
+        );
+        assertTrue(exception.getMessage().contains("Cannot reactivate retired equipment"));
         assertEquals(EquipmentStatus.RETIRED, equipment.getStatus());
     }
     

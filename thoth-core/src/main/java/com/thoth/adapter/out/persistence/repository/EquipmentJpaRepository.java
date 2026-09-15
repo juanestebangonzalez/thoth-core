@@ -1,6 +1,8 @@
 package com.thoth.adapter.out.persistence.repository;
 
 import com.thoth.adapter.out.persistence.entity.EquipmentEntity;
+import com.thoth.domain.valueobject.EquipmentCategory;
+import com.thoth.domain.valueobject.EquipmentStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -12,22 +14,24 @@ import java.util.UUID;
 
 @Repository
 public interface EquipmentJpaRepository extends JpaRepository<EquipmentEntity, UUID> {
-    
+
     Optional<EquipmentEntity> findBySerialNumber(String serialNumber);
-    
-    List<EquipmentEntity> findByStatus(String status);
-    
-    List<EquipmentEntity> findByCategory(String category);
-    
-    Page<EquipmentEntity> findByStatus(String status, Pageable pageable);
-    
+
+    List<EquipmentEntity> findByStatus(EquipmentStatus status);
+
+    List<EquipmentEntity> findByCategory(EquipmentCategory category);
+
+    Page<EquipmentEntity> findByStatus(EquipmentStatus status, Pageable pageable);
+
     Page<EquipmentEntity> findByLocationBuilding(String building, Pageable pageable);
-    
+
     Page<EquipmentEntity> findByAssignedTo(String assignedTo, Pageable pageable);
-    
+
     Page<EquipmentEntity> findAll(Pageable pageable);
-    
-    long countByStatus(String status);
-    
-    long countByCategory(String category);
+
+    long countByStatus(EquipmentStatus status);
+
+    long countByCategory(EquipmentCategory category);
+
+    Optional<EquipmentEntity> findByInventoryNumber(String inventoryNumber);
 }

@@ -1,4 +1,3 @@
-version: '3.8'
 
 services:
   postgres:
@@ -7,11 +6,14 @@ services:
     environment:
       POSTGRES_DB: thoth_core
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: root
+      POSTGRES_PASSWORD: ${DB_SUPERUSER_PASSWORD:?DB_SUPERUSER_PASSWORD must be set}
+      APP_DB_USER: ${DB_USERNAME:-thoth_app}
+      APP_DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set}
     ports:
       - "5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -25,8 +27,9 @@ services:
       - "8080:8080"
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/thoth_core
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: root
+      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME:-thoth_app}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
     depends_on:
       postgres:
         condition: service_healthy

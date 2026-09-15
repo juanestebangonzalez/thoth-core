@@ -17,12 +17,10 @@ import static org.junit.jupiter.api.Assertions.*;
 class EquipmentDtoMapperTest {
     
     private EquipmentDtoMapper mapper;
-    private LocationDtoMapper locationMapper;
-    
+
     @BeforeEach
     void setUp() {
-        locationMapper = new LocationDtoMapper();
-        mapper = new EquipmentDtoMapper(locationMapper);
+        mapper = new EquipmentDtoMapper();
     }
     
     @Test
@@ -31,7 +29,7 @@ class EquipmentDtoMapperTest {
         Location location = Location.of("Edificio A", "2", "201", "");
         Equipment equipment = Equipment.create(
             "Dell OptiPlex",
-            EquipmentCategory.DESKTOP_PC,
+            EquipmentCategory.DESKTOP,
             "SN-2024-00001",
             "Dell",
             "OptiPlex",
@@ -47,6 +45,6 @@ class EquipmentDtoMapperTest {
         
         assertNotNull(dto);
         assertEquals("Dell OptiPlex", dto.name());
-        assertEquals("PC de Escritorio", dto.category());
+        assertEquals("DESKTOP", dto.category());
     }
 }

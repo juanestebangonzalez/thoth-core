@@ -1,11 +1,11 @@
 package com.thoth.domain.valueobject;
 
 public enum EquipmentCategory {
-    DESKTOP_PC("PC de Escritorio"),
+    DESKTOP("PC de Escritorio"),
     LAPTOP("Portatil"),
     SERVER("Servidor"),
     PRINTER("Impresora"),
-    NETWORK_DEVICE("Dispositivo de Red"),
+    NETWORK("Dispositivo de Red"),
     PERIPHERAL("Periferico"),
     STORAGE("Almacenamiento"),
     MONITOR("Monitor"),

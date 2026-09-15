@@ -2,10 +2,9 @@ package com.thoth.application.usecase;
 
 import com.thoth.application.command.RegisterEquipmentCommand;
 import com.thoth.application.dto.EquipmentResponseDTO;
-import com.thoth.application.exception.ValidationException;
 import com.thoth.application.mapper.EquipmentDtoMapper;
-import com.thoth.application.mapper.LocationDtoMapper;
 import com.thoth.application.port.output.EquipmentRepositoryPort;
+import com.thoth.application.service.MaintenanceSchedulerService;
 import com.thoth.application.usecase.impl.RegisterEquipmentUseCaseImpl;
 import com.thoth.domain.model.Equipment;
 import com.thoth.domain.valueobject.EquipmentCategory;
@@ -19,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -31,16 +31,16 @@ class RegisterEquipmentUseCaseTest {
     
     @Mock
     private EquipmentRepositoryPort equipmentRepository;
-    
+
     private RegisterEquipmentUseCaseImpl useCase;
     private EquipmentDtoMapper equipmentMapper;
-    private LocationDtoMapper locationMapper;
-    
+    private MaintenanceSchedulerService schedulerService;
+
     @BeforeEach
     void setUp() {
-        locationMapper = new LocationDtoMapper();
-        equipmentMapper = new EquipmentDtoMapper(locationMapper);
-        useCase = new RegisterEquipmentUseCaseImpl(equipmentRepository, locationMapper, equipmentMapper);
+        equipmentMapper = new EquipmentDtoMapper();
+        schedulerService = new MaintenanceSchedulerService();
+        useCase = new RegisterEquipmentUseCaseImpl(equipmentRepository, schedulerService, equipmentMapper);
     }
     
     @Test
@@ -48,8 +48,9 @@ class RegisterEquipmentUseCaseTest {
     void testRegisterEquipmentSuccessfully() {
         RegisterEquipmentCommand command = new RegisterEquipmentCommand(
             "Dell OptiPlex 7090",
-            "DESKTOP_PC",
+            "DESKTOP",
             "SN-2024-00001",
+            null,
             "Dell",
             "OptiPlex 7090",
             "00:1A:2B:3C:4D:5E",
@@ -59,12 +60,14 @@ class RegisterEquipmentUseCaseTest {
             "2",
             "201",
             "Juan Perez",
-            "admin"
+            "admin",
+            null, null, null, null, null, null, null, null, null, null,
+            null, null, null, null, null, null, null
         );
-        
+
         Equipment mockEquipment = Equipment.create(
             command.name(),
-            EquipmentCategory.DESKTOP_PC,
+            EquipmentCategory.DESKTOP,
             command.serialNumber(),
             command.brand(),
             command.model(),
@@ -91,8 +94,9 @@ class RegisterEquipmentUseCaseTest {
     void testRegisterThrowsWhenNameBlank() {
         RegisterEquipmentCommand command = new RegisterEquipmentCommand(
             "",
-            "DESKTOP_PC",
+            "DESKTOP",
             "SN-2024-00001",
+            null,
             "Dell",
             "OptiPlex 7090",
             "00:1A:2B:3C:4D:5E",
@@ -102,9 +106,53 @@ class RegisterEquipmentUseCaseTest {
             "2",
             "201",
             "Juan Perez",
+            "admin",
+            null, null, null, null, null, null, null, null, null, null,
+            null, null, null, null, null, null, null
+        );
+
+        assertThrows(IllegalArgumentException.class, () -> useCase.register(command));
+    }
+
+    @Test
+    @DisplayName("Should throw when inventory number already exists (via port, not JPA repo directly)")
+    void testRegisterThrowsWhenInventoryNumberAlreadyExists() {
+        RegisterEquipmentCommand command = new RegisterEquipmentCommand(
+            "Dell OptiPlex 7090",
+            "DESKTOP",
+            "SN-2024-00002",
+            "INV-001",
+            "Dell",
+            "OptiPlex 7090",
+            "00:1A:2B:3C:4D:5E",
+            LocalDate.of(2023, 1, 15),
+            BigDecimal.valueOf(1200),
+            "Edificio A",
+            "2",
+            "201",
+            "Juan Perez",
+            "admin",
+            null, null, null, null, null, null, null, null, null, null,
+            null, null, null, null, null, null, null
+        );
+
+        Equipment existing = Equipment.create(
+            "Otro equipo",
+            EquipmentCategory.DESKTOP,
+            "SN-2024-00001",
+            "Dell",
+            "OptiPlex",
+            "00:1A:2B:3C:4D:5F",
+            LocalDate.of(2022, 1, 1),
+            BigDecimal.valueOf(900),
+            Location.of("Edificio A", "2", "201", ""),
+            "Otro",
             "admin"
         );
-        
-        assertThrows(ValidationException.class, () -> useCase.register(command));
+
+        when(equipmentRepository.findByInventoryNumber("INV-001")).thenReturn(Optional.of(existing));
+
+        assertThrows(IllegalArgumentException.class, () -> useCase.register(command));
+        verify(equipmentRepository, never()).save(any());
     }
 }

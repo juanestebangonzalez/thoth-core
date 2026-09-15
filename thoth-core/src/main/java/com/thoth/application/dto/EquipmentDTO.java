@@ -9,6 +9,7 @@ public record EquipmentDTO(
     String name,
     String category,
     String serialNumber,
+    String inventoryNumber,
     String macAddress,
     String brand,
     String model,
@@ -17,5 +18,9 @@ public record EquipmentDTO(
     BigDecimal purchaseValue,
     LocationDTO location,
     String assignedTo,
-    String createdBy
+    String createdBy,
+    String ownershipType,
+    RentalInfoDTO rentalInfo,
+    HardwareDTO hardware,
+    LocalDate nextMaintenanceDate
 ) {}

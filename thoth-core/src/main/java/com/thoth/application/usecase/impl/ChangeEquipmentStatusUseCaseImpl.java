@@ -4,6 +4,7 @@ import com.thoth.application.command.ChangeStatusCommand;
 import com.thoth.application.dto.EquipmentResponseDTO;
 import com.thoth.application.exception.EquipmentNotFoundException;
 import com.thoth.application.exception.InvalidStatusTransitionException;
+import com.thoth.application.mapper.EquipmentDtoMapper;
 import com.thoth.application.port.input.ChangeEquipmentStatusUseCase;
 import com.thoth.application.port.output.EquipmentRepositoryPort;
 import com.thoth.domain.model.Equipment;
@@ -16,16 +17,17 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Transactional
 public class ChangeEquipmentStatusUseCaseImpl implements ChangeEquipmentStatusUseCase {
-    
+
     private final EquipmentRepositoryPort equipmentRepository;
-    
+    private final EquipmentDtoMapper mapper;
+
     @Override
     public EquipmentResponseDTO changeStatus(ChangeStatusCommand command) {
         Equipment equipment = equipmentRepository.findById(command.equipmentId())
             .orElseThrow(() -> new EquipmentNotFoundException(command.equipmentId()));
-        
+
         EquipmentStatus newStatus = parseStatus(command.newStatus());
-        
+
         switch (newStatus) {
             case MAINTENANCE:
                 equipment.markForMaintenance();
@@ -40,20 +42,11 @@ public class ChangeEquipmentStatusUseCaseImpl implements ChangeEquipmentStatusUs
                 equipment.markAsRetired();
                 break;
         }
-        
+
         Equipment saved = equipmentRepository.save(equipment);
-        
-        return new EquipmentResponseDTO(
-            saved.getEquipmentId(),
-            saved.getName(),
-            saved.getCategory().getDisplayName(),
-            saved.getStatus().getDisplayName(),
-            saved.getLocation().getFullAddress(),
-            saved.getAssignedTo(),
-            "Status changed to " + newStatus.getDisplayName()
-        );
+        return mapper.toResponseDTO(saved);
     }
-    
+
     private EquipmentStatus parseStatus(String status) {
         try {
             return EquipmentStatus.valueOf(status.toUpperCase());

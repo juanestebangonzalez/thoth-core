@@ -1,21 +1,23 @@
-﻿spring:
+spring:
   datasource:
-    url: jdbc:h2:mem:thoth_core_dev
-    username: sa
-    password:
-    driver-class-name: org.h2.Driver
-
+    url: jdbc:postgresql://localhost:5432/thoth_core
+    username: ${DB_USERNAME:thoth_app}
+    password: ${DB_PASSWORD:thoth_secret}
+    driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: create-drop
-    show-sql: false
-    database-platform: org.hibernate.dialect.H2Dialect
-    open-in-view: false
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  docker:
+    compose:
+      enabled: false
 
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
+jwt:
+  secret: ${JWT_SECRET:thoth-core-DEV-ONLY-secret-not-for-production-6f2a9c1e7b4d}
+  expiration: 86400000
 
 logging:
   level:

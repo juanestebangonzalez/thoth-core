@@ -3,7 +3,7 @@ package com.thoth.application.usecase;
 import com.thoth.application.command.UpdateEquipmentCommand;
 import com.thoth.application.dto.EquipmentResponseDTO;
 import com.thoth.application.exception.EquipmentNotFoundException;
-import com.thoth.application.mapper.LocationDtoMapper;
+import com.thoth.application.mapper.EquipmentDtoMapper;
 import com.thoth.application.port.output.EquipmentRepositoryPort;
 import com.thoth.application.usecase.impl.UpdateEquipmentUseCaseImpl;
 import com.thoth.domain.model.Equipment;
@@ -31,14 +31,14 @@ class UpdateEquipmentUseCaseTest {
     
     @Mock
     private EquipmentRepositoryPort equipmentRepository;
-    
+
     private UpdateEquipmentUseCaseImpl useCase;
-    private LocationDtoMapper locationMapper;
-    
+    private EquipmentDtoMapper equipmentMapper;
+
     @BeforeEach
     void setUp() {
-        locationMapper = new LocationDtoMapper();
-        useCase = new UpdateEquipmentUseCaseImpl(equipmentRepository, locationMapper);
+        equipmentMapper = new EquipmentDtoMapper();
+        useCase = new UpdateEquipmentUseCaseImpl(equipmentRepository, equipmentMapper);
     }
     
     @Test
@@ -48,7 +48,7 @@ class UpdateEquipmentUseCaseTest {
         Location location = Location.of("Edificio A", "2", "201", "");
         Equipment equipment = Equipment.create(
             "Dell OptiPlex",
-            EquipmentCategory.DESKTOP_PC,
+            EquipmentCategory.DESKTOP,
             "SN-2024-00001",
             "Dell",
             "OptiPlex",
@@ -64,11 +64,14 @@ class UpdateEquipmentUseCaseTest {
         UpdateEquipmentCommand command = new UpdateEquipmentCommand(
             equipmentId,
             "Dell OptiPlex Updated",
+            null,
             "Maria",
             "Edificio B",
             "3",
             "305",
-            "admin"
+            "admin",
+            null, null, null, null, null, null, null, null, null, null,
+            null, null, null, null, null, null, null, null, null, null
         );
         
         when(equipmentRepository.findById(equipmentId)).thenReturn(Optional.of(equipment));
@@ -89,11 +92,14 @@ class UpdateEquipmentUseCaseTest {
         UpdateEquipmentCommand command = new UpdateEquipmentCommand(
             equipmentId,
             "Updated",
+            null,
             "Maria",
             "B",
             "3",
             "305",
-            "admin"
+            "admin",
+            null, null, null, null, null, null, null, null, null, null,
+            null, null, null, null, null, null, null, null, null, null
         );
         
         assertThrows(EquipmentNotFoundException.class, () -> useCase.update(command));

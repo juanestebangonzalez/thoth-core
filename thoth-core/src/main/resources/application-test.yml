@@ -12,6 +12,10 @@
     database-platform: org.hibernate.dialect.H2Dialect
     open-in-view: false
 
+jwt:
+  secret: thoth-core-TEST-ONLY-secret-not-for-production-3d8f5a2c9e1b
+  expiration: 86400000
+
 logging:
   level:
     root: OFF
