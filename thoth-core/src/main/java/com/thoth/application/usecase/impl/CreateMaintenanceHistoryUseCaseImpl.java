@@ -59,6 +59,14 @@ public class CreateMaintenanceHistoryUseCaseImpl implements CreateMaintenanceHis
             command.createdBy()
         );
 
+        // Firma digital
+        if (command.signatureBase64() != null && !command.signatureBase64().isBlank()) {
+            maintenance.setSignatureBase64(command.signatureBase64());
+        }
+        if (command.signedBy() != null && !command.signedBy().isBlank()) {
+            maintenance.setSignedBy(command.signedBy());
+        }
+
         MaintenanceHistory saved = repository.save(maintenance);
 
         // Actualizar el equipo: recalcular proxima fecha si es preventivo

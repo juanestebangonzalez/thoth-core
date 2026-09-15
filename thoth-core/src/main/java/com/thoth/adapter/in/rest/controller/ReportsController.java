@@ -204,4 +204,82 @@ public class ReportsController {
             .sorted(Map.Entry.<K, Long>comparingByValue().reversed())
             .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (a, b) -> a, LinkedHashMap::new));
     }
+
+    @GetMapping("/maintenance-report")
+    @Operation(summary = "Reporte detallado de mantenimientos por semana y mes")
+    public ResponseEntity<Map<String, Object>> maintenanceReport() {
+        List<MaintenanceHistoryEntity> all = maintenanceRepository.findAll();
+        Map<String, Object> report = new LinkedHashMap<>();
+
+        java.time.LocalDate today = java.time.LocalDate.now();
+
+        // Mantenimientos por semana (ultimas 8 semanas)
+        List<Map<String, Object>> byWeek = new ArrayList<>();
+        for (int i = 7; i >= 0; i--) {
+            java.time.LocalDate weekStart = today.minusWeeks(i).with(java.time.DayOfWeek.MONDAY);
+            java.time.LocalDate weekEnd = weekStart.plusDays(6);
+            long prev = all.stream().filter(m -> m.getPerformedDate() != null && !m.getPerformedDate().toLocalDate().isBefore(weekStart) && !m.getPerformedDate().toLocalDate().isAfter(weekEnd) && m.getMaintenanceType().name().equals("PREVENTIVE")).count();
+            long corr = all.stream().filter(m -> m.getPerformedDate() != null && !m.getPerformedDate().toLocalDate().isBefore(weekStart) && !m.getPerformedDate().toLocalDate().isAfter(weekEnd) && m.getMaintenanceType().name().equals("CORRECTIVE")).count();
+            Map<String, Object> week = new LinkedHashMap<>();
+            week.put("weekStart", weekStart.toString());
+            week.put("weekEnd", weekEnd.toString());
+            week.put("label", weekStart.getDayOfMonth() + "-" + weekEnd.getDayOfMonth() + " " + weekStart.getMonth().toString().substring(0, 3));
+            week.put("preventive", prev);
+            week.put("corrective", corr);
+            week.put("total", prev + corr);
+            byWeek.add(week);
+        }
+        report.put("byWeek", byWeek);
+
+        // Mantenimientos por mes (ultimos 12 meses)
+        List<Map<String, Object>> byMonth = new ArrayList<>();
+        java.time.format.DateTimeFormatter fmt = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM");
+        String[] meses = {"Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"};
+        for (int i = 11; i >= 0; i--) {
+            java.time.LocalDate monthDate = today.minusMonths(i).withDayOfMonth(1);
+            String monthKey = monthDate.format(fmt);
+            long prev = all.stream().filter(m -> m.getPerformedDate() != null && m.getPerformedDate().toLocalDate().format(fmt).equals(monthKey) && m.getMaintenanceType().name().equals("PREVENTIVE")).count();
+            long corr = all.stream().filter(m -> m.getPerformedDate() != null && m.getPerformedDate().toLocalDate().format(fmt).equals(monthKey) && m.getMaintenanceType().name().equals("CORRECTIVE")).count();
+            Map<String, Object> month = new LinkedHashMap<>();
+            month.put("month", monthKey);
+            month.put("label", meses[monthDate.getMonthValue() - 1] + " " + monthDate.getYear());
+            month.put("preventive", prev);
+            month.put("corrective", corr);
+            month.put("total", prev + corr);
+            byMonth.add(month);
+        }
+        report.put("byMonth", byMonth);
+
+        // Totales
+        long totalPrev = all.stream().filter(m -> m.getMaintenanceType().name().equals("PREVENTIVE")).count();
+        long totalCorr = all.stream().filter(m -> m.getMaintenanceType().name().equals("CORRECTIVE")).count();
+        report.put("totalPreventive", totalPrev);
+        report.put("totalCorrective", totalCorr);
+        report.put("total", totalPrev + totalCorr);
+
+        // Por tecnico
+        Map<String, Long> byTech = all.stream()
+            .filter(m -> m.getTechnicianName() != null)
+            .collect(Collectors.groupingBy(MaintenanceHistoryEntity::getTechnicianName, Collectors.counting()));
+        report.put("byTechnician", byTech);
+
+        // Ultimos 10 mantenimientos
+        List<Map<String, Object>> recent = all.stream()
+            .sorted((a, b) -> b.getPerformedDate().compareTo(a.getPerformedDate()))
+            .limit(10)
+            .map(m -> {
+                Map<String, Object> item = new LinkedHashMap<>();
+                item.put("id", m.getMaintenanceId());
+                item.put("equipmentId", m.getEquipmentId());
+                item.put("type", m.getMaintenanceType().name());
+                item.put("date", m.getPerformedDate());
+                item.put("technician", m.getTechnicianName());
+                item.put("reason", m.getReason());
+                item.put("hasSig", m.getSignatureBase64() != null && !m.getSignatureBase64().isBlank());
+                return item;
+            }).collect(Collectors.toList());
+        report.put("recent", recent);
+
+        return ResponseEntity.ok(report);
+    }
 }

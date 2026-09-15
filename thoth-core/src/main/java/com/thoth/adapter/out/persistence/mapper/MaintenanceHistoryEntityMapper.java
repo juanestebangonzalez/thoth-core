@@ -24,6 +24,8 @@ public class MaintenanceHistoryEntityMapper {
             .nextScheduledDate(domain.getNextScheduledDate())
             .createdAt(domain.getCreatedAt())
             .createdBy(domain.getCreatedBy())
+            .signatureBase64(domain.getSignatureBase64())
+            .signedBy(domain.getSignedBy())
             .partsReplaced(new ArrayList<>())
             .build();
 
@@ -67,6 +69,8 @@ public class MaintenanceHistoryEntityMapper {
             .partsReplaced(parts)
             .createdAt(entity.getCreatedAt())
             .createdBy(entity.getCreatedBy())
+            .signatureBase64(entity.getSignatureBase64())
+            .signedBy(entity.getSignedBy())
             .build();
     }
 }
