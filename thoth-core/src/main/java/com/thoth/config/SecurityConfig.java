@@ -40,7 +40,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/v1/auth/**").permitAll()
                 .requestMatchers("/api/v1/qr/**").permitAll()
-                .requestMatchers("/api/v1/alerts/**").permitAll()
+                .requestMatchers("/api/v1/alerts/**").authenticated()
                 .requestMatchers("/api/v1/sedes/**").permitAll()
                 .requestMatchers("/api/v1/users/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.GET, "/api/v1/equipment/**").authenticated()
@@ -49,7 +49,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.PATCH, "/api/v1/equipment/**").hasAnyRole("ADMIN", "TECHNICIAN")
                 .requestMatchers(HttpMethod.DELETE, "/api/v1/equipment/**").hasAnyRole("ADMIN", "TECHNICIAN")
                 .requestMatchers("/api/v1/maintenance/**").permitAll()
-                .requestMatchers("/api/v1/ai/**").permitAll()
+                .requestMatchers("/api/v1/ai/**").authenticated()
                 .requestMatchers("/swagger-ui/**").permitAll()
                 .requestMatchers("/swagger-ui.html").permitAll()
                 .requestMatchers("/v3/api-docs/**").permitAll()

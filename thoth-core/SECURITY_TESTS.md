@@ -7,7 +7,7 @@ para el contexto de cada control.
 ## Cómo ejecutar
 
 ```bash
-./gradlew test                          # toda la suite (74 tests)
+./gradlew test                          # toda la suite (84 tests)
 ./gradlew check                         # test + ArchUnit + piso de cobertura JaCoCo
 ./gradlew jacocoTestReport               # reporte HTML en build/reports/jacoco/test/html/index.html
 ```
@@ -116,6 +116,31 @@ agregado `Equipment`, no solo la parte de seguridad.)
 | `create_thenListActive_returnsDtoWithExpectedFields` | `SedeController` responde `SedeDTO` (no `SedeEntity`) con los campos esperados, de punta a punta (no solo que compile). |
 | `getById_withUnknownId_returns404` | Comportamiento de no encontrado se mantiene tras el cambio de tipo de retorno. |
 
+## Alertas / SEC-013 (encontrado en auditoría final) — `AlertControllerSecurityTest`
+
+| Test | Cubre |
+|---|---|
+| `upcomingMaintenance_withoutAuthentication_returns401` | Antes público: dump del inventario completo (nombre, serial, categoría) sin autenticar. |
+| `hardwareCritical_withoutAuthentication_returns401` | Antes público: exponía qué equipos tienen hardware en estado crítico. |
+| `rentalExpiring_withoutAuthentication_returns401` | Antes público: exponía empresa y fecha de vencimiento de contratos de alquiler. |
+| `summary_withoutAuthentication_returns401` | Antes público: resumen agregado de las 3 alertas anteriores. |
+| `upcomingMaintenance_authenticated_returns200` | Caso positivo: cualquier rol autenticado (incl. `VIEWER`) sigue pudiendo ver las alertas — no se quitó funcionalidad, solo se exigió login. |
+
+## IA / SEC-014 (encontrado en auditoría final) — `AIControllerSecurityTest`
+
+| Test | Cubre |
+|---|---|
+| `analyzeMaintenance_withoutAuthentication_returns401` | Antes público: cualquiera podía disparar un análisis de IA (costo por llamada externa) sobre cualquier equipo. |
+| `predictFailure_withoutAuthentication_returns401` | Mismo control sobre el endpoint de predicción de fallas. |
+| `recommendReplacement_withoutAuthentication_returns401` | Mismo control sobre el endpoint de recomendación de reemplazo. |
+
+## Reportes (verificado, no era vulnerable) — `ReportsControllerSecurityTest`
+
+| Test | Cubre |
+|---|---|
+| `dashboard_withoutAuthentication_returns401` | Confirma que `/api/v1/reports/dashboard` (KPIs agregados de todo el inventario) ya requería autenticación vía el catch-all de `SecurityConfig` — no era un hallazgo, pero se fija con un test para que no pueda volverse público por accidente. |
+| `dashboard_authenticated_returns200` | Caso positivo. |
+
 ## Resto de la suite (no específicos de seguridad, pero necesarios para el Quality Gate)
 
 `ChangeEquipmentStatusUseCaseTest`, `EquipmentDtoMapperTest`,
@@ -132,10 +157,10 @@ ejecutar la suite completa para validar los fixes de seguridad.
 | | Antes | Después |
 |---|---|---|
 | Vulnerabilidades CRITICAL abiertas | 3 (SEC-001, 002, 003) | 0 |
-| Vulnerabilidades HIGH abiertas | 3 (SEC-004, 005, 006) | 0 |
+| Vulnerabilidades HIGH abiertas | 3 (SEC-004, 005, 006) + 2 encontradas después (SEC-013, 014) = 5 | 0 |
 | Vulnerabilidades MEDIUM abiertas | 3 (SEC-007, 008, 009) | 0 (SEC-007 mitigado y documentado, no "oculto") |
 | Vulnerabilidades LOW abiertas | 3 (SEC-010, 011, 012) | 0 |
-| Tests totales | 0 ejecutables (5 archivos no compilaban) | 74, 0 fallos |
+| Tests totales | 0 ejecutables (5 archivos no compilaban) | 84, 0 fallos |
 | ArchUnit | No existía | 6 reglas activas |
 | JaCoCo | No configurado | Configurado, piso 35% (medido ~36%) |
 | SonarQube | No configurado | Plugin configurado; análisis real pendiente de servidor/token |

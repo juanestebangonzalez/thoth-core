@@ -26,20 +26,21 @@ inventa controles que no existan.
   confirmados como código muerto duplicado (0 referencias fuera de sí
   mismos) tras búsqueda exhaustiva.
 - **Conocido, no corregido en esta pasada**: `AlertController`,
-  `ReportsController`, `QrCodeController`, y las escrituras de
-  `SedeController`/`DocumentController` (que sí siguen usando
+  `ReportsController`, `QrCodeController`, `AIController`, y las escrituras
+  de `SedeController`/`DocumentController` (que sí siguen usando
   `SedeRepository`/`DocumentRepository` para leer/guardar, aunque ya no
   devuelven la entidad) siguen inyectando el repositorio de persistencia
   directamente en vez de pasar por una capa `application`/puerto dedicada.
   A diferencia del caso de Equipment, estos módulos no tienen hoy ningún
   caso de uso ni puerto — corregirlo significa **crear una capa hexagonal
   nueva** (dominio + puerto + adaptador) para cada uno, no ajustar una
-  existente. Es una violación arquitectónica real pero de bajo riesgo (no
-  hay fuga de datos ni de autorización), y tocar la lógica de negocio de
-  4 controladores que no había leído en profundidad antes sin ese diseño
-  agregaría riesgo de romper funcionalidad — la regla explícita del proceso
-  ("no rompas funcionalidad"). Recomendado como iniciativa aparte, con
-  alcance y prioridad acordados explícitamente.
+  existente. Es una violación arquitectónica de bajo riesgo en sí misma
+  (ya no hay fuga de datos ni de autorización — ver SEC-013/SEC-014 más
+  abajo, que sí eran fugas reales y quedaron corregidas), y tocar la lógica
+  de negocio de varios controladores que no había leído en profundidad
+  antes sin ese diseño agregaría riesgo de romper funcionalidad — la regla
+  explícita del proceso ("no rompas funcionalidad"). Recomendado como
+  iniciativa aparte, con alcance y prioridad acordados explícitamente.
 
 ## 2. Autenticación
 
@@ -66,6 +67,21 @@ inventa controles que no existan.
     `DOCUMENTS:VIEW`.
   - `/api/v1/maintenance-history/**` (lectura): requiere autenticación +
     permiso `MAINTENANCE:VIEW`.
+  - `/api/v1/alerts/**`: requiere autenticación (SEC-013 — antes público).
+  - `/api/v1/ai/**`: requiere autenticación (SEC-014 — antes público).
+- **SEC-013 (HIGH, encontrado en auditoría final)**: `AlertController`
+  consulta `EquipmentJpaRepository` directamente y devolvía en 4 endpoints
+  (`upcoming-maintenance`, `hardware-critical`, `rental-expiring`,
+  `summary`) el inventario completo de equipos — nombres, números de
+  serie, salud de hardware, empresa de alquiler — sin ninguna
+  autenticación. Evadía por completo la protección de SEC-001 sobre
+  `/api/v1/equipment/**`, ya que consultaba el mismo dato por otra ruta.
+  Corregido exigiendo autenticación.
+- **SEC-014 (HIGH, encontrado en auditoría final)**: `AIController` permitía
+  a cualquiera, sin autenticar, disparar análisis de IA (con costo probable
+  por llamada a un LLM externo vía `AIAgentPort`) sobre cualquier
+  `equipmentId`, filtrando indirectamente datos del equipo y habilitando
+  abuso de costos/DoS. Corregido exigiendo autenticación.
 - Permisos granulares por módulo/acción viven en `PermissionService` +
   `UserPermissionEntity`. `PermissionService.requireModulePermission(...)`
   es el guard reutilizable para controllers; lanza `AccessDeniedException`
@@ -214,21 +230,24 @@ Ver `SECURITY_TESTS.md` para el detalle de qué prueba cada test.
   localmente por el equipo.
 - **Quality Gate**: no hay un Quality Gate de SonarQube real evaluado (por
   lo anterior). El gate local equivalente es `./gradlew check`, que exige:
-  compilación limpia + 74 tests en verde + reglas ArchUnit + piso de
+  compilación limpia + 84 tests en verde + reglas ArchUnit + piso de
   cobertura JaCoCo.
 
 ## 18. Riesgos residuales conocidos
 
 | # | Riesgo | Severidad | Por qué no se corrigió aquí |
 |---|---|---|---|
-| 1 | `AlertController`/`ReportsController`/`QrCodeController`/escrituras de `Sede`/`Document` inyectan el repositorio JPA en vez de pasar por un puerto | Bajo/Arquitectura | No existe hoy capa `application`/puerto para estos módulos; crearla es una iniciativa nueva, no un ajuste — se evitó para no arriesgar romper funcionalidad no auditada en profundidad |
+| 1 | `AlertController`/`ReportsController`/`QrCodeController`/`AIController`/escrituras de `Sede`/`Document` inyectan el repositorio JPA en vez de pasar por un puerto | Bajo/Arquitectura | No existe hoy capa `application`/puerto para estos módulos; crearla es una iniciativa nueva, no un ajuste — se evitó para no arriesgar romper funcionalidad no auditada en profundidad. **Nota**: los riesgos de *autorización* de `AlertController` y `AIController` (no el de arquitectura) sí se corrigieron — ver SEC-013/SEC-014 |
 | 2 | CORS con orígenes hardcodeados a IPs de dev | Bajo | Requiere decidir el/los dominios reales de producción |
 | 3 | Rate limiting en memoria (no distribuido) | Bajo | Suficiente para una sola instancia; multi-instancia real necesita Redis u otro store compartido |
 | 4 | Sin scanner de CVEs de dependencias en CI | Medio (proceso) | No hay herramienta de scanning disponible en este entorno |
 | 5 | SonarQube no ejecutado | Medio (proceso) | Requiere servidor/token que no están disponibles aquí |
 | 6 | `MaintenanceController` es un stub sin implementación real | Ninguno (no hay dato que proteger) | Preexistente, fuera del alcance de esta auditoría de seguridad |
+| 7 | (informativo, no es un riesgo) `ReportsController`/`QrCodeController` revisados en la auditoría final | N/A | `ReportsController` (`/api/v1/reports/dashboard`, agrega KPIs de todo el inventario) cae bajo `anyRequest().authenticated()` — **no es público**, ya requiere login, confirmado leyendo el controlador completo. `QrCodeController` es `permitAll()` deliberado (códigos QR pensados para escanearse sin login) y solo genera una imagen con una URL — no expone datos sensibles. Ninguno de los dos necesitó corrección. |
 
 **Corregidos en esta pasada** (ya no son riesgos residuales): entidades JPA
 devueltas directamente en `SedeController`/`DocumentController`; casos de
 uso de Equipment dependiendo del repositorio JPA en vez del puerto; DTOs
-duplicados en `application.dto` confirmados como código muerto y eliminados.
+duplicados en `application.dto` confirmados como código muerto y eliminados;
+**SEC-013** (`/api/v1/alerts/**` público, dump completo del inventario);
+**SEC-014** (`/api/v1/ai/**` público, análisis de IA sin autenticar).
