@@ -3,6 +3,7 @@ package com.thoth.adapter.in.rest.dto.request;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,15 +17,19 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class CreateEquipmentRequest {
     @NotBlank(message = "Equipment name is required")
+    @Size(max = 200)
     private String name;
 
     @NotBlank(message = "Category is required")
+    @Size(max = 200)
     private String category;
 
     @NotBlank(message = "Serial number is required")
+    @Size(max = 200)
     private String serialNumber;
 
     @NotBlank(message = "Brand is required")
+    @Size(max = 200)
     private String brand;
 
     private String model;
@@ -43,6 +48,8 @@ public class CreateEquipmentRequest {
 
     private String assignedTo;
     private String ownershipType;
+    @Valid
     private RentalInfoRequest rentalInfo;
+    @Valid
     private HardwareRequest hardware;
 }

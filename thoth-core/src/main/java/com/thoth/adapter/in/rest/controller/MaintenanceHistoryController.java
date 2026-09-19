@@ -5,6 +5,7 @@ import com.thoth.application.command.CreateMaintenanceHistoryCommand;
 import com.thoth.application.dto.MaintenanceHistoryDTO;
 import com.thoth.application.port.input.CreateMaintenanceHistoryUseCase;
 import com.thoth.application.port.input.GetMaintenanceHistoryUseCase;
+import com.thoth.application.service.AuditService;
 import com.thoth.application.service.PermissionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -26,6 +27,7 @@ public class MaintenanceHistoryController {
     private final CreateMaintenanceHistoryUseCase createUseCase;
     private final GetMaintenanceHistoryUseCase getUseCase;
     private final PermissionService permissionService;
+    private final AuditService auditService;
 
     @PostMapping
     @Operation(summary = "Registrar mantenimiento en la HV del equipo")
@@ -58,6 +60,10 @@ public class MaintenanceHistoryController {
         );
 
         MaintenanceHistoryDTO result = createUseCase.create(command);
+        auditService.log("CREATE", "MAINTENANCE", result.maintenanceId().toString(),
+                request.getMaintenanceType(),
+                "Mantenimiento registrado: " + request.getMaintenanceType() + " por " + request.getTechnicianName() + " en equipo " + request.getEquipmentId(),
+                authentication.getName());
         return ResponseEntity.status(HttpStatus.CREATED).body(result);
     }
 

@@ -1,0 +1,38 @@
+# render.yaml - Infrastructure as Code for Render
+# Deploy: Connect GitHub repo → Render auto-detects this file
+
+databases:
+  - name: thoth-core-db
+    plan: free
+    databaseName: thothcore
+    user: thothcore
+
+services:
+  - type: web
+    name: thoth-core-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./thoth-core/Dockerfile
+    dockerContext: ./thoth-core
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: SPRING_DATASOURCE_URL
+        fromDatabase:
+          name: thoth-core-db
+          property: connectionURI
+      - key: SPRING_DATASOURCE_USERNAME
+        fromDatabase:
+          name: thoth-core-db
+          property: user
+      - key: SPRING_DATASOURCE_PASSWORD
+        fromDatabase:
+          name: thoth-core-db
+          property: password
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JAVA_TOOL_OPTIONS
+        value: "-Xmx400m -XX:+UseSerialGC -Dspring.main.lazy-initialization=true"
+      - key: CORS_ALLOWED_ORIGINS
+        value: "https://thoth-core.netlify.app"
+    healthCheckPath: /actuator/health

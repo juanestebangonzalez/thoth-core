@@ -3,6 +3,7 @@ package com.thoth.adapter.in.rest.dto.request;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -23,19 +24,23 @@ public class CreateMaintenanceHistoryRequest {
     private String maintenanceType;
 
     @NotBlank(message = "Technician name is required")
+    @Size(max = 100)
     private String technicianName;
 
     private UUID technicianId;
 
     @NotBlank(message = "Reason is required")
+    @Size(max = 2000)
     private String reason;
 
+    @Size(max = 2000)
     private String description;
     private LocalDate nextScheduledDate;
 
     @Valid
     private List<PartReplacedRequest> partsReplaced;
 
+    @Size(max = 500000)
     private String signatureBase64;
     private String signedBy;
 }

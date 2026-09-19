@@ -16,9 +16,10 @@ public class ChangePasswordRequest {
     private String username;
 
     @NotBlank
+    @Size(max = 100)
     private String currentPassword;
 
     @NotBlank
-    @Size(min = 6, message = "La nueva contrasena debe tener al menos 6 caracteres")
+    @Size(min = 6, max = 100, message = "La nueva contrasena debe tener al menos 6 caracteres")
     private String newPassword;
 }

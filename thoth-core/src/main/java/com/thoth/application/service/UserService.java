@@ -95,4 +95,14 @@ public class UserService {
         }
         return sb.toString();
     }
+
+    public record TechnicianInfo(UUID id, String username, String email) {}
+
+    public List<TechnicianInfo> listTechnicians() {
+        return userRepository.findAll().stream()
+            .filter(u -> u.getRole() == UserEntity.UserRole.TECHNICIAN && u.isEnabled())
+            .map(u -> new TechnicianInfo(u.getId(), u.getUsername(), u.getEmail()))
+            .toList();
+    }
+
 }

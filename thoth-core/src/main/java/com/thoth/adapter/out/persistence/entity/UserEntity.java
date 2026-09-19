@@ -1,5 +1,6 @@
 package com.thoth.adapter.out.persistence.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -9,6 +10,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
+import lombok.ToString;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -30,6 +32,8 @@ public class UserEntity {
     @Column(unique = true, nullable = false)
     private String username;
 
+    @JsonIgnore
+    @ToString.Exclude
     @Column(nullable = false)
     private String password;
 

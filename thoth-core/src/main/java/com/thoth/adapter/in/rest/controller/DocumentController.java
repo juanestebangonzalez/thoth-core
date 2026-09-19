@@ -3,6 +3,7 @@ package com.thoth.adapter.in.rest.controller;
 import com.thoth.adapter.out.persistence.entity.DocumentEntity;
 import com.thoth.adapter.out.persistence.repository.DocumentRepository;
 import com.thoth.application.dto.DocumentResponseDTO;
+import com.thoth.application.service.AuditService;
 import com.thoth.application.service.PermissionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -16,6 +17,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
@@ -40,17 +42,20 @@ public class DocumentController {
 
     private final DocumentRepository documentRepository;
     private final PermissionService permissionService;
+    private final AuditService auditService;
 
     @Value("${app.upload.dir:uploads}")
     private String uploadDir;
 
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/upload")
     @Operation(summary = "Subir documento para un equipo")
     public ResponseEntity<?> upload(
             @RequestParam("file") MultipartFile file,
             @RequestParam("equipmentId") UUID equipmentId,
             @RequestParam("documentType") String documentType,
-            @RequestParam(value = "description", required = false) String description) {
+            @RequestParam(value = "description", required = false) String description,
+            Authentication authentication) {
         try {
             if (file.isEmpty()) {
                 return ResponseEntity.badRequest().body(Map.of("message", "El archivo esta vacio"));
@@ -95,12 +100,18 @@ public class DocumentController {
                 .uploadedAt(LocalDateTime.now())
                 .build();
 
-            return ResponseEntity.ok(toDTO(documentRepository.save(doc)));
+            DocumentEntity saved = documentRepository.save(doc);
+            String user = authentication != null ? authentication.getName() : "SYSTEM";
+            auditService.log("UPLOAD", "DOCUMENT", saved.getId().toString(), file.getOriginalFilename(),
+                    "Documento subido: " + documentType + " - " + file.getOriginalFilename() + " para equipo " + equipmentId,
+                    user);
+            return ResponseEntity.ok(toDTO(saved));
         } catch (IOException e) {
             return ResponseEntity.internalServerError().body(Map.of("message", "Error al guardar archivo: " + e.getMessage()));
         }
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/equipment/{equipmentId}")
     @Operation(summary = "Listar documentos de un equipo")
     public ResponseEntity<List<DocumentResponseDTO>> listByEquipment(@PathVariable UUID equipmentId) {
@@ -109,6 +120,7 @@ public class DocumentController {
             .toList());
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{id}/download")
     @Operation(summary = "Descargar documento")
     public ResponseEntity<?> download(@PathVariable UUID id, Authentication authentication) {
@@ -137,15 +149,20 @@ public class DocumentController {
         }).orElse(ResponseEntity.notFound().build());
     }
 
+    @PreAuthorize("isAuthenticated()")
     @DeleteMapping("/{id}")
     @Operation(summary = "Eliminar documento")
-    public ResponseEntity<?> delete(@PathVariable UUID id) {
+    public ResponseEntity<?> delete(@PathVariable UUID id, Authentication authentication) {
         return documentRepository.findById(id).map(doc -> {
             try {
                 Path filePath = Paths.get(uploadDir, doc.getEquipmentId().toString(), doc.getFileName());
                 Files.deleteIfExists(filePath);
             } catch (IOException ignored) {}
             documentRepository.delete(doc);
+            String user = authentication != null ? authentication.getName() : "SYSTEM";
+            auditService.log("DELETE", "DOCUMENT", id.toString(), doc.getOriginalName(),
+                    "Documento eliminado: " + doc.getOriginalName(),
+                    user);
             return ResponseEntity.ok(Map.of("message", "Documento eliminado"));
         }).orElse(ResponseEntity.notFound().build());
     }

@@ -57,6 +57,12 @@ public class RateLimitingFilter extends OncePerRequestFilter {
             return existing;
         }).count.get();
 
+        // Periodic cleanup of expired windows to prevent memory leak
+        if (attempts == 1) {
+            long now = System.currentTimeMillis();
+            buckets.entrySet().removeIf(e -> (now - e.getValue().windowStart) > windowMillis * 2);
+        }
+
         if (attempts > maxAttempts) {
             response.setStatus(429);
             response.setContentType("application/json");
@@ -69,10 +75,6 @@ public class RateLimitingFilter extends OncePerRequestFilter {
     }
 
     private String clientIp(HttpServletRequest request) {
-        String forwarded = request.getHeader("X-Forwarded-For");
-        if (forwarded != null && !forwarded.isBlank()) {
-            return forwarded.split(",")[0].trim();
-        }
         return request.getRemoteAddr();
     }
 

@@ -3,11 +3,14 @@ package com.thoth.adapter.in.rest.controller;
 import com.thoth.adapter.out.persistence.entity.SedeEntity;
 import com.thoth.adapter.out.persistence.repository.SedeRepository;
 import com.thoth.application.dto.SedeDTO;
+import com.thoth.application.service.AuditService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import java.security.Principal;
 import java.util.*;
 
 @RestController
@@ -17,7 +20,9 @@ import java.util.*;
 public class SedeController {
 
     private final SedeRepository sedeRepository;
+    private final AuditService auditService;
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     @Operation(summary = "Listar todas las sedes activas")
     public ResponseEntity<List<SedeDTO>> listActive() {
@@ -26,6 +31,7 @@ public class SedeController {
             .toList());
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/all")
     @Operation(summary = "Listar todas las sedes (incluyendo inactivas)")
     public ResponseEntity<List<SedeDTO>> listAll() {
@@ -34,6 +40,7 @@ public class SedeController {
             .toList());
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{id}")
     @Operation(summary = "Obtener sede por ID")
     public ResponseEntity<SedeDTO> getById(@PathVariable UUID id) {
@@ -43,9 +50,10 @@ public class SedeController {
             .orElse(ResponseEntity.notFound().build());
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     @Operation(summary = "Crear nueva sede")
-    public ResponseEntity<?> create(@RequestBody Map<String, String> body) {
+    public ResponseEntity<?> create(@RequestBody Map<String, String> body, Principal principal) {
         String name = body.get("name");
         if (name == null || name.isBlank()) {
             return ResponseEntity.badRequest().body(Map.of("message", "El nombre es obligatorio"));
@@ -59,12 +67,17 @@ public class SedeController {
             .phone(body.getOrDefault("phone", ""))
             .active(true)
             .build();
-        return ResponseEntity.ok(toDTO(sedeRepository.save(sede)));
+        SedeEntity saved = sedeRepository.save(sede);
+        auditService.log("CREATE", "SEDE", saved.getId().toString(), name,
+                "Sede creada: " + name,
+                principal != null ? principal.getName() : "SYSTEM");
+        return ResponseEntity.ok(toDTO(saved));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     @Operation(summary = "Actualizar sede")
-    public ResponseEntity<?> update(@PathVariable UUID id, @RequestBody Map<String, String> body) {
+    public ResponseEntity<?> update(@PathVariable UUID id, @RequestBody Map<String, String> body, Principal principal) {
         return sedeRepository.findById(id).map(sede -> {
             String name = body.get("name");
             if (name != null && !name.isBlank()) {
@@ -77,16 +90,24 @@ public class SedeController {
             if (body.containsKey("address")) sede.setAddress(body.get("address"));
             if (body.containsKey("phone")) sede.setPhone(body.get("phone"));
             if (body.containsKey("active")) sede.setActive(Boolean.parseBoolean(body.get("active")));
-            return ResponseEntity.ok((Object) toDTO(sedeRepository.save(sede)));
+            SedeEntity updated = sedeRepository.save(sede);
+            auditService.log("UPDATE", "SEDE", id.toString(), sede.getName(),
+                    "Sede actualizada: " + sede.getName(),
+                    principal != null ? principal.getName() : "SYSTEM");
+            return ResponseEntity.ok((Object) toDTO(updated));
         }).orElse(ResponseEntity.notFound().build());
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     @Operation(summary = "Desactivar sede (soft delete)")
-    public ResponseEntity<?> delete(@PathVariable UUID id) {
+    public ResponseEntity<?> delete(@PathVariable UUID id, Principal principal) {
         return sedeRepository.findById(id).map(sede -> {
             sede.setActive(false);
             sedeRepository.save(sede);
+            auditService.log("DELETE", "SEDE", id.toString(), sede.getName(),
+                    "Sede desactivada: " + sede.getName(),
+                    principal != null ? principal.getName() : "SYSTEM");
             return ResponseEntity.ok(Map.of("message", "Sede desactivada"));
         }).orElse(ResponseEntity.notFound().build());
     }

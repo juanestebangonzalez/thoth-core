@@ -1,5 +1,6 @@
 package com.thoth.adapter.in.rest.controller;
 
+import com.thoth.application.service.AuditService;
 import com.thoth.application.service.PermissionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -7,6 +8,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import com.thoth.adapter.out.persistence.entity.UserEntity;
+import com.thoth.adapter.out.persistence.repository.UserJpaRepository;
+import java.security.Principal;
 import java.util.*;
 
 @RestController
@@ -17,6 +21,21 @@ import java.util.*;
 public class PermissionController {
 
     private final PermissionService permissionService;
+    private final UserJpaRepository userRepository;
+    private final AuditService auditService;
+
+    /**
+     * Endpoint para que cualquier usuario autenticado obtenga sus propios permisos.
+     * No requiere rol ADMIN (override de la anotacion a nivel de clase).
+     */
+    @GetMapping("/me")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Obtener mis propios permisos")
+    public ResponseEntity<Map<String, List<String>>> getMyPermissions(Principal principal) {
+        UserEntity user = userRepository.findByUsername(principal.getName())
+            .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        return ResponseEntity.ok(permissionService.getUserPermissions(user.getId()));
+    }
 
     @GetMapping("/{userId}")
     @Operation(summary = "Obtener permisos de un usuario")
@@ -28,8 +47,14 @@ public class PermissionController {
     @Operation(summary = "Establecer permisos de un usuario")
     public ResponseEntity<Map<String, List<String>>> setUserPermissions(
             @PathVariable UUID userId,
-            @RequestBody Map<String, List<String>> permissions) {
-        return ResponseEntity.ok(permissionService.setUserPermissions(userId, permissions));
+            @RequestBody Map<String, List<String>> permissions,
+            Principal principal) {
+        Map<String, List<String>> result = permissionService.setUserPermissions(userId, permissions);
+        String username = userRepository.findById(userId).map(UserEntity::getUsername).orElse(userId.toString());
+        auditService.log("UPDATE_PERMISSIONS", "PERMISSIONS", userId.toString(), username,
+                "Permisos actualizados para " + username + ": " + permissions,
+                principal != null ? principal.getName() : "SYSTEM");
+        return ResponseEntity.ok(result);
     }
 
     @PostMapping("/{userId}/defaults")

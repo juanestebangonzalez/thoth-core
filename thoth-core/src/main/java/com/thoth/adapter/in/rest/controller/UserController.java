@@ -1,16 +1,20 @@
 package com.thoth.adapter.in.rest.controller;
 
 import com.thoth.application.service.UserService;
+import com.thoth.application.service.AuditService;
 import com.thoth.adapter.out.persistence.repository.UserJpaRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import java.security.Principal;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+@PreAuthorize("hasRole('ADMIN')")
 @RestController
 @RequestMapping("/api/v1/users")
 @Tag(name = "User Management", description = "Gestion de usuarios (solo ADMIN)")
@@ -18,6 +22,7 @@ import java.util.UUID;
 public class UserController {
 
     private final UserService userService;
+    private final AuditService auditService;
     private final UserJpaRepository userJpaRepository;
 
     @GetMapping
@@ -30,11 +35,14 @@ public class UserController {
     @Operation(summary = "Cambiar rol de un usuario")
     public ResponseEntity<UserService.UpdateResult> changeRole(
             @PathVariable UUID id,
-            @RequestBody Map<String, String> body) {
+            @RequestBody Map<String, String> body, Principal principal) {
         String newRole = body.get("role");
         UserService.UpdateResult result = userService.changeRole(id, newRole);
         if (!result.success()) {
             return ResponseEntity.badRequest().body(result);
+        }
+        if (result.success()) {
+            auditService.log("CHANGE_ROLE", "USERS", id.toString(), null, "Nuevo rol: " + newRole, principal != null ? principal.getName() : "system");
         }
         return ResponseEntity.ok(result);
     }
@@ -45,6 +53,9 @@ public class UserController {
         UserService.UpdateResult result = userService.toggleEnabled(id);
         if (!result.success()) {
             return ResponseEntity.badRequest().body(result);
+        }
+        if (result.success()) {
+            auditService.log("TOGGLE_ENABLED", "USERS", id.toString(), null, result.message(), "system");
         }
         return ResponseEntity.ok(result);
     }
@@ -67,6 +78,7 @@ public class UserController {
                 return ResponseEntity.badRequest().body(java.util.Map.of("message", "No se puede eliminar el usuario admin"));
             }
             userJpaRepository.delete(user);
+            auditService.log("DELETE_USER", "USERS", id.toString(), user.getUsername(), "Usuario eliminado", "admin");
             return ResponseEntity.ok(java.util.Map.of("message", "Usuario eliminado: " + user.getUsername()));
         }).orElse(ResponseEntity.notFound().build());
     }
