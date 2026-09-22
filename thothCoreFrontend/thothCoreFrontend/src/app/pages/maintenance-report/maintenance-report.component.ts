@@ -1,6 +1,5 @@
 import { Component, OnInit, signal, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
@@ -11,7 +10,7 @@ import { environment } from '../../../environments/environment';
 @Component({
   selector: 'app-maintenance-report',
   standalone: true,
-  imports: [CommonModule, RouterLink, MatCardModule, MatIconModule, MatButtonModule, MatTabsModule],
+  imports: [CommonModule, MatCardModule, MatIconModule, MatButtonModule, MatTabsModule],
   template: `
     <div class="report-page">
       <div class="header">

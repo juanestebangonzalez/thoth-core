@@ -1,0 +1,224 @@
+name: "Oracle Cloud - Crear VM ARM"
+
+# Ejecuta cada 20 minutos entre 6:00-10:00 UTC (1:00-5:00 AM hora Colombia)
+on:
+  schedule:
+    - cron: '*/20 6-9 * * *'
+  workflow_dispatch:  # También se puede ejecutar manualmente
+
+env:
+  OCI_CLI_TENANCY: ${{ secrets.OCI_TENANCY }}
+  OCI_CLI_USER: ${{ secrets.OCI_USER }}
+  OCI_CLI_FINGERPRINT: ${{ secrets.OCI_FINGERPRINT }}
+  OCI_CLI_KEY_CONTENT: ${{ secrets.OCI_KEY_CONTENT }}
+  OCI_CLI_REGION: sa-saopaulo-1
+
+jobs:
+  create-vm:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verificar si la VM ya existe
+        id: check
+        run: |
+          # Instalar OCI CLI
+          pip install oci-cli --quiet
+          
+          # Verificar si ya existe una instancia con el nombre THOTH
+          EXISTING=$(oci compute instance list \
+            --compartment-id "${{ secrets.OCI_COMPARTMENT }}" \
+            --display-name "thoth-core-server" \
+            --lifecycle-state RUNNING \
+            --query "data[0].id" \
+            --raw-output 2>/dev/null || echo "")
+          
+          if [ -n "$EXISTING" ] && [ "$EXISTING" != "null" ] && [ "$EXISTING" != "None" ]; then
+            echo "VM ya existe con ID: $EXISTING"
+            echo "exists=true" >> $GITHUB_OUTPUT
+            
+            # Obtener IP pública
+            VNIC_ATTACH=$(oci compute vnic-attachment list \
+              --compartment-id "${{ secrets.OCI_COMPARTMENT }}" \
+              --instance-id "$EXISTING" \
+              --query "data[0].\"vnic-id\"" \
+              --raw-output)
+            
+            PUBLIC_IP=$(oci network vnic get \
+              --vnic-id "$VNIC_ATTACH" \
+              --query "data.\"public-ip\"" \
+              --raw-output 2>/dev/null || echo "sin IP")
+            
+            echo "IP Pública: $PUBLIC_IP"
+            echo "public_ip=$PUBLIC_IP" >> $GITHUB_OUTPUT
+          else
+            echo "VM no encontrada, intentando crear..."
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Obtener datos de red
+        if: steps.check.outputs.exists == 'false'
+        id: network
+        run: |
+          # Buscar VCN existente o crear uno
+          VCN_ID=$(oci network vcn list \
+            --compartment-id "${{ secrets.OCI_COMPARTMENT }}" \
+            --query "data[0].id" \
+            --raw-output 2>/dev/null || echo "")
+          
+          if [ -z "$VCN_ID" ] || [ "$VCN_ID" = "null" ] || [ "$VCN_ID" = "None" ]; then
+            echo "Creando VCN..."
+            VCN_ID=$(oci network vcn create \
+              --compartment-id "${{ secrets.OCI_COMPARTMENT }}" \
+              --cidr-blocks '["10.0.0.0/16"]' \
+              --display-name "thoth-vcn" \
+              --dns-label "thothvcn" \
+              --query "data.id" \
+              --raw-output)
+            
+            echo "VCN creado: $VCN_ID"
+            
+            # Crear Internet Gateway
+            IG_ID=$(oci network internet-gateway create \
+              --compartment-id "${{ secrets.OCI_COMPARTMENT }}" \
+              --vcn-id "$VCN_ID" \
+              --is-enabled true \
+              --display-name "thoth-ig" \
+              --query "data.id" \
+              --raw-output)
+            
+            # Obtener route table
+            RT_ID=$(oci network route-table list \
+              --compartment-id "${{ secrets.OCI_COMPARTMENT }}" \
+              --vcn-id "$VCN_ID" \
+              --query "data[0].id" \
+              --raw-output)
+            
+            # Agregar ruta a internet
+            oci network route-table update \
+              --rt-id "$RT_ID" \
+              --route-rules "[{\"destination\":\"0.0.0.0/0\",\"destinationType\":\"CIDR_BLOCK\",\"networkEntityId\":\"$IG_ID\"}]" \
+              --force
+            
+            # Crear Security List con puertos abiertos (22, 80, 443, 8080)
+            SL_ID=$(oci network security-list list \
+              --compartment-id "${{ secrets.OCI_COMPARTMENT }}" \
+              --vcn-id "$VCN_ID" \
+              --query "data[0].id" \
+              --raw-output)
+            
+            oci network security-list update \
+              --security-list-id "$SL_ID" \
+              --ingress-security-rules '[
+                {"source":"0.0.0.0/0","protocol":"6","tcpOptions":{"destinationPortRange":{"min":22,"max":22}}},
+                {"source":"0.0.0.0/0","protocol":"6","tcpOptions":{"destinationPortRange":{"min":80,"max":80}}},
+                {"source":"0.0.0.0/0","protocol":"6","tcpOptions":{"destinationPortRange":{"min":443,"max":443}}},
+                {"source":"0.0.0.0/0","protocol":"6","tcpOptions":{"destinationPortRange":{"min":8080,"max":8080}}}
+              ]' \
+              --egress-security-rules '[{"destination":"0.0.0.0/0","protocol":"all"}]' \
+              --force
+            
+            # Crear Subnet
+            SUBNET_ID=$(oci network subnet create \
+              --compartment-id "${{ secrets.OCI_COMPARTMENT }}" \
+              --vcn-id "$VCN_ID" \
+              --cidr-block "10.0.1.0/24" \
+              --display-name "thoth-subnet" \
+              --dns-label "thothsub" \
+              --query "data.id" \
+              --raw-output)
+          else
+            echo "VCN existente: $VCN_ID"
+            SUBNET_ID=$(oci network subnet list \
+              --compartment-id "${{ secrets.OCI_COMPARTMENT }}" \
+              --vcn-id "$VCN_ID" \
+              --query "data[0].id" \
+              --raw-output)
+          fi
+          
+          echo "subnet_id=$SUBNET_ID" >> $GITHUB_OUTPUT
+
+      - name: Obtener imagen Ubuntu ARM
+        if: steps.check.outputs.exists == 'false'
+        id: image
+        run: |
+          IMAGE_ID=$(oci compute image list \
+            --compartment-id "${{ secrets.OCI_COMPARTMENT }}" \
+            --operating-system "Canonical Ubuntu" \
+            --operating-system-version "22.04" \
+            --shape "VM.Standard.A1.Flex" \
+            --sort-by TIMECREATED \
+            --sort-order DESC \
+            --query "data[0].id" \
+            --raw-output)
+          
+          echo "image_id=$IMAGE_ID" >> $GITHUB_OUTPUT
+          echo "Imagen: $IMAGE_ID"
+
+      - name: Crear instancia ARM
+        if: steps.check.outputs.exists == 'false'
+        id: create
+        run: |
+          # Intentar con diferentes ADs
+          for AD_NUM in 1 2 3; do
+            AD_NAME=$(oci iam availability-domain list \
+              --compartment-id "${{ secrets.OCI_TENANCY }}" \
+              --query "data[?contains(name, 'AD-${AD_NUM}')].name | [0]" \
+              --raw-output 2>/dev/null || echo "")
+            
+            if [ -z "$AD_NAME" ] || [ "$AD_NAME" = "null" ] || [ "$AD_NAME" = "None" ]; then
+              continue
+            fi
+            
+            echo "Intentando en $AD_NAME..."
+            
+            RESULT=$(oci compute instance launch \
+              --compartment-id "${{ secrets.OCI_COMPARTMENT }}" \
+              --availability-domain "$AD_NAME" \
+              --shape "VM.Standard.A1.Flex" \
+              --shape-config '{"ocpus":2,"memoryInGBs":12}' \
+              --display-name "thoth-core-server" \
+              --image-id "${{ steps.image.outputs.image_id }}" \
+              --subnet-id "${{ steps.network.outputs.subnet_id }}" \
+              --assign-public-ip true \
+              --metadata '{"ssh_authorized_keys":"'"${{ secrets.SSH_PUBLIC_KEY }}"'"}' \
+              --boot-volume-size-in-gbs 50 \
+              --query "data.id" \
+              --raw-output 2>&1) || true
+            
+            if [[ "$RESULT" == ocid1.instance* ]]; then
+              echo "¡VM CREADA! ID: $RESULT"
+              echo "instance_id=$RESULT" >> $GITHUB_OUTPUT
+              echo "created=true" >> $GITHUB_OUTPUT
+              break
+            else
+              echo "Fallo en $AD_NAME: $RESULT"
+            fi
+          done
+
+      - name: Obtener IP pública de la nueva VM
+        if: steps.create.outputs.created == 'true'
+        run: |
+          echo "Esperando que la VM esté lista..."
+          sleep 60
+          
+          VNIC_ATTACH=$(oci compute vnic-attachment list \
+            --compartment-id "${{ secrets.OCI_COMPARTMENT }}" \
+            --instance-id "${{ steps.create.outputs.instance_id }}" \
+            --query "data[0].\"vnic-id\"" \
+            --raw-output)
+          
+          PUBLIC_IP=$(oci network vnic get \
+            --vnic-id "$VNIC_ATTACH" \
+            --query "data.\"public-ip\"" \
+            --raw-output)
+          
+          echo "==========================================="
+          echo "  ¡VM CREADA EXITOSAMENTE!"
+          echo "  IP Pública: $PUBLIC_IP"
+          echo "  Conectar: ssh ubuntu@$PUBLIC_IP"
+          echo "==========================================="
+
+      - name: Desactivar workflow si VM fue creada
+        if: steps.check.outputs.exists == 'true' || steps.create.outputs.created == 'true'
+        run: |
+          echo "VM existe o fue creada. El workflow seguirá ejecutándose pero no hará nada si la VM existe."
+          echo "Para detenerlo, deshabilita el workflow manualmente en GitHub Actions."
