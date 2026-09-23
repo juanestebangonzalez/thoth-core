@@ -6,20 +6,17 @@
 [build.environment]
   NODE_VERSION = "22"
 
-# Proxy API calls to backend (avoids Mixed Content)
 [[redirects]]
   from = "/api/v1/*"
   to = "http://129.148.44.87/api/v1/:splat"
   status = 200
   force = true
 
-# SPA fallback: all routes serve index.html
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
 
-# Cache static assets aggressively (hashed filenames = immutable)
 [[headers]]
   for = "/assets/*"
   [headers.values]
@@ -35,7 +32,6 @@
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
-# Security headers
 [[headers]]
   for = "/*"
   [headers.values]
