@@ -24,7 +24,8 @@ public class RateLimitingFilter extends OncePerRequestFilter {
     private static final Set<String> PROTECTED_PATHS = Set.of(
         "/api/v1/auth/login",
         "/api/v1/auth/register",
-        "/api/v1/auth/change-password"
+        "/api/v1/auth/change-password",
+        "/api/v1/auth/request-password-reset"
     );
 
     private final int maxAttempts;

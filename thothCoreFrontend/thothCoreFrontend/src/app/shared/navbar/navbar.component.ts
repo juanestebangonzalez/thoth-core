@@ -91,6 +91,12 @@ import { AlertService } from '../../core/services/alert.service';
           <a class="nav-item" routerLink="/sedes" routerLinkActive="active" (click)="closeMobile()">
             <mat-icon>business</mat-icon><span>Sedes</span>
           </a>
+          <a class="nav-item" routerLink="/device-types" routerLinkActive="active" (click)="closeMobile()">
+            <mat-icon>devices</mat-icon><span>Tipos Dispositivo</span>
+          </a>
+          <a class="nav-item" routerLink="/maintenance-categories" routerLinkActive="active" (click)="closeMobile()">
+            <mat-icon>handyman</mat-icon><span>Tipos Mantenim.</span>
+          </a>
           <a class="nav-item" routerLink="/users" routerLinkActive="active" (click)="closeMobile()">
             <mat-icon>people</mat-icon><span>Usuarios</span>
           </a>
@@ -163,7 +169,7 @@ import { AlertService } from '../../core/services/alert.service';
       content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 3px;
       background: linear-gradient(180deg, #3B82F6, #8B5CF6); border-radius: 0 3px 3px 0;
     }
-    .nav-item mat-icon { font-size: 20px; width: 20px; height: 20px; }
+    .nav-item mat-icon { font-size: 20px; width: 20px; height: 20px; overflow: hidden; }
     .nav-item.logout { color: #EF4444; }
     .nav-item.logout:hover { background: rgba(239, 68, 68, 0.1); }
 

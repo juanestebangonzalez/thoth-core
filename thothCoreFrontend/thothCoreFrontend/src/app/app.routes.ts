@@ -22,6 +22,8 @@ export const routes: Routes = [
   { path: 'scan', loadComponent: () => import('./pages/qr-scanner/qr-scanner.component').then(m => m.QrScannerComponent), canActivate: [permissionGuard('QR')] },
   { path: 'audit-log', loadComponent: () => import('./pages/audit-log/audit-log.component').then(m => m.AuditLogComponent), canActivate: [authGuard] },
   { path: 'sedes', loadComponent: () => import('./pages/sedes/sedes.component').then(m => m.SedesComponent), canActivate: [permissionGuard('EQUIPMENT', 'EDIT')] },
+  { path: 'device-types', loadComponent: () => import('./pages/device-types/device-types.component').then(m => m.DeviceTypesComponent), canActivate: [authGuard] },
+  { path: 'maintenance-categories', loadComponent: () => import('./pages/maintenance-categories/maintenance-categories.component').then(m => m.MaintenanceCategoriesComponent), canActivate: [authGuard] },
   { path: 'users', loadComponent: () => import('./pages/user-list/user-list.component').then(m => m.UserListComponent), canActivate: [adminGuard] },
   { path: '**', redirectTo: '/login' }
 ];

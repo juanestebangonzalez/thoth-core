@@ -6,6 +6,13 @@
 [build.environment]
   NODE_VERSION = "22"
 
+# Proxy API calls to backend (avoids Mixed Content)
+[[redirects]]
+  from = "/api/v1/*"
+  to = "http://129.148.44.87/api/v1/:splat"
+  status = 200
+  force = true
+
 # SPA fallback: all routes serve index.html
 [[redirects]]
   from = "/*"
@@ -35,6 +42,5 @@
     X-Frame-Options = "DENY"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
-    Strict-Transport-Security = "max-age=63072000; includeSubDomains; preload"
-    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://*.onrender.com https://*.oraclecloud.com; frame-ancestors 'none'"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self'; frame-ancestors 'none'"
     Permissions-Policy = "camera=(self), microphone=(), geolocation=()"

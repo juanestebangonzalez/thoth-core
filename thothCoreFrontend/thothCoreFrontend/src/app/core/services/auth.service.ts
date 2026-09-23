@@ -112,6 +112,10 @@ export class AuthService {
     return perms[module]?.includes(action) || false;
   }
 
+  requestPasswordReset(data: { username: string; email: string }): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.apiUrl}/request-password-reset`, data);
+  }
+
   canView(module: string): boolean { return this.hasPermission(module, 'VIEW'); }
   canCreate(module: string): boolean { return this.hasPermission(module, 'CREATE'); }
   canEdit(module: string): boolean { return this.hasPermission(module, 'EDIT'); }

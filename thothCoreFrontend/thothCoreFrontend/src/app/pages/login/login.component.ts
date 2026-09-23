@@ -50,6 +50,44 @@ import { IdleService } from '../../core/services/idle.service';
             </button>
             <button mat-button class="full-width" (click)="cancelChange()">Cancelar</button>
           </div>
+        } @else if (showForgotPassword) {
+          <div class="forgot-password-section">
+            <div class="info-box">
+              <mat-icon>help_outline</mat-icon>
+              <div>
+                <strong>Recuperar acceso</strong>
+                <p>Ingresa tu usuario y correo electronico. Si coinciden, se enviara una solicitud al administrador para restablecer tu contrasena.</p>
+              </div>
+            </div>
+
+            @if (resetRequestSent) {
+              <div class="success-box">
+                <mat-icon>check_circle</mat-icon>
+                <div>
+                  <strong>Solicitud enviada</strong>
+                  <p>El administrador ha sido notificado. Recibiras una contrasena temporal cuando tu solicitud sea procesada.</p>
+                </div>
+              </div>
+              <button mat-raised-button color="primary" class="full-width" (click)="backToLogin()">
+                Volver al Inicio de Sesion
+              </button>
+            } @else {
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Usuario</mat-label>
+                <input matInput [(ngModel)]="forgotData.username">
+                <mat-icon matPrefix>person</mat-icon>
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Correo Electronico</mat-label>
+                <input matInput [(ngModel)]="forgotData.email" type="email" (keyup.enter)="submitForgotPassword()">
+                <mat-icon matPrefix>email</mat-icon>
+              </mat-form-field>
+              <button mat-raised-button color="primary" class="full-width" (click)="submitForgotPassword()" [disabled]="loading">
+                {{ loading ? 'Enviando...' : 'Solicitar Restablecimiento' }}
+              </button>
+              <button mat-button class="full-width" (click)="backToLogin()">Volver</button>
+            }
+          </div>
         } @else {
           <mat-tab-group>
             <mat-tab label="Iniciar Sesion">
@@ -69,6 +107,9 @@ import { IdleService } from '../../core/services/idle.service';
                 </mat-form-field>
                 <button mat-raised-button color="primary" class="full-width" (click)="login()" [disabled]="loading">
                   {{ loading ? 'Ingresando...' : 'Ingresar' }}
+                </button>
+                <button mat-button class="forgot-link" (click)="showForgotPassword = true">
+                  <mat-icon>lock_reset</mat-icon> Olvide mi contrasena
                 </button>
               </div>
             </mat-tab>
@@ -111,7 +152,7 @@ import { IdleService } from '../../core/services/idle.service';
       background-clip: text;
     }
     .login-header p { color: #94A3B8; margin: 4px 0 0; font-size: 13px; }
-    .form-container, .change-password-section { padding: 16px 0; }
+    .form-container, .change-password-section, .forgot-password-section { padding: 16px 0; }
     .full-width { width: 100%; margin-bottom: 8px; }
     .warning-box {
       display: flex; gap: 12px; padding: 16px;
@@ -122,16 +163,47 @@ import { IdleService } from '../../core/services/idle.service';
     .warning-box mat-icon { color: #F59E0B; flex-shrink: 0; }
     .warning-box strong { color: #FBBF24; display: block; margin-bottom: 4px; }
     .warning-box p { color: #FCD34D; font-size: 13px; margin: 0; line-height: 1.5; }
+
+    .info-box {
+      display: flex; gap: 12px; padding: 16px;
+      background: rgba(59, 130, 246, 0.15);
+      border-left: 4px solid #3B82F6; border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    .info-box mat-icon { color: #60A5FA; flex-shrink: 0; }
+    .info-box strong { color: #93C5FD; display: block; margin-bottom: 4px; }
+    .info-box p { color: #BFDBFE; font-size: 13px; margin: 0; line-height: 1.5; }
+
+    .success-box {
+      display: flex; gap: 12px; padding: 16px;
+      background: rgba(16, 185, 129, 0.15);
+      border-left: 4px solid #10B981; border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    .success-box mat-icon { color: #6EE7B7; flex-shrink: 0; }
+    .success-box strong { color: #6EE7B7; display: block; margin-bottom: 4px; }
+    .success-box p { color: #A7F3D0; font-size: 13px; margin: 0; line-height: 1.5; }
+
+    .forgot-link {
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      color: #60A5FA !important; font-size: 13px; margin-top: 4px;
+      width: 100%; cursor: pointer;
+    }
+    .forgot-link mat-icon { font-size: 18px; width: 18px; height: 18px; overflow: hidden; }
+    .forgot-link:hover { color: #93C5FD !important; }
   `]
 })
 export class LoginComponent {
   loginData = { username: '', password: '' };
   registerData = { username: '', password: '', email: '', role: 'USER' };
+  forgotData = { username: '', email: '' };
   hidePassword = true;
   hideNew = true;
   loading = false;
 
   mustChangePassword = false;
+  showForgotPassword = false;
+  resetRequestSent = false;
   tempUsername = '';
   tempPassword = '';
   newPassword = '';
@@ -189,6 +261,31 @@ export class LoginComponent {
         this.snackBar.open(msg, 'OK', { duration: 5000 });
       }
     });
+  }
+
+  submitForgotPassword() {
+    if (!this.forgotData.username || !this.forgotData.email) {
+      this.snackBar.open('Ingresa tu usuario y correo electronico', 'OK', { duration: 3000 });
+      return;
+    }
+    this.loading = true;
+    this.auth.requestPasswordReset(this.forgotData).subscribe({
+      next: () => {
+        this.loading = false;
+        this.resetRequestSent = true;
+      },
+      error: (err: any) => {
+        this.loading = false;
+        const msg = err.error?.message || 'No se pudo enviar la solicitud';
+        this.snackBar.open(msg, 'OK', { duration: 5000 });
+      }
+    });
+  }
+
+  backToLogin() {
+    this.showForgotPassword = false;
+    this.resetRequestSent = false;
+    this.forgotData = { username: '', email: '' };
   }
 
   submitChangePassword() {

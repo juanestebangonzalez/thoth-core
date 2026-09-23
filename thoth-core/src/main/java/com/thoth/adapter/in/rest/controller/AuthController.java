@@ -6,6 +6,7 @@ import com.thoth.adapter.in.rest.dto.request.RegisterRequest;
 import com.thoth.adapter.in.rest.dto.response.AuthResponse;
 import com.thoth.adapter.out.persistence.repository.UserJpaRepository;
 import com.thoth.application.service.AuthService;
+import com.thoth.application.service.AuditService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -25,6 +27,7 @@ public class AuthController {
 
     private final AuthService authService;
     private final UserJpaRepository userRepository;
+    private final AuditService auditService;
 
     private String resolveUserId(String username) {
         return userRepository.findByUsername(username)
@@ -73,5 +76,26 @@ public class AuthController {
             .message(result.message()).passwordChangeRequired(result.passwordChangeRequired()).build();
         if (!result.success()) return ResponseEntity.badRequest().body(response);
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/request-password-reset")
+    @Operation(summary = "Request password reset (notifies admin)")
+    public ResponseEntity<Map<String, String>> requestPasswordReset(@RequestBody Map<String, String> body) {
+        String username = body.get("username");
+        String email = body.get("email");
+        if (username == null || username.isBlank() || email == null || email.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Usuario y correo son requeridos"));
+        }
+
+        AuthService.PasswordResetRequestCommand command = new AuthService.PasswordResetRequestCommand(username, email);
+        AuthService.SimpleResult result = authService.requestPasswordReset(command);
+
+        // Log audit entry only for valid matches so admin can see real requests
+        if (authService.isValidResetRequest(username, email)) {
+            auditService.log("PASSWORD_RESET_REQUEST", "AUTH", null, username,
+                "Solicitud de restablecimiento de contrasena para: " + username + " (" + email + ")", "system");
+        }
+
+        return ResponseEntity.ok(Map.of("message", result.message()));
     }
 }

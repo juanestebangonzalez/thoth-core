@@ -23,7 +23,9 @@ public class AuthService {
     public record RegisterCommand(String username, String password, String email) {}
     public record LoginCommand(String username, String password) {}
     public record ChangePasswordCommand(String username, String currentPassword, String newPassword) {}
+    public record PasswordResetRequestCommand(String username, String email) {}
     public record AuthResult(String token, String username, String role, String message, boolean success, boolean passwordChangeRequired) {}
+    public record SimpleResult(String message, boolean success) {}
 
     public AuthResult register(RegisterCommand command) {
         // SEC-007 (user enumeration, MEDIUM): registration intentionally keeps
@@ -99,5 +101,40 @@ public class AuthService {
         String token = jwtTokenProvider.generateToken(user.getUsername(), user.getRole().name());
         return new AuthResult(token, user.getUsername(), user.getRole().name(),
             "Contrasena actualizada exitosamente", true, false);
+    }
+
+    /**
+     * Validates username+email match and returns a generic success message.
+     * The audit log records the request so the admin can see it and use the
+     * existing "reset password" action from the user management panel.
+     * Returns the same message regardless of whether the user exists (anti-enumeration).
+     */
+    public SimpleResult requestPasswordReset(PasswordResetRequestCommand command) {
+        // Always return success to prevent user enumeration
+        String genericMessage = "Si los datos son correctos, el administrador sera notificado de tu solicitud.";
+
+        Optional<UserEntity> optUser = userRepository.findByUsername(command.username());
+        if (optUser.isEmpty()) {
+            return new SimpleResult(genericMessage, true);
+        }
+
+        UserEntity user = optUser.get();
+        // Verify email matches (case-insensitive)
+        if (user.getEmail() == null || !user.getEmail().equalsIgnoreCase(command.email())) {
+            return new SimpleResult(genericMessage, true);
+        }
+
+        // Valid match - the audit log entry is created by the controller
+        return new SimpleResult(genericMessage, true);
+    }
+
+    /**
+     * Check if user+email match exists (used by controller to decide whether to audit log).
+     */
+    public boolean isValidResetRequest(String username, String email) {
+        Optional<UserEntity> optUser = userRepository.findByUsername(username);
+        if (optUser.isEmpty()) return false;
+        UserEntity user = optUser.get();
+        return user.getEmail() != null && user.getEmail().equalsIgnoreCase(email) && user.isEnabled();
     }
 }

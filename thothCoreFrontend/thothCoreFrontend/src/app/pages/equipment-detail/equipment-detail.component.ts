@@ -3,6 +3,7 @@ import { EquipmentDocumentsComponent } from '../equipment-documents/equipment-do
 import { Component, OnInit, signal, ChangeDetectorRef, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -479,7 +480,8 @@ export class EquipmentDetailComponent implements OnInit {
     private cdr: ChangeDetectorRef,
     private locationHistoryService: LocationHistoryService,
     private dialog: MatDialog,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private http: HttpClient
   ) {}
 
   ngOnInit() {
@@ -540,12 +542,36 @@ export class EquipmentDetailComponent implements OnInit {
   }
 
   showQr() {
-    this.qrUrl = environment.apiUrl + '/qr/' + this.equipmentId;
-    this.showQrCode.set(!this.showQrCode());
-    this.cdr.detectChanges();
+    if (this.showQrCode()) {
+      this.showQrCode.set(false);
+      this.cdr.detectChanges();
+      return;
+    }
+    this.http.get(environment.apiUrl + '/qr/' + this.equipmentId, { responseType: 'blob' }).subscribe({
+      next: (blob) => {
+        this.qrUrl = URL.createObjectURL(blob);
+        this.showQrCode.set(true);
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.snackBar.open('Error al generar QR', 'OK', { duration: 3000 });
+      }
+    });
   }
 
   downloadQr() {
-    window.open(environment.apiUrl + '/qr/' + this.equipmentId + '/download', '_blank');
+    this.http.get(environment.apiUrl + '/qr/' + this.equipmentId + '/download', { responseType: 'blob' }).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'QR-' + this.equipmentId + '.png';
+        a.click();
+        URL.revokeObjectURL(url);
+      },
+      error: () => {
+        this.snackBar.open('Error al descargar QR', 'OK', { duration: 3000 });
+      }
+    });
   }
 }

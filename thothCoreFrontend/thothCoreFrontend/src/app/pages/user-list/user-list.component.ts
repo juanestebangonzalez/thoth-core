@@ -166,13 +166,23 @@ import { ResetPasswordDialogComponent } from './reset-password-dialog.component'
       display: inline-flex; align-items: center; gap: 4px;
       padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600;
     }
-    .status-badge mat-icon { font-size: 16px; width: 16px; height: 16px; }
+    .status-badge mat-icon { font-size: 16px; width: 16px; height: 16px; overflow: hidden; }
     .status-badge.enabled { background: rgba(16, 185, 129, 0.2); color: #6EE7B7; }
     .status-badge.disabled { background: rgba(239, 68, 68, 0.2); color: #FCA5A5; }
 
     .empty-state { text-align: center; padding: 60px 20px; }
     .empty-icon { font-size: 64px; width: 64px; height: 64px; color: #64748B; }
     .empty-state h3 { color: #E2E8F0; }
+
+    @media (max-width: 768px) {
+      .user-page { padding: 12px; }
+      h2 { font-size: 18px; }
+      .table-card { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      .user-cell { gap: 8px; }
+      .avatar { width: 32px; height: 32px; font-size: 13px; }
+      .username { font-size: 13px; }
+      .email { font-size: 11px; }
+    }
   `]
 })
 export class UserListComponent implements OnInit {
