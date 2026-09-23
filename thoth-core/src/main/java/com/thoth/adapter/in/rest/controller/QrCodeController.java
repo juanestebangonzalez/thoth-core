@@ -25,7 +25,7 @@ public class QrCodeController {
     @Operation(summary = "Generar QR code PNG para un equipo")
     public ResponseEntity<byte[]> generateQr(
             @PathVariable UUID equipmentId,
-            @RequestParam(required = false, defaultValue = "http://localhost:4200") String baseUrl) {
+            @RequestParam(required = false, defaultValue = "https://thoth-core.netlify.app") String baseUrl) {
         try {
             byte[] qrImage = qrCodeService.generateQrCode(equipmentId, baseUrl);
 
@@ -43,7 +43,7 @@ public class QrCodeController {
     @Operation(summary = "Descargar QR code PNG para imprimir")
     public ResponseEntity<byte[]> downloadQr(
             @PathVariable UUID equipmentId,
-            @RequestParam(required = false, defaultValue = "http://localhost:4200") String baseUrl) {
+            @RequestParam(required = false, defaultValue = "https://thoth-core.netlify.app") String baseUrl) {
         try {
             byte[] qrImage = qrCodeService.generateQrCode(equipmentId, baseUrl);
 

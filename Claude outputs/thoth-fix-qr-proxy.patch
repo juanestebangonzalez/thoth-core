@@ -1,0 +1,70 @@
+From b34d3bb6f06299e18949fb57b9932cb768da558c Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 23 Sep 2026 23:33:20 +0000
+Subject: [PATCH] =?UTF-8?q?fix:=20QR=20apunta=20a=20producci=C3=B3n,=20api?=
+ =?UTF-8?q?Url=20usa=20proxy=20Netlify,=20puerto=208080=20en=20proxy?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+- QrCodeController: defaultValue cambiado de localhost:4200 a thoth-core.netlify.app
+- environment.prod.ts: apiUrl usa '/api/v1' (relativo, pasa por proxy Netlify)
+- netlify.toml: agrega puerto :8080 al proxy del backend
+
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01FJ63Pprs5p5Y71fmjSXBX9
+---
+ .../thoth/adapter/in/rest/controller/QrCodeController.java    | 4 ++--
+ thothCoreFrontend/thothCoreFrontend/netlify.toml              | 2 +-
+ .../thothCoreFrontend/src/environments/environment.prod.ts    | 2 +-
+ 3 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/thoth-core/src/main/java/com/thoth/adapter/in/rest/controller/QrCodeController.java b/thoth-core/src/main/java/com/thoth/adapter/in/rest/controller/QrCodeController.java
+index 81d20b5..72a9643 100644
+--- a/thoth-core/src/main/java/com/thoth/adapter/in/rest/controller/QrCodeController.java
++++ b/thoth-core/src/main/java/com/thoth/adapter/in/rest/controller/QrCodeController.java
+@@ -25,7 +25,7 @@ public class QrCodeController {
+     @Operation(summary = "Generar QR code PNG para un equipo")
+     public ResponseEntity<byte[]> generateQr(
+             @PathVariable UUID equipmentId,
+-            @RequestParam(required = false, defaultValue = "http://localhost:4200") String baseUrl) {
++            @RequestParam(required = false, defaultValue = "https://thoth-core.netlify.app") String baseUrl) {
+         try {
+             byte[] qrImage = qrCodeService.generateQrCode(equipmentId, baseUrl);
+ 
+@@ -43,7 +43,7 @@ public class QrCodeController {
+     @Operation(summary = "Descargar QR code PNG para imprimir")
+     public ResponseEntity<byte[]> downloadQr(
+             @PathVariable UUID equipmentId,
+-            @RequestParam(required = false, defaultValue = "http://localhost:4200") String baseUrl) {
++            @RequestParam(required = false, defaultValue = "https://thoth-core.netlify.app") String baseUrl) {
+         try {
+             byte[] qrImage = qrCodeService.generateQrCode(equipmentId, baseUrl);
+ 
+diff --git a/thothCoreFrontend/thothCoreFrontend/netlify.toml b/thothCoreFrontend/thothCoreFrontend/netlify.toml
+index 8e863ec..5ecf006 100644
+--- a/thothCoreFrontend/thothCoreFrontend/netlify.toml
++++ b/thothCoreFrontend/thothCoreFrontend/netlify.toml
+@@ -9,7 +9,7 @@
+ # Proxy API calls to backend (avoids Mixed Content)
+ [[redirects]]
+   from = "/api/v1/*"
+-  to = "http://129.148.44.87/api/v1/:splat"
++  to = "http://129.148.44.87:8080/api/v1/:splat"
+   status = 200
+   force = true
+ 
+diff --git a/thothCoreFrontend/thothCoreFrontend/src/environments/environment.prod.ts b/thothCoreFrontend/thothCoreFrontend/src/environments/environment.prod.ts
+index bce901e..52ebf31 100644
+--- a/thothCoreFrontend/thothCoreFrontend/src/environments/environment.prod.ts
++++ b/thothCoreFrontend/thothCoreFrontend/src/environments/environment.prod.ts
+@@ -1,4 +1,4 @@
+ export const environment = {
+   production: true,
+-  apiUrl: 'https://api.thoth-core.com/api/v1'
++  apiUrl: '/api/v1'
+ };
+\ No newline at end of file
+-- 
+2.43.0
+
