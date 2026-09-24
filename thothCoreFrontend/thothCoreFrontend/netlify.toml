@@ -1,6 +1,6 @@
 [build]
   base = "thothCoreFrontend/thothCoreFrontend"
-  command = "npm ci && npx ng build --configuration production"
+  command = "npm ci --legacy-peer-deps && npx ng build --configuration production"
   publish = "dist/thothCoreFrontend/browser"
 
 [build.environment]
