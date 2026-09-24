@@ -18,8 +18,11 @@ public class MaintenanceSchedulerService {
      * - UPS: cada 12 meses
      * - MONITOR / PRINTER / PERIPHERAL / OTHER: bajo demanda (no automatico)
      */
-    public LocalDate calculateNextMaintenanceDate(EquipmentCategory category, LocalDate fromDate) {
-        if (category == null || fromDate == null) return null;
+    public LocalDate calculateNextMaintenanceDate(String categoryName, LocalDate fromDate) {
+        if (categoryName == null || fromDate == null) return null;
+
+        EquipmentCategory category = parseCategory(categoryName);
+        if (category == null) return null;
 
         return switch (category) {
             case LAPTOP, DESKTOP -> fromDate.plusMonths(6);
@@ -34,7 +37,9 @@ public class MaintenanceSchedulerService {
     /**
      * Retorna el intervalo en meses segun la categoria.
      */
-    public Integer getMaintenanceIntervalMonths(EquipmentCategory category) {
+    public Integer getMaintenanceIntervalMonths(String categoryName) {
+        if (categoryName == null) return null;
+        EquipmentCategory category = parseCategory(categoryName);
         if (category == null) return null;
         return switch (category) {
             case LAPTOP, DESKTOP -> 6;
@@ -49,7 +54,16 @@ public class MaintenanceSchedulerService {
     /**
      * Indica si la categoria requiere mantenimientos programados automaticos.
      */
-    public boolean isScheduled(EquipmentCategory category) {
-        return getMaintenanceIntervalMonths(category) != null;
+    public boolean isScheduled(String categoryName) {
+        return getMaintenanceIntervalMonths(categoryName) != null;
+    }
+
+    private EquipmentCategory parseCategory(String name) {
+        if (name == null || name.isBlank()) return null;
+        try {
+            return EquipmentCategory.valueOf(name.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 }

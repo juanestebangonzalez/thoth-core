@@ -96,6 +96,25 @@ public class UserService {
         return sb.toString();
     }
 
+    public UpdateResult changeEmail(UUID userId, String newEmail) {
+        if (newEmail == null || newEmail.isBlank()) {
+            return new UpdateResult("El correo es requerido", false);
+        }
+        newEmail = newEmail.trim().toLowerCase();
+        UserEntity user = userRepository.findById(userId).orElse(null);
+        if (user == null) {
+            return new UpdateResult("Usuario no encontrado", false);
+        }
+        // Check uniqueness
+        var existing = userRepository.findByEmail(newEmail);
+        if (existing.isPresent() && !existing.get().getId().equals(userId)) {
+            return new UpdateResult("Ya existe un usuario con ese correo", false);
+        }
+        user.setEmail(newEmail);
+        userRepository.save(user);
+        return new UpdateResult("Correo actualizado a " + newEmail, true);
+    }
+
     public record TechnicianInfo(UUID id, String username, String email) {}
 
     public List<TechnicianInfo> listTechnicians() {

@@ -7,6 +7,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.Optional;
 
 @Getter
 @Setter
@@ -18,7 +19,7 @@ public class Equipment {
 
     private UUID equipmentId;
     private String name;
-    private EquipmentCategory category;
+    private String category;
     private String serialNumber;
     private String inventoryNumber;
     private String macAddress;
@@ -41,7 +42,7 @@ public class Equipment {
 
     public static Equipment create(
             String name,
-            EquipmentCategory category,
+            String category,
             String serialNumber,
             String brand,
             String model,
@@ -58,20 +59,17 @@ public class Equipment {
         if (serialNumber == null || serialNumber.isBlank()) {
             throw new IllegalArgumentException("Serial number cannot be blank");
         }
-        if (purchaseValue == null || purchaseValue.signum() <= 0) {
-            throw new IllegalArgumentException("Purchase value must be positive");
+        if (purchaseValue != null && purchaseValue.signum() < 0) {
+            throw new IllegalArgumentException("Purchase value cannot be negative");
         }
-        if (purchaseDate == null) {
-            throw new IllegalArgumentException("Purchase date cannot be null");
-        }
-        if (purchaseDate.isAfter(LocalDate.now())) {
+        if (purchaseDate != null && purchaseDate.isAfter(LocalDate.now())) {
             throw new IllegalArgumentException("Purchase date cannot be in the future");
         }
         if (location == null) {
             throw new IllegalArgumentException("Location cannot be null");
         }
-        if (category == null) {
-            throw new IllegalArgumentException("Category cannot be null");
+        if (category == null || category.isBlank()) {
+            throw new IllegalArgumentException("Category cannot be blank");
         }
 
         String normalizedMac = normalizeMacAddress(macAddress);
@@ -84,7 +82,7 @@ public class Equipment {
         return Equipment.builder()
             .equipmentId(UUID.randomUUID())
             .name(name.trim())
-            .category(category)
+            .category(category.trim().toUpperCase())
             .serialNumber(serialNumber.trim())
             .brand(brand != null ? brand.trim() : "")
             .model(model != null ? model.trim() : "")
@@ -138,6 +136,7 @@ public class Equipment {
     }
 
     public long getDaysOwnedCount() {
+        if (this.purchaseDate == null) return 0;
         return ChronoUnit.DAYS.between(this.purchaseDate, LocalDate.now());
     }
 
@@ -147,11 +146,11 @@ public class Equipment {
     }
 
     public boolean isOld() {
-        return getYearsOwned() > 3;
+        return this.purchaseDate != null && getYearsOwned() > 3;
     }
 
     public boolean isVeryOld() {
-        return getYearsOwned() > 5;
+        return this.purchaseDate != null && getYearsOwned() > 5;
     }
 
     public boolean isRented() {

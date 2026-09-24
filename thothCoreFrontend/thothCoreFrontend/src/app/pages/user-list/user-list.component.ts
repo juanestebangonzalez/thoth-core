@@ -85,6 +85,10 @@ import { ResetPasswordDialogComponent } from './reset-password-dialog.component'
                     <mat-icon>admin_panel_settings</mat-icon>
                     <span>Cambiar Rol</span>
                   </button>
+                  <button mat-menu-item (click)="changeEmail(u)">
+                    <mat-icon style="color:#3B82F6;">email</mat-icon>
+                    <span>Cambiar Email</span>
+                  </button>
                   <button mat-menu-item (click)="resetPassword(u)">
                     <mat-icon style="color:#F59E0B;">lock_reset</mat-icon>
                     <span>Resetear Password</span>
@@ -259,6 +263,18 @@ export class UserListComponent implements OnInit {
     this.userService.deleteUser(user.id).subscribe({
       next: () => { this.snackBar.open('Usuario eliminado', 'OK', { duration: 3000 }); this.loadUsers(); },
       error: (err: any) => this.snackBar.open(err.error?.message || 'Error al eliminar', 'OK', { duration: 5000 })
+    });
+  }
+
+  changeEmail(user: User) {
+    const newEmail = prompt('Ingrese el nuevo correo para ' + user.username + ':', user.email);
+    if (!newEmail || newEmail === user.email) return;
+    this.userService.changeEmail(user.id, newEmail).subscribe({
+      next: (r) => {
+        this.snackBar.open(r.message, 'OK', { duration: 3000 });
+        this.loadUsers();
+      },
+      error: (err) => this.snackBar.open('Error: ' + (err.error?.message || 'No se pudo cambiar el correo'), 'OK', { duration: 5000 })
     });
   }
 

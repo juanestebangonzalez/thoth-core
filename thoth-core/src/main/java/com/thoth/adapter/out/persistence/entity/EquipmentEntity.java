@@ -1,7 +1,6 @@
 package com.thoth.adapter.out.persistence.entity;
 
 import com.thoth.domain.valueobject.DiskType;
-import com.thoth.domain.valueobject.EquipmentCategory;
 import com.thoth.domain.valueobject.EquipmentStatus;
 import com.thoth.domain.valueobject.OwnershipType;
 import com.thoth.domain.valueobject.RamType;
@@ -30,9 +29,8 @@ public class EquipmentEntity {
     @Column(nullable = false)
     private String name;
 
-    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private EquipmentCategory category;
+    private String category;
 
     @Column(name = "serial_number", nullable = false, unique = true)
     private String serialNumber;
@@ -50,10 +48,10 @@ public class EquipmentEntity {
     @Column(nullable = false)
     private EquipmentStatus status;
 
-    @Column(name = "purchase_date", nullable = false)
+    @Column(name = "purchase_date")
     private LocalDate purchaseDate;
 
-    @Column(name = "purchase_value", nullable = false)
+    @Column(name = "purchase_value")
     private BigDecimal purchaseValue;
 
     @Column(name = "location_building")

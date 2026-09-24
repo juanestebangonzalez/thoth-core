@@ -7,7 +7,6 @@ import com.thoth.application.port.output.EquipmentRepositoryPort;
 import com.thoth.application.service.MaintenanceSchedulerService;
 import com.thoth.application.usecase.impl.RegisterEquipmentUseCaseImpl;
 import com.thoth.domain.model.Equipment;
-import com.thoth.domain.valueobject.EquipmentCategory;
 import com.thoth.domain.valueobject.Location;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -67,7 +66,7 @@ class RegisterEquipmentUseCaseTest {
 
         Equipment mockEquipment = Equipment.create(
             command.name(),
-            EquipmentCategory.DESKTOP,
+            "DESKTOP",
             command.serialNumber(),
             command.brand(),
             command.model(),
@@ -138,7 +137,7 @@ class RegisterEquipmentUseCaseTest {
 
         Equipment existing = Equipment.create(
             "Otro equipo",
-            EquipmentCategory.DESKTOP,
+            "DESKTOP",
             "SN-2024-00001",
             "Dell",
             "OptiPlex",

@@ -26,6 +26,10 @@ export class UserService {
     return this.http.post<ResetPasswordResult>(`${this.apiUrl}/${userId}/reset-password`, {});
   }
 
+  changeEmail(userId: string, email: string): Observable<UpdateResult> {
+    return this.http.patch<UpdateResult>(`${this.apiUrl}/${userId}/email`, { email });
+  }
+
   deleteUser(userId: string): Observable<any> {
     return this.http.delete(`${this.apiUrl}/${userId}`);
   }

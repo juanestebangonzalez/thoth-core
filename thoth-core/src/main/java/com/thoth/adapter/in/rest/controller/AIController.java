@@ -5,7 +5,6 @@ import com.thoth.application.port.input.GetEquipmentUseCase;
 import com.thoth.application.port.output.AIAgentPort;
 import com.thoth.application.dto.EquipmentDTO;
 import com.thoth.domain.model.Equipment;
-import com.thoth.domain.valueobject.EquipmentCategory;
 import com.thoth.domain.valueobject.EquipmentStatus;
 import com.thoth.domain.valueobject.Location;
 import io.swagger.v3.oas.annotations.Operation;
@@ -60,12 +59,7 @@ public class AIController {
     }
 
     private Equipment mapToEquipment(EquipmentDTO dto) {
-        EquipmentCategory category;
-        try {
-            category = EquipmentCategory.valueOf(dto.category());
-        } catch (Exception e) {
-            category = EquipmentCategory.LAPTOP;
-        }
+        String category = dto.category() != null ? dto.category() : "LAPTOP";
         EquipmentStatus status;
         try {
             status = EquipmentStatus.valueOf(dto.status());

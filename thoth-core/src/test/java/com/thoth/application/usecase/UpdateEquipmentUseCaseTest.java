@@ -7,7 +7,6 @@ import com.thoth.application.mapper.EquipmentDtoMapper;
 import com.thoth.application.port.output.EquipmentRepositoryPort;
 import com.thoth.application.usecase.impl.UpdateEquipmentUseCaseImpl;
 import com.thoth.domain.model.Equipment;
-import com.thoth.domain.valueobject.EquipmentCategory;
 import com.thoth.domain.valueobject.Location;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -48,7 +47,7 @@ class UpdateEquipmentUseCaseTest {
         Location location = Location.of("Edificio A", "2", "201", "");
         Equipment equipment = Equipment.create(
             "Dell OptiPlex",
-            EquipmentCategory.DESKTOP,
+            "DESKTOP",
             "SN-2024-00001",
             "Dell",
             "OptiPlex",

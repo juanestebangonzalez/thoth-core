@@ -1,7 +1,6 @@
 package com.thoth.adapter.out.persistence.repository;
 
 import com.thoth.adapter.out.persistence.entity.EquipmentEntity;
-import com.thoth.domain.valueobject.EquipmentCategory;
 import com.thoth.domain.valueobject.EquipmentStatus;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,7 +26,7 @@ class EquipmentRepositoryTest {
         EquipmentEntity entity = EquipmentEntity.builder()
             .equipmentId(UUID.randomUUID())
             .name("Dell Precision 7550")
-            .category(EquipmentCategory.LAPTOP)
+            .category("LAPTOP")
             .serialNumber("ABC123456")
             .brand("Dell")
             .status(EquipmentStatus.ACTIVE)
@@ -49,7 +48,7 @@ class EquipmentRepositoryTest {
         EquipmentEntity entity = EquipmentEntity.builder()
             .equipmentId(UUID.randomUUID())
             .name("HP ProDesk 600")
-            .category(EquipmentCategory.DESKTOP)
+            .category("DESKTOP")
             .serialNumber(serialNumber)
             .status(EquipmentStatus.ACTIVE)
             .locationBuilding("Tower B")
@@ -70,7 +69,7 @@ class EquipmentRepositoryTest {
         EquipmentEntity entity = EquipmentEntity.builder()
             .equipmentId(UUID.randomUUID())
             .name("Lenovo ThinkPad")
-            .category(EquipmentCategory.LAPTOP)
+            .category("LAPTOP")
             .serialNumber("LEN123456")
             .status(EquipmentStatus.MAINTENANCE)
             .locationBuilding("Tower C")

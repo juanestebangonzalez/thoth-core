@@ -24,11 +24,10 @@ public class RegisterEquipmentUseCaseImpl implements RegisterEquipmentUseCase {
     @Transactional
     public EquipmentResponseDTO register(RegisterEquipmentCommand command) {
         Location location = Location.of(command.building(), command.floor(), command.office(), "");
-        EquipmentCategory category = EquipmentCategory.valueOf(command.category().toUpperCase());
 
         Equipment equipment = Equipment.create(
             command.name(),
-            category,
+            command.category(),
             command.serialNumber(),
             command.brand(),
             command.model(),
@@ -86,7 +85,7 @@ public class RegisterEquipmentUseCaseImpl implements RegisterEquipmentUseCase {
         }
 
         // Calcular proxima fecha de mantenimiento automatica
-        java.time.LocalDate nextDate = schedulerService.calculateNextMaintenanceDate(equipment.getCategory(), java.time.LocalDate.now());
+        java.time.LocalDate nextDate = schedulerService.calculateNextMaintenanceDate(equipment.getCategory().toUpperCase(), java.time.LocalDate.now());
         if (nextDate != null) {
             equipment.setNextMaintenanceDate(nextDate);
         }

@@ -17,7 +17,7 @@ public class EquipmentDtoMapper {
         return new EquipmentDTO(
             equipment.getEquipmentId(),
             equipment.getName(),
-            equipment.getCategory() != null ? equipment.getCategory().name() : null,
+            equipment.getCategory(),
             equipment.getSerialNumber(),
             equipment.getInventoryNumber(),
             equipment.getMacAddress(),
@@ -40,7 +40,7 @@ public class EquipmentDtoMapper {
         return new EquipmentResponseDTO(
             equipment.getEquipmentId(),
             equipment.getName(),
-            equipment.getCategory() != null ? equipment.getCategory().name() : null,
+            equipment.getCategory(),
             equipment.getSerialNumber(),
             equipment.getInventoryNumber(),
             equipment.getMacAddress(),

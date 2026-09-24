@@ -4,7 +4,7 @@
 -- ============================================================
 -- 1. Device Type catalog
 -- ============================================================
-CREATE TABLE device_type (
+CREATE TABLE IF NOT EXISTS device_type (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(100) NOT NULL UNIQUE,
     description VARCHAR(255),
@@ -16,7 +16,7 @@ CREATE TABLE device_type (
 -- ============================================================
 -- 2. Maintenance Category catalog
 -- ============================================================
-CREATE TABLE maintenance_category (
+CREATE TABLE IF NOT EXISTS maintenance_category (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(100) NOT NULL UNIQUE,
     description VARCHAR(255),

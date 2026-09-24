@@ -2,7 +2,6 @@ package com.thoth.application.mapper;
 
 import com.thoth.application.dto.EquipmentDTO;
 import com.thoth.domain.model.Equipment;
-import com.thoth.domain.valueobject.EquipmentCategory;
 import com.thoth.domain.valueobject.Location;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -29,7 +28,7 @@ class EquipmentDtoMapperTest {
         Location location = Location.of("Edificio A", "2", "201", "");
         Equipment equipment = Equipment.create(
             "Dell OptiPlex",
-            EquipmentCategory.DESKTOP,
+            "DESKTOP",
             "SN-2024-00001",
             "Dell",
             "OptiPlex",

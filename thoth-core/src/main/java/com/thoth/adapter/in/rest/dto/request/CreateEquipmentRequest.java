@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -40,10 +41,8 @@ public class CreateEquipmentRequest {
     @Valid
     private LocationRequest location;
 
-    @NotNull(message = "Purchase date is required")
     private LocalDate purchaseDate;
 
-    @NotNull(message = "Purchase value is required")
     private BigDecimal purchaseValue;
 
     private String assignedTo;

@@ -70,6 +70,20 @@ public class UserController {
         return ResponseEntity.ok(result);
     }
 
+    @PatchMapping("/{id}/email")
+    @Operation(summary = "Cambiar email de un usuario")
+    public ResponseEntity<UserService.UpdateResult> changeEmail(
+            @PathVariable UUID id,
+            @RequestBody Map<String, String> body, Principal principal) {
+        String newEmail = body.get("email");
+        UserService.UpdateResult result = userService.changeEmail(id, newEmail);
+        if (!result.success()) {
+            return ResponseEntity.badRequest().body(result);
+        }
+        auditService.log("CHANGE_EMAIL", "USERS", id.toString(), null, "Nuevo email: " + newEmail, principal != null ? principal.getName() : "system");
+        return ResponseEntity.ok(result);
+    }
+
     @DeleteMapping("/{id}")
     @Operation(summary = "Eliminar usuario permanentemente")
     public ResponseEntity<?> deleteUser(@PathVariable java.util.UUID id) {

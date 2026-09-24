@@ -12,6 +12,7 @@ import { MatRadioModule } from '@angular/material/radio';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatDividerModule } from '@angular/material/divider';
 import { SedeService, Sede } from '../../core/services/sede.service';
+import { DeviceTypeService, DeviceType } from '../../core/services/device-type.service';
 import { EquipmentService } from '../../core/services/equipment.service';
 import { CreateEquipmentRequest } from '../../core/models/equipment.model';
 
@@ -36,13 +37,9 @@ import { CreateEquipmentRequest } from '../../core/models/equipment.model';
           <mat-form-field appearance="outline">
             <mat-label>Categoria</mat-label>
             <mat-select [(ngModel)]="equipment.category" required [disabled]="isEditMode()">
-              <mat-option value="LAPTOP">Laptop</mat-option>
-              <mat-option value="DESKTOP">Desktop</mat-option>
-              <mat-option value="MONITOR">Monitor</mat-option>
-              <mat-option value="PRINTER">Impresora</mat-option>
-              <mat-option value="NETWORK">Red</mat-option>
-              <mat-option value="SERVER">Servidor</mat-option>
-              <mat-option value="PERIPHERAL">Periferico</mat-option>
+              @for (dt of deviceTypes(); track dt.id) {
+                <mat-option [value]="dt.name">{{ dt.name }}</mat-option>
+              }
             </mat-select>
           </mat-form-field>
           <mat-form-field appearance="outline">
@@ -68,11 +65,11 @@ import { CreateEquipmentRequest } from '../../core/models/equipment.model';
           </mat-form-field>
           <mat-form-field appearance="outline">
             <mat-label>Fecha de Compra</mat-label>
-            <input matInput [(ngModel)]="equipment.purchaseDate" type="date" required [disabled]="isEditMode()">
+            <input matInput [(ngModel)]="equipment.purchaseDate" type="date" [disabled]="isEditMode()">
           </mat-form-field>
           <mat-form-field appearance="outline">
             <mat-label>Valor de Compra</mat-label>
-            <input matInput [(ngModel)]="equipment.purchaseValue" type="number" required [disabled]="isEditMode()">
+            <input matInput [(ngModel)]="equipment.purchaseValue" type="number" [disabled]="isEditMode()">
             <span matPrefix>$&nbsp;</span>
           </mat-form-field>
           <mat-form-field appearance="outline">
@@ -295,6 +292,7 @@ export class EquipmentFormComponent implements OnInit {
   };
   isEditMode = signal(false);
   sedes = signal<Sede[]>([]);
+  deviceTypes = signal<DeviceType[]>([]);
   selectedSede = '';
   loading = signal(false);
   equipmentId = '';
@@ -302,6 +300,7 @@ export class EquipmentFormComponent implements OnInit {
   constructor(
     private equipmentService: EquipmentService,
     private sedeService: SedeService,
+    private deviceTypeService: DeviceTypeService,
     private router: Router,
     private route: ActivatedRoute,
     private snackBar: MatSnackBar,
@@ -311,6 +310,7 @@ export class EquipmentFormComponent implements OnInit {
   ngOnInit() {
     this.equipmentId = this.route.snapshot.paramMap.get('id') || '';
     this.loadSedes();
+    this.loadDeviceTypes();
     if (this.equipmentId) {
       this.isEditMode.set(true);
       this.loadEquipment();
@@ -320,6 +320,12 @@ export class EquipmentFormComponent implements OnInit {
   loadSedes() {
     this.sedeService.listActive().subscribe({
       next: (s) => { this.sedes.set(s); this.cdr.detectChanges(); }
+    });
+  }
+
+  loadDeviceTypes() {
+    this.deviceTypeService.listActive().subscribe({
+      next: (types) => { this.deviceTypes.set(types); this.cdr.detectChanges(); }
     });
   }
 

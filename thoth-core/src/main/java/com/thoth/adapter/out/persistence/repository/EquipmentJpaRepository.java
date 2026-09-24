@@ -1,7 +1,6 @@
 package com.thoth.adapter.out.persistence.repository;
 
 import com.thoth.adapter.out.persistence.entity.EquipmentEntity;
-import com.thoth.domain.valueobject.EquipmentCategory;
 import com.thoth.domain.valueobject.EquipmentStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -19,7 +18,7 @@ public interface EquipmentJpaRepository extends JpaRepository<EquipmentEntity, U
 
     List<EquipmentEntity> findByStatus(EquipmentStatus status);
 
-    List<EquipmentEntity> findByCategory(EquipmentCategory category);
+    List<EquipmentEntity> findByCategory(String category);
 
     Page<EquipmentEntity> findByStatus(EquipmentStatus status, Pageable pageable);
 
@@ -31,7 +30,7 @@ public interface EquipmentJpaRepository extends JpaRepository<EquipmentEntity, U
 
     long countByStatus(EquipmentStatus status);
 
-    long countByCategory(EquipmentCategory category);
+    long countByCategory(String category);
 
     Optional<EquipmentEntity> findByInventoryNumber(String inventoryNumber);
 }

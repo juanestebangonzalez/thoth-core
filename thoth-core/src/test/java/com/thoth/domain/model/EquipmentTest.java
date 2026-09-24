@@ -24,7 +24,7 @@ class EquipmentTest {
         
         equipment = Equipment.create(
             "Dell OptiPlex 7090",
-            EquipmentCategory.DESKTOP,
+            "DESKTOP",
             "SN-2024-00001",
             "Dell",
             "OptiPlex 7090",
@@ -43,7 +43,7 @@ class EquipmentTest {
         assertNotNull(equipment.getEquipmentId());
         assertEquals(EquipmentStatus.ACTIVE, equipment.getStatus());
         assertEquals("Dell OptiPlex 7090", equipment.getName());
-        assertEquals(EquipmentCategory.DESKTOP, equipment.getCategory());
+        assertEquals("DESKTOP", equipment.getCategory());
         assertNotNull(equipment.getCreatedAt());
     }
     
@@ -54,7 +54,7 @@ class EquipmentTest {
             IllegalArgumentException.class,
             () -> Equipment.create(
                 "",
-                EquipmentCategory.LAPTOP,
+                "LAPTOP",
                 "SN123",
                 "Brand",
                 "Model",
@@ -152,7 +152,7 @@ class EquipmentTest {
         Equipment same = equipment;
         Equipment different = Equipment.create(
             "Otro equipo",
-            EquipmentCategory.LAPTOP,
+            "LAPTOP",
             "SN-2024-00002",
             "HP",
             "ProBook",
