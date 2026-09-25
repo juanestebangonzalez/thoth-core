@@ -40,7 +40,9 @@ public class MaintenanceHistoryController {
                 .map(p -> new CreateMaintenanceHistoryCommand.PartCommand(
                     p.getPartName(),
                     p.getPartSerialNumber(),
-                    p.getReason()
+                    p.getReason(),
+                    p.getPurchaseDate(),
+                    p.getTicketNumber()
                 ))
                 .toList();
         }

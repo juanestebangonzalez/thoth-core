@@ -2,6 +2,8 @@ export interface PartReplaced {
   partName: string;
   partSerialNumber?: string;
   reason?: string;
+  purchaseDate?: string;
+  ticketNumber?: string;
 }
 
 export interface MaintenanceHistory {

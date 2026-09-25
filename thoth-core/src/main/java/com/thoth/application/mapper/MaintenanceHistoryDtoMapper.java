@@ -38,7 +38,9 @@ public class MaintenanceHistoryDtoMapper {
         return new PartReplacedDTO(
             p.getPartName(),
             p.getPartSerialNumber(),
-            p.getReason()
+            p.getReason(),
+            p.getPurchaseDate(),
+            p.getTicketNumber()
         );
     }
 }

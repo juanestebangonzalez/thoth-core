@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import java.time.LocalDate;
 
 @Data
 @Builder
@@ -13,4 +14,6 @@ public class PartReplaced {
     private String partName;
     private String partSerialNumber;
     private String reason;
+    private LocalDate purchaseDate;
+    private String ticketNumber;
 }

@@ -35,6 +35,8 @@ public class MaintenanceHistoryEntityMapper {
                     .partName(part.getPartName())
                     .partSerialNumber(part.getPartSerialNumber())
                     .reason(part.getReason())
+                    .purchaseDate(part.getPurchaseDate())
+                    .ticketNumber(part.getTicketNumber())
                     .maintenanceHistory(entity)
                     .build();
                 entity.getPartsReplaced().add(partEntity);
@@ -52,6 +54,8 @@ public class MaintenanceHistoryEntityMapper {
                     .partName(partEntity.getPartName())
                     .partSerialNumber(partEntity.getPartSerialNumber())
                     .reason(partEntity.getReason())
+                    .purchaseDate(partEntity.getPurchaseDate())
+                    .ticketNumber(partEntity.getTicketNumber())
                     .build());
             }
         }

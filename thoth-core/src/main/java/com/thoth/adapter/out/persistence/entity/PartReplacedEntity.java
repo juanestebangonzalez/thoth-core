@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import java.time.LocalDate;
 import java.util.UUID;
 
 @Entity
@@ -32,4 +33,10 @@ public class PartReplacedEntity {
 
     @Column(columnDefinition = "TEXT")
     private String reason;
+
+    @Column(name = "purchase_date")
+    private LocalDate purchaseDate;
+
+    @Column(name = "ticket_number", length = 100)
+    private String ticketNumber;
 }

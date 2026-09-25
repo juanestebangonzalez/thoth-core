@@ -279,6 +279,9 @@ import { CreateEquipmentRequest } from '../../core/models/equipment.model';
     .section-panel mat-panel-title mat-icon { color: #60A5FA; }
     .section-panel mat-panel-description { color: #94A3B8; }
     mat-divider { margin: 20px 0 !important; border-top-color: rgba(148, 163, 184, 0.15) !important; }
+    /* Auto-uppercase para inputs de texto */
+    input:not([type="date"]):not([type="number"]):not([type="email"]) { text-transform: uppercase; }
+    textarea { text-transform: uppercase; }
   `]
 })
 export class EquipmentFormComponent implements OnInit {

@@ -91,6 +91,18 @@ body {
   color: #64748B !important;
 }
 
+/* Auto-uppercase: todos los inputs de texto se muestran en mayuscula */
+.mat-mdc-input-element:not([type="date"]):not([type="number"]):not([type="email"]):not([type="password"]),
+.mat-mdc-form-field input:not([type="date"]):not([type="number"]):not([type="email"]):not([type="password"]),
+.mat-mdc-form-field textarea {
+  text-transform: uppercase !important;
+}
+.mat-mdc-input-element::placeholder,
+.mat-mdc-form-field input::placeholder,
+.mat-mdc-form-field textarea::placeholder {
+  text-transform: none !important;
+}
+
 /* Select dropdown */
 .mat-mdc-select-value,
 .mat-mdc-select-value-text {

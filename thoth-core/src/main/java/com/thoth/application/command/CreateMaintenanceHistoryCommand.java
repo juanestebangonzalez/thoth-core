@@ -20,6 +20,8 @@ public record CreateMaintenanceHistoryCommand(
     public record PartCommand(
         String partName,
         String partSerialNumber,
-        String reason
+        String reason,
+        java.time.LocalDate purchaseDate,
+        String ticketNumber
     ) {}
 }

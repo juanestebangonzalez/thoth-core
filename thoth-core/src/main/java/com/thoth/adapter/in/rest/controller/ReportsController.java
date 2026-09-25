@@ -210,6 +210,83 @@ public class ReportsController {
             .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (a, b) -> a, LinkedHashMap::new));
     }
 
+    @GetMapping("/parts-report")
+    @Operation(summary = "Reporte mensual de partes reemplazadas")
+    public ResponseEntity<Map<String, Object>> partsReport() {
+        List<MaintenanceHistoryEntity> allMaintenance = maintenanceRepository.findAll();
+        Map<String, Object> report = new LinkedHashMap<>();
+
+        LocalDate today = LocalDate.now();
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM");
+        String[] meses = {"Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"};
+
+        // Recopilar todas las partes con su fecha de mantenimiento
+        List<Map<String, Object>> allParts = new ArrayList<>();
+        long totalParts = 0;
+
+        for (MaintenanceHistoryEntity m : allMaintenance) {
+            if (m.getPartsReplaced() != null) {
+                for (var part : m.getPartsReplaced()) {
+                    totalParts++;
+                    Map<String, Object> partInfo = new LinkedHashMap<>();
+                    partInfo.put("partName", part.getPartName());
+                    partInfo.put("partSerialNumber", part.getPartSerialNumber());
+                    partInfo.put("reason", part.getReason());
+                    partInfo.put("purchaseDate", part.getPurchaseDate());
+                    partInfo.put("ticketNumber", part.getTicketNumber());
+                    partInfo.put("maintenanceDate", m.getPerformedDate());
+                    partInfo.put("equipmentId", m.getEquipmentId());
+                    partInfo.put("technicianName", m.getTechnicianName());
+                    partInfo.put("maintenanceType", m.getMaintenanceType() != null ? m.getMaintenanceType().name() : null);
+                    allParts.add(partInfo);
+                }
+            }
+        }
+
+        report.put("totalPartes", totalParts);
+
+        // Partes por mes (ultimos 12 meses)
+        List<Map<String, Object>> byMonth = new ArrayList<>();
+        for (int i = 11; i >= 0; i--) {
+            LocalDate monthDate = today.minusMonths(i).withDayOfMonth(1);
+            String monthKey = monthDate.format(fmt);
+            long count = allParts.stream()
+                .filter(p -> p.get("maintenanceDate") != null &&
+                    ((java.time.LocalDateTime) p.get("maintenanceDate")).toLocalDate().format(fmt).equals(monthKey))
+                .count();
+
+            // Recopilar detalles de partes de ese mes
+            List<Map<String, Object>> monthParts = allParts.stream()
+                .filter(p -> p.get("maintenanceDate") != null &&
+                    ((java.time.LocalDateTime) p.get("maintenanceDate")).toLocalDate().format(fmt).equals(monthKey))
+                .toList();
+
+            Map<String, Object> month = new LinkedHashMap<>();
+            month.put("month", monthKey);
+            month.put("label", meses[monthDate.getMonthValue() - 1] + " " + monthDate.getYear());
+            month.put("cantidadPartes", count);
+            month.put("partes", monthParts);
+            byMonth.add(month);
+        }
+        report.put("porMes", byMonth);
+
+        // Ultimas 20 partes reemplazadas
+        List<Map<String, Object>> recent = allParts.stream()
+            .sorted((a, b) -> {
+                var dateA = (java.time.LocalDateTime) a.get("maintenanceDate");
+                var dateB = (java.time.LocalDateTime) b.get("maintenanceDate");
+                if (dateA == null && dateB == null) return 0;
+                if (dateA == null) return 1;
+                if (dateB == null) return -1;
+                return dateB.compareTo(dateA);
+            })
+            .limit(20)
+            .toList();
+        report.put("ultimasPartes", recent);
+
+        return ResponseEntity.ok(report);
+    }
+
     @GetMapping("/maintenance-report")
     @Operation(summary = "Reporte detallado de mantenimientos por semana y mes")
     public ResponseEntity<Map<String, Object>> maintenanceReport() {

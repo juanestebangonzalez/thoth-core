@@ -27,21 +27,21 @@ public class UpdateEquipmentUseCaseImpl implements UpdateEquipmentUseCase {
             .orElseThrow(() -> new EquipmentNotFoundException(command.equipmentId()));
 
         if (command.name() != null && !command.name().isBlank()) {
-            equipment.rename(command.name());
+            equipment.rename(command.name().toUpperCase());
         }
 
         if (command.assignedTo() != null) {
-            equipment.reassignTo(command.assignedTo());
+            equipment.reassignTo(command.assignedTo().toUpperCase());
         }
 
         if (command.building() != null && command.floor() != null && command.office() != null) {
-            Location newLocation = Location.of(command.building(), command.floor(), command.office(), "");
+            Location newLocation = Location.of(toUpper(command.building()), toUpper(command.floor()), toUpper(command.office()), "");
             equipment.updateLocation(newLocation);
         }
 
-        if (command.brand() != null) equipment.setBrand(command.brand());
-        if (command.model() != null) equipment.setModel(command.model());
-        if (command.macAddress() != null) equipment.setMacAddress(command.macAddress());
+        if (command.brand() != null) equipment.setBrand(toUpper(command.brand()));
+        if (command.model() != null) equipment.setModel(toUpper(command.model()));
+        if (command.macAddress() != null) equipment.setMacAddress(command.macAddress() != null ? command.macAddress().toUpperCase().trim() : null);
 
         if (command.ownershipType() != null && !command.ownershipType().isBlank()) {
             try {
@@ -52,22 +52,22 @@ public class UpdateEquipmentUseCaseImpl implements UpdateEquipmentUseCase {
 
         if (equipment.getOwnershipType() == OwnershipType.RENTED && hasRentalData(command)) {
             RentalInfo rentalInfo = RentalInfo.builder()
-                .rentalCompany(command.rentalCompany())
-                .contactName(command.rentalContactName())
+                .rentalCompany(toUpper(command.rentalCompany()))
+                .contactName(toUpper(command.rentalContactName()))
                 .contactPhone(command.rentalContactPhone())
                 .contactEmail(command.rentalContactEmail())
                 .startDate(command.rentalStartDate())
                 .endDate(command.rentalEndDate())
-                .contractNumber(command.rentalContractNumber())
+                .contractNumber(toUpper(command.rentalContractNumber()))
                 .contractFileUrl(command.rentalContractFileUrl())
-                .notes(command.rentalNotes())
+                .notes(toUpper(command.rentalNotes()))
                 .build();
             equipment.updateRentalInfo(rentalInfo);
         }
 
         if (hasHardwareData(command)) {
             Hardware hardware = Hardware.builder()
-                .processor(command.processor())
+                .processor(toUpper(command.processor()))
                 .ramSizeGb(command.ramSizeGb())
                 .ramType(parseRamType(command.ramType()))
                 .diskType(parseDiskType(command.diskType()))
@@ -82,11 +82,12 @@ public class UpdateEquipmentUseCaseImpl implements UpdateEquipmentUseCase {
         equipment.setUpdatedAt(LocalDateTime.now());
 
         if (command.inventoryNumber() != null && !command.inventoryNumber().isBlank()) {
-            var existing = equipmentRepository.findByInventoryNumber(command.inventoryNumber());
+            String invNum = command.inventoryNumber().toUpperCase().trim();
+            var existing = equipmentRepository.findByInventoryNumber(invNum);
             if (existing.isPresent() && !existing.get().getEquipmentId().equals(command.equipmentId())) {
-                throw new IllegalArgumentException("Ya existe un equipo con el numero de inventario: " + command.inventoryNumber());
+                throw new IllegalArgumentException("Ya existe un equipo con el numero de inventario: " + invNum);
             }
-            equipment.setInventoryNumber(command.inventoryNumber());
+            equipment.setInventoryNumber(invNum);
         }
 
         Equipment saved = equipmentRepository.save(equipment);
@@ -111,5 +112,9 @@ public class UpdateEquipmentUseCaseImpl implements UpdateEquipmentUseCase {
         if (type == null || type.isBlank()) return null;
         try { return DiskType.valueOf(type.toUpperCase()); }
         catch (IllegalArgumentException e) { return null; }
+    }
+
+    private String toUpper(String value) {
+        return value != null ? value.toUpperCase().trim() : null;
     }
 }

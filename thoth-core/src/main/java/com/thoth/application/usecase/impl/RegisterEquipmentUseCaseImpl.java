@@ -23,29 +23,30 @@ public class RegisterEquipmentUseCaseImpl implements RegisterEquipmentUseCase {
     @Override
     @Transactional
     public EquipmentResponseDTO register(RegisterEquipmentCommand command) {
-        Location location = Location.of(command.building(), command.floor(), command.office(), "");
+        Location location = Location.of(toUpper(command.building()), toUpper(command.floor()), toUpper(command.office()), "");
 
         Equipment equipment = Equipment.create(
-            command.name(),
-            command.category(),
-            command.serialNumber(),
-            command.brand(),
-            command.model(),
-            command.macAddress(),
+            toUpper(command.name()),
+            toUpper(command.category()),
+            toUpper(command.serialNumber()),
+            toUpper(command.brand()),
+            toUpper(command.model()),
+            command.macAddress() != null ? command.macAddress().toUpperCase().trim() : null,
             command.purchaseDate(),
             command.purchaseValue(),
             location,
-            command.assignedTo(),
+            toUpper(command.assignedTo()),
             command.createdBy()
         );
 
         // Inventory number - validar unicidad
         if (command.inventoryNumber() != null && !command.inventoryNumber().isBlank()) {
-            var existing = equipmentRepository.findByInventoryNumber(command.inventoryNumber());
+            String invNum = command.inventoryNumber().toUpperCase().trim();
+            var existing = equipmentRepository.findByInventoryNumber(invNum);
             if (existing.isPresent()) {
-                throw new IllegalArgumentException("Ya existe un equipo con el numero de inventario: " + command.inventoryNumber());
+                throw new IllegalArgumentException("Ya existe un equipo con el numero de inventario: " + invNum);
             }
-            equipment.setInventoryNumber(command.inventoryNumber());
+            equipment.setInventoryNumber(invNum);
         }
 
         if (command.ownershipType() != null && !command.ownershipType().isBlank()) {
@@ -58,22 +59,22 @@ public class RegisterEquipmentUseCaseImpl implements RegisterEquipmentUseCase {
 
         if (equipment.getOwnershipType() == OwnershipType.RENTED) {
             RentalInfo rentalInfo = RentalInfo.builder()
-                .rentalCompany(command.rentalCompany())
-                .contactName(command.rentalContactName())
+                .rentalCompany(toUpper(command.rentalCompany()))
+                .contactName(toUpper(command.rentalContactName()))
                 .contactPhone(command.rentalContactPhone())
                 .contactEmail(command.rentalContactEmail())
                 .startDate(command.rentalStartDate())
                 .endDate(command.rentalEndDate())
-                .contractNumber(command.rentalContractNumber())
+                .contractNumber(toUpper(command.rentalContractNumber()))
                 .contractFileUrl(command.rentalContractFileUrl())
-                .notes(command.rentalNotes())
+                .notes(toUpper(command.rentalNotes()))
                 .build();
             equipment.setRentalInfo(rentalInfo);
         }
 
         if (hasHardwareData(command)) {
             Hardware hardware = Hardware.builder()
-                .processor(command.processor())
+                .processor(toUpper(command.processor()))
                 .ramSizeGb(command.ramSizeGb())
                 .ramType(parseRamType(command.ramType()))
                 .diskType(parseDiskType(command.diskType()))
@@ -107,5 +108,9 @@ public class RegisterEquipmentUseCaseImpl implements RegisterEquipmentUseCase {
         if (type == null || type.isBlank()) return null;
         try { return DiskType.valueOf(type.toUpperCase()); }
         catch (IllegalArgumentException e) { return null; }
+    }
+
+    private String toUpper(String value) {
+        return value != null ? value.toUpperCase().trim() : null;
     }
 }

@@ -41,9 +41,11 @@ public class CreateMaintenanceHistoryUseCaseImpl implements CreateMaintenanceHis
         if (command.partsReplaced() != null) {
             for (CreateMaintenanceHistoryCommand.PartCommand p : command.partsReplaced()) {
                 parts.add(PartReplaced.builder()
-                    .partName(p.partName())
-                    .partSerialNumber(p.partSerialNumber())
-                    .reason(p.reason())
+                    .partName(toUpper(p.partName()))
+                    .partSerialNumber(toUpper(p.partSerialNumber()))
+                    .reason(toUpper(p.reason()))
+                    .purchaseDate(p.purchaseDate())
+                    .ticketNumber(toUpper(p.ticketNumber()))
                     .build());
             }
         }
@@ -51,9 +53,9 @@ public class CreateMaintenanceHistoryUseCaseImpl implements CreateMaintenanceHis
         MaintenanceHistory maintenance = MaintenanceHistory.create(
             command.equipmentId(),
             type,
-            command.technicianName(),
-            command.reason(),
-            command.description(),
+            toUpper(command.technicianName()),
+            toUpper(command.reason()),
+            toUpper(command.description()),
             command.nextScheduledDate(),
             parts,
             command.createdBy()
@@ -92,5 +94,9 @@ public class CreateMaintenanceHistoryUseCaseImpl implements CreateMaintenanceHis
         }
 
         return mapper.toDTO(saved);
+    }
+
+    private String toUpper(String value) {
+        return value != null ? value.toUpperCase().trim() : null;
     }
 }

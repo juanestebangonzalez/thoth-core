@@ -61,12 +61,12 @@ import { CreateMaintenanceRequest, PartReplaced } from '../../core/models/mainte
 
           <mat-form-field appearance="outline" class="full-col">
             <mat-label>Motivo del Mantenimiento</mat-label>
-            <input matInput [(ngModel)]="maintenance.reason" required placeholder="Por que se realizo este mantenimiento?">
+            <input matInput [(ngModel)]="maintenance.reason" required placeholder="Por que se realizo este mantenimiento?" style="text-transform:uppercase;">
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="full-col">
             <mat-label>Descripcion del Trabajo</mat-label>
-            <textarea matInput [(ngModel)]="maintenance.description" rows="3" placeholder="Detalle del trabajo realizado, acciones tomadas..."></textarea>
+            <textarea matInput [(ngModel)]="maintenance.description" rows="3" placeholder="Detalle del trabajo realizado, acciones tomadas..." style="text-transform:uppercase;"></textarea>
           </mat-form-field>
 
           <mat-form-field appearance="outline">
@@ -104,15 +104,23 @@ import { CreateMaintenanceRequest, PartReplaced } from '../../core/models/mainte
             <div class="form-grid">
               <mat-form-field appearance="outline">
                 <mat-label>Nombre de la Parte</mat-label>
-                <input matInput [(ngModel)]="part.partName" required placeholder="Ej: Disco SSD 480GB">
+                <input matInput [(ngModel)]="part.partName" required placeholder="Ej: Disco SSD 480GB" style="text-transform:uppercase;">
               </mat-form-field>
               <mat-form-field appearance="outline">
                 <mat-label>Serial (Opcional)</mat-label>
-                <input matInput [(ngModel)]="part.partSerialNumber" placeholder="Serial de la parte nueva">
+                <input matInput [(ngModel)]="part.partSerialNumber" placeholder="Serial de la parte nueva" style="text-transform:uppercase;">
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Fecha de Compra</mat-label>
+                <input matInput [(ngModel)]="part.purchaseDate" type="date">
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>N° Ticket / Factura</mat-label>
+                <input matInput [(ngModel)]="part.ticketNumber" placeholder="Ej: FAC-2026-001" style="text-transform:uppercase;">
               </mat-form-field>
               <mat-form-field appearance="outline" class="full-col">
                 <mat-label>Motivo del Cambio</mat-label>
-                <input matInput [(ngModel)]="part.reason" placeholder="Por que se cambio esta parte?">
+                <input matInput [(ngModel)]="part.reason" placeholder="Por que se cambio esta parte?" style="text-transform:uppercase;">
               </mat-form-field>
             </div>
           </div>
@@ -128,7 +136,7 @@ import { CreateMaintenanceRequest, PartReplaced } from '../../core/models/mainte
         </h3>
         <mat-form-field appearance="outline" style="width:100%;">
           <mat-label>Nombre de quien firma</mat-label>
-          <input matInput [(ngModel)]="signedBy" placeholder="Nombre completo del responsable">
+          <input matInput [(ngModel)]="signedBy" placeholder="Nombre completo del responsable" style="text-transform:uppercase;">
         </mat-form-field>
         <app-signature-pad (signatureChange)="onSignatureChange($event)" label="Firma (obligatoria para constancia)"></app-signature-pad>
       </div>
@@ -227,7 +235,7 @@ export class AddMaintenanceDialogComponent implements OnInit {
   }
 
   addPart() {
-    this.parts.push({ partName: '', partSerialNumber: '', reason: '' });
+    this.parts.push({ partName: '', partSerialNumber: '', reason: '', purchaseDate: '', ticketNumber: '' });
   }
 
   removePart(index: number) {
