@@ -1,5 +1,7 @@
 package com.thoth.adapter.in.rest.controller;
 
+import com.thoth.adapter.in.rest.dto.request.ChangeEmailRequest;
+import com.thoth.adapter.in.rest.dto.request.ChangeRoleRequest;
 import com.thoth.application.service.UserService;
 import com.thoth.application.service.AuditService;
 import com.thoth.adapter.out.persistence.repository.UserJpaRepository;
@@ -8,6 +10,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 import java.security.Principal;
 import java.util.List;
@@ -35,8 +38,8 @@ public class UserController {
     @Operation(summary = "Cambiar rol de un usuario")
     public ResponseEntity<UserService.UpdateResult> changeRole(
             @PathVariable UUID id,
-            @RequestBody Map<String, String> body, Principal principal) {
-        String newRole = body.get("role");
+            @Valid @RequestBody ChangeRoleRequest body, Principal principal) {
+        String newRole = body.role();
         UserService.UpdateResult result = userService.changeRole(id, newRole);
         if (!result.success()) {
             return ResponseEntity.badRequest().body(result);
@@ -82,8 +85,8 @@ public class UserController {
     @Operation(summary = "Cambiar email de un usuario")
     public ResponseEntity<UserService.UpdateResult> changeEmail(
             @PathVariable UUID id,
-            @RequestBody Map<String, String> body, Principal principal) {
-        String newEmail = body.get("email");
+            @Valid @RequestBody ChangeEmailRequest body, Principal principal) {
+        String newEmail = body.email();
         UserService.UpdateResult result = userService.changeEmail(id, newEmail);
         if (!result.success()) {
             return ResponseEntity.badRequest().body(result);

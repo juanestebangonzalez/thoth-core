@@ -1,6 +1,7 @@
 package com.thoth.adapter.in.rest.controller;
 
 import com.thoth.adapter.in.rest.dto.request.ChangePasswordRequest;
+import com.thoth.adapter.in.rest.dto.request.PasswordResetRequest;
 import com.thoth.adapter.in.rest.dto.request.LoginRequest;
 import com.thoth.adapter.in.rest.dto.request.RegisterRequest;
 import com.thoth.adapter.in.rest.dto.response.AuthResponse;
@@ -80,12 +81,9 @@ public class AuthController {
 
     @PostMapping("/request-password-reset")
     @Operation(summary = "Request password reset (notifies admin)")
-    public ResponseEntity<Map<String, String>> requestPasswordReset(@RequestBody Map<String, String> body) {
-        String username = body.get("username");
-        String email = body.get("email");
-        if (username == null || username.isBlank() || email == null || email.isBlank()) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Usuario y correo son requeridos"));
-        }
+    public ResponseEntity<Map<String, String>> requestPasswordReset(@Valid @RequestBody PasswordResetRequest body) {
+        String username = body.username();
+        String email = body.email();
 
         AuthService.PasswordResetRequestCommand command = new AuthService.PasswordResetRequestCommand(username, email);
         AuthService.SimpleResult result = authService.requestPasswordReset(command);

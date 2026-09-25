@@ -12,6 +12,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import com.thoth.adapter.in.rest.dto.request.TransferEquipmentRequest;
+import jakarta.validation.Valid;
 import java.security.Principal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -42,7 +44,7 @@ public class LocationHistoryController {
     @Operation(summary = "Registrar traslado de equipo")
     public ResponseEntity<?> transferEquipment(
             @PathVariable UUID equipmentId,
-            @RequestBody Map<String, String> body,
+            @Valid @RequestBody TransferEquipmentRequest body,
             Principal principal) {
 
         EquipmentEntity equipment = equipmentRepository.findById(equipmentId).orElse(null);
@@ -50,14 +52,10 @@ public class LocationHistoryController {
             return ResponseEntity.notFound().build();
         }
 
-        String toBuilding = body.get("toBuilding");
-        String toFloor = body.get("toFloor");
-        String toOffice = body.get("toOffice");
-        String reason = body.get("reason");
-
-        if (toBuilding == null || toBuilding.isBlank() || reason == null || reason.isBlank()) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Sede destino y motivo son obligatorios"));
-        }
+        String toBuilding = body.toBuilding();
+        String toFloor = body.toFloor();
+        String toOffice = body.toOffice();
+        String reason = body.reason();
 
         // Save history entry
         LocationHistoryEntity history = LocationHistoryEntity.builder()

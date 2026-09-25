@@ -4,11 +4,13 @@ import com.thoth.adapter.out.persistence.entity.SedeEntity;
 import com.thoth.adapter.out.persistence.repository.SedeRepository;
 import com.thoth.application.dto.SedeDTO;
 import com.thoth.application.service.AuditService;
+import com.thoth.adapter.in.rest.dto.request.CreateCatalogItemRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 import java.security.Principal;
 import java.util.*;
@@ -53,18 +55,15 @@ public class SedeController {
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     @Operation(summary = "Crear nueva sede")
-    public ResponseEntity<?> create(@RequestBody Map<String, String> body, Principal principal) {
-        String name = body.get("name");
-        if (name == null || name.isBlank()) {
-            return ResponseEntity.badRequest().body(Map.of("message", "El nombre es obligatorio"));
-        }
+    public ResponseEntity<?> create(@Valid @RequestBody CreateCatalogItemRequest body, Principal principal) {
+        String name = body.name();
         if (sedeRepository.existsByNameIgnoreCase(name.trim())) {
             return ResponseEntity.badRequest().body(Map.of("message", "Ya existe una sede con ese nombre"));
         }
         SedeEntity sede = SedeEntity.builder()
             .name(name.trim())
-            .address(body.getOrDefault("address", ""))
-            .phone(body.getOrDefault("phone", ""))
+            .address(body.address() != null ? body.address() : "")
+            .phone(body.phone() != null ? body.phone() : "")
             .active(true)
             .build();
         SedeEntity saved = sedeRepository.save(sede);
@@ -77,9 +76,9 @@ public class SedeController {
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     @Operation(summary = "Actualizar sede")
-    public ResponseEntity<?> update(@PathVariable UUID id, @RequestBody Map<String, String> body, Principal principal) {
+    public ResponseEntity<?> update(@PathVariable UUID id, @Valid @RequestBody CreateCatalogItemRequest body, Principal principal) {
         return sedeRepository.findById(id).map(sede -> {
-            String name = body.get("name");
+            String name = body.name();
             if (name != null && !name.isBlank()) {
                 var existing = sedeRepository.findByNameIgnoreCase(name.trim());
                 if (existing.isPresent() && !existing.get().getId().equals(id)) {
@@ -87,9 +86,9 @@ public class SedeController {
                 }
                 sede.setName(name.trim());
             }
-            if (body.containsKey("address")) sede.setAddress(body.get("address"));
-            if (body.containsKey("phone")) sede.setPhone(body.get("phone"));
-            if (body.containsKey("active")) sede.setActive(Boolean.parseBoolean(body.get("active")));
+            if (body.address() != null) sede.setAddress(body.address());
+            if (body.phone() != null) sede.setPhone(body.phone());
+            if (body.active() != null) sede.setActive(body.active());
             SedeEntity updated = sedeRepository.save(sede);
             auditService.log("UPDATE", "SEDE", id.toString(), sede.getName(),
                     "Sede actualizada: " + sede.getName(),

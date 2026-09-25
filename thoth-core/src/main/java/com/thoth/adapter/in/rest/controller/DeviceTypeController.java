@@ -10,6 +10,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import com.thoth.adapter.in.rest.dto.request.CreateCatalogItemRequest;
+import jakarta.validation.Valid;
 import java.security.Principal;
 import java.util.*;
 
@@ -53,17 +55,14 @@ public class DeviceTypeController {
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     @Operation(summary = "Crear nuevo tipo de dispositivo")
-    public ResponseEntity<?> create(@RequestBody Map<String, String> body, Principal principal) {
-        String name = body.get("name");
-        if (name == null || name.isBlank()) {
-            return ResponseEntity.badRequest().body(Map.of("message", "El nombre es obligatorio"));
-        }
+    public ResponseEntity<?> create(@Valid @RequestBody CreateCatalogItemRequest body, Principal principal) {
+        String name = body.name();
         if (deviceTypeRepository.existsByNameIgnoreCase(name.trim())) {
             return ResponseEntity.badRequest().body(Map.of("message", "Ya existe un tipo de dispositivo con ese nombre"));
         }
         DeviceTypeEntity deviceType = DeviceTypeEntity.builder()
             .name(name.trim())
-            .description(body.getOrDefault("description", ""))
+            .description(body.description() != null ? body.description() : "")
             .active(true)
             .build();
         DeviceTypeEntity saved = deviceTypeRepository.save(deviceType);
@@ -76,9 +75,9 @@ public class DeviceTypeController {
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     @Operation(summary = "Actualizar tipo de dispositivo")
-    public ResponseEntity<?> update(@PathVariable UUID id, @RequestBody Map<String, String> body, Principal principal) {
+    public ResponseEntity<?> update(@PathVariable UUID id, @Valid @RequestBody CreateCatalogItemRequest body, Principal principal) {
         return deviceTypeRepository.findById(id).map(deviceType -> {
-            String name = body.get("name");
+            String name = body.name();
             if (name != null && !name.isBlank()) {
                 var existing = deviceTypeRepository.findByNameIgnoreCase(name.trim());
                 if (existing.isPresent() && !existing.get().getId().equals(id)) {
@@ -86,8 +85,8 @@ public class DeviceTypeController {
                 }
                 deviceType.setName(name.trim());
             }
-            if (body.containsKey("description")) deviceType.setDescription(body.get("description"));
-            if (body.containsKey("active")) deviceType.setActive(Boolean.parseBoolean(body.get("active")));
+            if (body.description() != null) deviceType.setDescription(body.description());
+            if (body.active() != null) deviceType.setActive(body.active());
             DeviceTypeEntity updated = deviceTypeRepository.save(deviceType);
             auditService.log("UPDATE", "DEVICE_TYPE", id.toString(), deviceType.getName(),
                     "Tipo de dispositivo actualizado: " + deviceType.getName(),

@@ -10,6 +10,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import com.thoth.adapter.in.rest.dto.request.CreateCatalogItemRequest;
+import jakarta.validation.Valid;
 import java.security.Principal;
 import java.util.*;
 
@@ -53,17 +55,14 @@ public class MaintenanceCategoryController {
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     @Operation(summary = "Crear nueva categoria de mantenimiento")
-    public ResponseEntity<?> create(@RequestBody Map<String, String> body, Principal principal) {
-        String name = body.get("name");
-        if (name == null || name.isBlank()) {
-            return ResponseEntity.badRequest().body(Map.of("message", "El nombre es obligatorio"));
-        }
+    public ResponseEntity<?> create(@Valid @RequestBody CreateCatalogItemRequest body, Principal principal) {
+        String name = body.name();
         if (maintenanceCategoryRepository.existsByNameIgnoreCase(name.trim())) {
             return ResponseEntity.badRequest().body(Map.of("message", "Ya existe una categoria de mantenimiento con ese nombre"));
         }
         MaintenanceCategoryEntity category = MaintenanceCategoryEntity.builder()
             .name(name.trim())
-            .description(body.getOrDefault("description", ""))
+            .description(body.description() != null ? body.description() : "")
             .active(true)
             .build();
         MaintenanceCategoryEntity saved = maintenanceCategoryRepository.save(category);
@@ -76,9 +75,9 @@ public class MaintenanceCategoryController {
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     @Operation(summary = "Actualizar categoria de mantenimiento")
-    public ResponseEntity<?> update(@PathVariable UUID id, @RequestBody Map<String, String> body, Principal principal) {
+    public ResponseEntity<?> update(@PathVariable UUID id, @Valid @RequestBody CreateCatalogItemRequest body, Principal principal) {
         return maintenanceCategoryRepository.findById(id).map(category -> {
-            String name = body.get("name");
+            String name = body.name();
             if (name != null && !name.isBlank()) {
                 var existing = maintenanceCategoryRepository.findByNameIgnoreCase(name.trim());
                 if (existing.isPresent() && !existing.get().getId().equals(id)) {
@@ -86,8 +85,8 @@ public class MaintenanceCategoryController {
                 }
                 category.setName(name.trim());
             }
-            if (body.containsKey("description")) category.setDescription(body.get("description"));
-            if (body.containsKey("active")) category.setActive(Boolean.parseBoolean(body.get("active")));
+            if (body.description() != null) category.setDescription(body.description());
+            if (body.active() != null) category.setActive(body.active());
             MaintenanceCategoryEntity updated = maintenanceCategoryRepository.save(category);
             auditService.log("UPDATE", "MAINTENANCE_CATEGORY", id.toString(), category.getName(),
                     "Categoria de mantenimiento actualizada: " + category.getName(),
