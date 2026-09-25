@@ -2,6 +2,7 @@ package com.thoth.adapter.in.rest.dto.request;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -17,8 +18,15 @@ public class RegisterRequest {
     @Size(min = 3, max = 50)
     private String username;
 
+    /**
+     * DT-08: minimo 10 caracteres, con al menos una letra y al menos un numero.
+     * El minimo anterior era de 6 caracteres sin ninguna exigencia de
+     * composicion, lo que admitia contrasenas como "123456".
+     */
     @NotBlank(message = "Password is required")
-    @Size(min = 6, max = 100)
+    @Size(min = PasswordPolicy.MIN_LENGTH, max = PasswordPolicy.MAX_LENGTH,
+          message = PasswordPolicy.LENGTH_MESSAGE)
+    @Pattern(regexp = PasswordPolicy.PATTERN, message = PasswordPolicy.PATTERN_MESSAGE)
     private String password;
 
     @NotBlank(message = "Email is required")

@@ -1,0 +1,89 @@
+name: CI
+
+# DT-30: hasta ahora el repositorio solo tenia el flujo de creacion de la VM.
+# Nada impedia fusionar codigo que no compilara, y la imagen de contenedor se
+# construye con `-x test`. Este flujo ejecuta las pruebas de verdad.
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Analisis de dependencias semanal: una vulnerabilidad nueva aparece sin
+    # que nadie toque el codigo.
+    - cron: '0 6 * * 1'
+
+jobs:
+  backend:
+    name: Backend - pruebas y cobertura
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Cache de Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('thoth-core/**/*.gradle', 'thoth-core/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: gradle-${{ runner.os }}-
+
+      - name: Ejecutar pruebas y verificar cobertura
+        working-directory: thoth-core
+        run: ./gradlew check --no-daemon
+
+      - name: Publicar informe de pruebas
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: informe-pruebas-backend
+          path: |
+            thoth-core/build/reports/tests/test
+            thoth-core/build/reports/jacoco/test/html
+          retention-days: 14
+
+  frontend:
+    name: Frontend - compilacion
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: thothCoreFrontend/thothCoreFrontend/package-lock.json
+
+      - name: Instalar dependencias
+        working-directory: thothCoreFrontend/thothCoreFrontend
+        run: npm ci
+
+      - name: Compilar
+        working-directory: thothCoreFrontend/thothCoreFrontend
+        run: npm run build
+
+  dependencias:
+    name: Analisis de vulnerabilidades
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Analizar el sistema de archivos con Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: CRITICAL,HIGH
+          format: table
+          # No rompe la compilacion todavia: primero hay que ver que reporta.
+          # Cuando el informe este limpio, cambiar a exit-code: '1'.
+          exit-code: '0'

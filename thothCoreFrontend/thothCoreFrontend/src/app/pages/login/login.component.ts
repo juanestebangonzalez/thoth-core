@@ -127,8 +127,8 @@ import { IdleService } from '../../core/services/idle.service';
                 </mat-form-field>
                 <mat-form-field appearance="outline" class="full-width">
                   <mat-label>Contrasena</mat-label>
-                  <input matInput [(ngModel)]="registerData.password" (keyup.enter)="register()" type="password" minlength="6">
-            <mat-hint>Minimo 6 caracteres</mat-hint>
+                  <input matInput [(ngModel)]="registerData.password" (keyup.enter)="register()" type="password" minlength="10">
+            <mat-hint>Minimo 10 caracteres, con al menos una letra y un numero</mat-hint>
                   <mat-icon matPrefix>lock</mat-icon>
                 </mat-form-field>
                 <button mat-raised-button color="accent" class="full-width" (click)="register()" [disabled]="loading">
@@ -239,8 +239,9 @@ export class LoginComponent {
       this.snackBar.open('Todos los campos son obligatorios', 'OK', { duration: 3000 });
       return;
     }
-    if (this.registerData.password.length < 6) {
-      this.snackBar.open('La contrasena debe tener minimo 6 caracteres', 'OK', { duration: 3000 });
+    const errorPassword = this.validarPassword(this.registerData.password);
+    if (errorPassword) {
+      this.snackBar.open(errorPassword, 'OK', { duration: 4000 });
       return;
     }
     this.loading = true;
@@ -289,8 +290,9 @@ export class LoginComponent {
   }
 
   submitChangePassword() {
-    if (!this.newPassword || this.newPassword.length < 6) {
-      this.snackBar.open('La nueva contrasena debe tener al menos 6 caracteres', 'OK', { duration: 3000 });
+    const errorNueva = this.validarPassword(this.newPassword);
+    if (errorNueva) {
+      this.snackBar.open(errorNueva, 'OK', { duration: 4000 });
       return;
     }
     if (this.newPassword !== this.confirmPassword) {
@@ -320,5 +322,26 @@ export class LoginComponent {
     this.newPassword = '';
     this.confirmPassword = '';
     this.loginData.password = '';
+  }
+
+  /**
+   * DT-08: politica de contrasenas, identica a la que aplica el backend en
+   * PasswordPolicy.java. Devuelve el mensaje de error, o null si es valida.
+   *
+   * Se valida aqui ademas de en el servidor para que el usuario sepa que le
+   * falta antes de enviar el formulario; la validacion que manda es la del
+   * backend.
+   */
+  private validarPassword(password: string): string | null {
+    if (!password || password.length < 10) {
+      return 'La contrasena debe tener al menos 10 caracteres';
+    }
+    if (password.length > 100) {
+      return 'La contrasena no puede superar los 100 caracteres';
+    }
+    if (!/[a-zA-Z]/.test(password) || !/[0-9]/.test(password)) {
+      return 'La contrasena debe incluir al menos una letra y al menos un numero';
+    }
+    return null;
   }
 }

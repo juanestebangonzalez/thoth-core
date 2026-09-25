@@ -17,7 +17,10 @@ spring:
 
 jwt:
   secret: ${JWT_SECRET:thoth-core-DEV-ONLY-secret-not-for-production-6f2a9c1e7b4d}
-  expiration: 86400000
+  # DT-09: vigencia reducida de 24h a 2h mientras no exista lista de
+  # revocacion. Acota la ventana en la que un token robado, o el de un
+  # usuario ya deshabilitado, sigue siendo valido.
+  expiration: ${JWT_EXPIRATION_MS:7200000}
 
 logging:
   level:
