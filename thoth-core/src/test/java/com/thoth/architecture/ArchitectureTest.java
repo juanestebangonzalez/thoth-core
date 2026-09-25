@@ -25,6 +25,8 @@ class ArchitectureTest {
             .importPackages("com.thoth");
     }
 
+    // === Reglas del dominio ===
+
     @Test
     void domainMustNotDependOnAdapterOrApplication() {
         ArchRule rule = noClasses()
@@ -53,6 +55,8 @@ class ArchitectureTest {
         rule.check(classes);
     }
 
+    // === Reglas de ubicación de clases ===
+
     @Test
     void controllersMustResideInAdapterInPackage() {
         ArchRule rule = classes()
@@ -73,17 +77,70 @@ class ArchitectureTest {
         rule.check(classes);
     }
 
-    /**
-     * Equipment use cases must depend only on EquipmentRepositoryPort, never
-     * reach directly into the JPA repository - that's the adapter's job.
-     * Fixed as part of the architecture cleanup; this pins it down so it
-     * can't silently regress.
-     */
+    @Test
+    void entitiesMustResideInAdapterOutPersistenceEntity() {
+        ArchRule rule = classes()
+            .that().areAnnotatedWith(jakarta.persistence.Entity.class)
+            .should().resideInAPackage("com.thoth.adapter.out.persistence.entity");
+
+        rule.check(classes);
+    }
+
+    // === Reglas de capas ===
+
     @Test
     void equipmentUseCasesMustNotDependOnJpaRepositoriesDirectly() {
         ArchRule rule = noClasses()
             .that().resideInAPackage("com.thoth.application.usecase..")
             .should().dependOnClassesThat().resideInAPackage("com.thoth.adapter.out.persistence.repository..");
+
+        rule.check(classes);
+    }
+
+    @Test
+    void servicesMustNotDependOnControllers() {
+        ArchRule rule = noClasses()
+            .that().resideInAPackage("com.thoth.application..")
+            .should().dependOnClassesThat().resideInAPackage("com.thoth.adapter.in.rest.controller..");
+
+        rule.check(classes);
+    }
+
+    @Test
+    void adapterOutMustNotDependOnAdapterIn() {
+        ArchRule rule = noClasses()
+            .that().resideInAPackage("com.thoth.adapter.out..")
+            .should().dependOnClassesThat().resideInAPackage("com.thoth.adapter.in..");
+
+        rule.check(classes);
+    }
+
+    // === DT-22: Reglas de convenciones ===
+
+    @Test
+    void requestDtosMustBeRecords() {
+        ArchRule rule = classes()
+            .that().resideInAPackage("com.thoth.adapter.in.rest.dto.request..")
+            .and().haveSimpleNameEndingWith("Request")
+            .should().beRecords();
+
+        rule.check(classes);
+    }
+
+    @Test
+    void scheduledJobsMustResideInSchedulerPackage() {
+        ArchRule rule = classes()
+            .that().haveSimpleNameEndingWith("ScheduledJob")
+            .should().resideInAPackage("com.thoth.adapter.out.scheduler");
+
+        rule.check(classes);
+    }
+
+    @Test
+    void configClassesMustResideInConfigPackage() {
+        ArchRule rule = classes()
+            .that().areAnnotatedWith(org.springframework.context.annotation.Configuration.class)
+            .should().resideInAPackage("com.thoth.config..");
 
         rule.check(classes);
     }
