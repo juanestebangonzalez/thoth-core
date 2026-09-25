@@ -69,7 +69,7 @@ public class ReportsController {
         Map<String, Long> byCategory = allEquipments.stream()
             .filter(e -> e.getCategory() != null)
             .collect(Collectors.groupingBy(
-                e -> traducirCategoria(e.getCategory().name()),
+                e -> traducirCategoria(e.getCategory()),
                 Collectors.counting()
             ));
         report.put("porCategoria", sortByValue(byCategory));
@@ -138,7 +138,7 @@ public class ReportsController {
                 Map<String, Object> item = new LinkedHashMap<>();
                 item.put("name", eq.getName());
                 item.put("serial", eq.getSerialNumber());
-                item.put("category", eq.getCategory() != null ? traducirCategoria(eq.getCategory().name()) : "");
+                item.put("category", eq.getCategory() != null ? traducirCategoria(eq.getCategory()) : "");
                 item.put("issues", issues);
                 critical.add(item);
             }
@@ -170,7 +170,7 @@ public class ReportsController {
         Map<String, BigDecimal> valueByCategory = allEquipments.stream()
             .filter(e -> e.getCategory() != null && e.getPurchaseValue() != null)
             .collect(Collectors.groupingBy(
-                e -> traducirCategoria(e.getCategory().name()),
+                e -> traducirCategoria(e.getCategory()),
                 Collectors.reducing(BigDecimal.ZERO, EquipmentEntity::getPurchaseValue, BigDecimal::add)
             ));
         report.put("valorPorCategoria", valueByCategory);
@@ -184,7 +184,7 @@ public class ReportsController {
             case "DESKTOP" -> "PC Escritorio";
             case "MONITOR" -> "Monitor";
             case "PRINTER" -> "Impresora";
-            case "NETWORK_DEVICE" -> "Red";
+            case "NETWORK", "NETWORK_DEVICE" -> "Red";
             case "SERVER" -> "Servidor";
             case "PERIPHERAL" -> "Periferico";
             case "STORAGE" -> "Almacenamiento";
@@ -345,7 +345,7 @@ public class ReportsController {
 
         // Ultimos 10 mantenimientos
         List<Map<String, Object>> recent = all.stream()
-            .sorted((a, b) -> b.getPerformedDate().compareTo(a.getPerformedDate()))
+            .sorted((a, b) -> { var dateA = a.getPerformedDate(); var dateB = b.getPerformedDate(); if (dateA == null && dateB == null) return 0; if (dateA == null) return 1; if (dateB == null) return -1; return dateB.compareTo(dateA); })
             .limit(10)
             .map(m -> {
                 Map<String, Object> item = new LinkedHashMap<>();

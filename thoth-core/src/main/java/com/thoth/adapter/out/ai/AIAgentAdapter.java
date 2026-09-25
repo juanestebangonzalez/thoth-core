@@ -12,9 +12,11 @@ public class AIAgentAdapter implements AIAgentPort {
 
     @Override
     public String analyzeMaintenance(Equipment equipment) {
-        long daysOwned = ChronoUnit.DAYS.between(equipment.getPurchaseDate(), LocalDate.now());
+        long daysOwned = equipment.getPurchaseDate() != null
+            ? ChronoUnit.DAYS.between(equipment.getPurchaseDate(), LocalDate.now())
+            : 0;
         double yearsOwned = daysOwned / 365.0;
-        String category = equipment.getCategory() != null ? traducirCategoria(equipment.getCategory().name()) : "DESCONOCIDO";
+        String category = equipment.getCategory() != null ? traducirCategoria(equipment.getCategory()) : "DESCONOCIDO";
         String status = equipment.getStatus() != null ? traducirEstado(equipment.getStatus().name()) : "DESCONOCIDO";
         Hardware hw = equipment.getHardware();
 
@@ -108,9 +110,11 @@ public class AIAgentAdapter implements AIAgentPort {
 
     @Override
     public String predictFailure(Equipment equipment) {
-        long daysOwned = ChronoUnit.DAYS.between(equipment.getPurchaseDate(), LocalDate.now());
+        long daysOwned = equipment.getPurchaseDate() != null
+            ? ChronoUnit.DAYS.between(equipment.getPurchaseDate(), LocalDate.now())
+            : 0;
         double yearsOwned = daysOwned / 365.0;
-        String category = equipment.getCategory() != null ? equipment.getCategory().name() : "UNKNOWN";
+        String category = equipment.getCategory() != null ? equipment.getCategory() : "UNKNOWN";
         Hardware hw = equipment.getHardware();
 
         double failureProbability;
@@ -195,7 +199,9 @@ public class AIAgentAdapter implements AIAgentPort {
 
     @Override
     public String recommendReplacement(Equipment equipment) {
-        long daysOwned = ChronoUnit.DAYS.between(equipment.getPurchaseDate(), LocalDate.now());
+        long daysOwned = equipment.getPurchaseDate() != null
+            ? ChronoUnit.DAYS.between(equipment.getPurchaseDate(), LocalDate.now())
+            : 0;
         double yearsOwned = daysOwned / 365.0;
         double originalValue = equipment.getPurchaseValue() != null ? equipment.getPurchaseValue().doubleValue() : 0;
         double currentValue = originalValue * Math.max(0.05, 1.0 - (yearsOwned * 0.20));

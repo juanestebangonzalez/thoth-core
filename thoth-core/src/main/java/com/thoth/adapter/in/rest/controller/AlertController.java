@@ -45,7 +45,7 @@ public class AlertController {
             Map<String, Object> alert = new HashMap<>();
             alert.put("equipmentId", eq.getEquipmentId());
             alert.put("name", eq.getName());
-            alert.put("category", eq.getCategory() != null ? eq.getCategory().name() : null);
+            alert.put("category", eq.getCategory());
             alert.put("serialNumber", eq.getSerialNumber());
             alert.put("nextMaintenanceDate", eq.getNextMaintenanceDate());
             alert.put("daysUntil", daysUntil);
@@ -83,7 +83,7 @@ public class AlertController {
                 Map<String, Object> alert = new HashMap<>();
                 alert.put("equipmentId", eq.getEquipmentId());
                 alert.put("name", eq.getName());
-                alert.put("category", eq.getCategory() != null ? eq.getCategory().name() : null);
+                alert.put("category", eq.getCategory());
                 alert.put("serialNumber", eq.getSerialNumber());
                 alert.put("issues", issues);
                 alert.put("severity", "CRITICAL");
