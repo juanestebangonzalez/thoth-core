@@ -1,5 +1,6 @@
 package com.thoth.adapter.in.rest.controller;
 
+import com.thoth.adapter.in.rest.dto.response.AuditLogDTO;
 import com.thoth.adapter.out.persistence.entity.AuditLogArchiveEntity;
 import com.thoth.adapter.out.persistence.entity.AuditLogEntity;
 import com.thoth.application.service.AuditArchiveService;
@@ -37,9 +38,10 @@ public class AuditController {
         int safePage = Math.max(page, 0);
         int safeSize = Math.max(1, Math.min(size, 100));
         Page<AuditLogEntity> result = auditService.getFiltered(module, user, action, safePage, safeSize);
+        Page<AuditLogDTO> dtoPage = result.map(this::toDTO);
 
         Map<String, Object> response = new HashMap<>();
-        response.put("content", result.getContent());
+        response.put("content", dtoPage.getContent());
         response.put("totalElements", result.getTotalElements());
         response.put("totalPages", result.getTotalPages());
         response.put("pageNumber", result.getNumber());
@@ -82,5 +84,19 @@ public class AuditController {
     @Operation(summary = "Estadisticas de auditoria (activos vs archivados)")
     public ResponseEntity<Map<String, Object>> getStats() {
         return ResponseEntity.ok(archiveService.getStats());
+    }
+
+    private AuditLogDTO toDTO(AuditLogEntity entity) {
+        return new AuditLogDTO(
+            entity.getId(),
+            entity.getAction(),
+            entity.getModule(),
+            entity.getEntityId(),
+            entity.getEntityName(),
+            entity.getDetails(),
+            entity.getPerformedBy(),
+            entity.getPerformedAt(),
+            entity.getIpAddress()
+        );
     }
 }

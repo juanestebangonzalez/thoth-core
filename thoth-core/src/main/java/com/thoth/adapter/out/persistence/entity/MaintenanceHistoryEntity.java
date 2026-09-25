@@ -64,4 +64,11 @@ public class MaintenanceHistoryEntity {
     @OneToMany(mappedBy = "maintenanceHistory", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
     @Builder.Default
     private List<PartReplacedEntity> partsReplaced = new ArrayList<>();
+
+    @PrePersist
+    protected void onCreate() {
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
+    }
 }

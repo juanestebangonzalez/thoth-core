@@ -134,4 +134,16 @@ public class EquipmentEntity {
 
     @Column(name = "next_maintenance_date")
     private LocalDate nextMaintenanceDate;
+
+    @PrePersist
+    protected void onCreate() {
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
 }

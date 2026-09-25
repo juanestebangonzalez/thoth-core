@@ -2,10 +2,8 @@ package com.thoth.adapter.in.rest.controller;
 
 import com.thoth.adapter.out.persistence.entity.EquipmentEntity;
 import com.thoth.adapter.out.persistence.entity.MaintenanceHistoryEntity;
-import com.thoth.adapter.out.persistence.entity.MaintenanceRecordEntity;
 import com.thoth.adapter.out.persistence.repository.EquipmentJpaRepository;
 import com.thoth.adapter.out.persistence.repository.MaintenanceHistoryJpaRepository;
-import com.thoth.adapter.out.persistence.repository.MaintenanceRecordJpaRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +28,6 @@ public class ReportsController {
 
     private final EquipmentJpaRepository equipmentRepository;
     private final MaintenanceHistoryJpaRepository maintenanceRepository;
-    private final MaintenanceRecordJpaRepository maintenanceRecordRepository;
 
     @GetMapping("/dashboard")
     @Operation(summary = "Dashboard completo de reportes para gerencia")
@@ -367,54 +364,80 @@ public class ReportsController {
         }
         report.put("bySede", bySede);
 
-        // ===== Planeados vs Cumplidos =====
-        List<MaintenanceRecordEntity> allRecords = maintenanceRecordRepository.findAll();
-        long totalPlanned = allRecords.stream().filter(r -> r.getScheduledDate() != null).count();
-        long totalCompleted = allRecords.stream().filter(r -> r.getCompletedDate() != null).count();
-        long totalPending = totalPlanned - totalCompleted;
-        long totalOverdue = allRecords.stream()
-            .filter(r -> r.getScheduledDate() != null && r.getCompletedDate() == null && r.getScheduledDate().isBefore(today))
-            .count();
-        double complianceRate = totalPlanned > 0 ? (totalCompleted * 100.0 / totalPlanned) : 0;
+        // ===== Planeados vs Cumplidos (basado en maintenance_history) =====
+        // "Programados" = mantenimientos cuyo nextScheduledDate está definido
+        // "Cumplidos" = mantenimientos que efectivamente se realizaron (todos los registros en maintenance_history)
+        // "Vencidos" = equipos cuyo último nextScheduledDate ya pasó sin un mantenimiento posterior
+
+        // Agrupar mantenimientos por equipo, ordenados por fecha
+        Map<UUID, List<MaintenanceHistoryEntity>> byEquipment = all.stream()
+            .collect(Collectors.groupingBy(MaintenanceHistoryEntity::getEquipmentId));
+
+        long totalScheduled = all.stream().filter(m -> m.getNextScheduledDate() != null).count();
+        long totalCompleted = all.size();
+
+        // Calcular vencidos: último mantenimiento de cada equipo tiene nextScheduledDate < hoy
+        long totalOverdue = 0;
+        long totalUpcoming = 0;
+        for (List<MaintenanceHistoryEntity> eqMaint : byEquipment.values()) {
+            eqMaint.sort((a, b) -> {
+                if (a.getPerformedDate() == null && b.getPerformedDate() == null) return 0;
+                if (a.getPerformedDate() == null) return 1;
+                if (b.getPerformedDate() == null) return -1;
+                return b.getPerformedDate().compareTo(a.getPerformedDate());
+            });
+            MaintenanceHistoryEntity latest = eqMaint.get(0);
+            if (latest.getNextScheduledDate() != null) {
+                if (latest.getNextScheduledDate().isBefore(today)) {
+                    totalOverdue++;
+                } else {
+                    totalUpcoming++;
+                }
+            }
+        }
+
+        double complianceRate = totalScheduled > 0 ? (totalCompleted * 100.0 / totalScheduled) : 0;
 
         Map<String, Object> plannedVsCompleted = new LinkedHashMap<>();
-        plannedVsCompleted.put("totalPlanned", totalPlanned);
+        plannedVsCompleted.put("totalScheduled", totalScheduled);
         plannedVsCompleted.put("totalCompleted", totalCompleted);
-        plannedVsCompleted.put("totalPending", totalPending);
-        plannedVsCompleted.put("totalOverdue", totalOverdue);
+        plannedVsCompleted.put("equiposConProximoMantenimiento", totalUpcoming);
+        plannedVsCompleted.put("equiposVencidos", totalOverdue);
         plannedVsCompleted.put("complianceRate", Math.round(complianceRate * 10.0) / 10.0);
 
-        // Planned vs completed by month (last 6 months)
+        // Cumplidos por mes (ultimos 6 meses)
         List<Map<String, Object>> pvcByMonth = new ArrayList<>();
         for (int i = 5; i >= 0; i--) {
             java.time.LocalDate monthDate = today.minusMonths(i).withDayOfMonth(1);
             java.time.LocalDate monthEnd = monthDate.plusMonths(1).minusDays(1);
             String monthKey = monthDate.format(fmt);
-            long planned = allRecords.stream()
-                .filter(r -> r.getScheduledDate() != null && !r.getScheduledDate().isBefore(monthDate) && !r.getScheduledDate().isAfter(monthEnd))
+            long completed = all.stream()
+                .filter(m -> m.getPerformedDate() != null
+                    && !m.getPerformedDate().toLocalDate().isBefore(monthDate)
+                    && !m.getPerformedDate().toLocalDate().isAfter(monthEnd))
                 .count();
-            long completed = allRecords.stream()
-                .filter(r -> r.getCompletedDate() != null && !r.getCompletedDate().isBefore(monthDate) && !r.getCompletedDate().isAfter(monthEnd))
+            long scheduled = all.stream()
+                .filter(m -> m.getNextScheduledDate() != null
+                    && !m.getNextScheduledDate().isBefore(monthDate)
+                    && !m.getNextScheduledDate().isAfter(monthEnd))
                 .count();
             Map<String, Object> monthData = new LinkedHashMap<>();
             monthData.put("month", monthKey);
             monthData.put("label", meses[monthDate.getMonthValue() - 1] + " " + monthDate.getYear());
-            monthData.put("planned", planned);
+            monthData.put("scheduled", scheduled);
             monthData.put("completed", completed);
             pvcByMonth.add(monthData);
         }
         plannedVsCompleted.put("byMonth", pvcByMonth);
 
-        // Planned vs completed by sede
+        // Cumplidos por sede
         Map<String, Map<String, Long>> pvcBySede = new LinkedHashMap<>();
-        for (MaintenanceRecordEntity r : allRecords) {
-            String sede = equipmentSedeMap.getOrDefault(r.getEquipmentId(), "Sin Sede");
-            pvcBySede.computeIfAbsent(sede, k -> new LinkedHashMap<>(Map.of("planned", 0L, "completed", 0L, "overdue", 0L)));
+        for (MaintenanceHistoryEntity m : all) {
+            String sede = equipmentSedeMap.getOrDefault(m.getEquipmentId(), "Sin Sede");
+            pvcBySede.computeIfAbsent(sede, k -> new LinkedHashMap<>(Map.of("scheduled", 0L, "completed", 0L)));
             Map<String, Long> counts = pvcBySede.get(sede);
-            if (r.getScheduledDate() != null) counts.put("planned", counts.get("planned") + 1);
-            if (r.getCompletedDate() != null) counts.put("completed", counts.get("completed") + 1);
-            if (r.getScheduledDate() != null && r.getCompletedDate() == null && r.getScheduledDate().isBefore(today))
-                counts.put("overdue", counts.get("overdue") + 1);
+            counts.put("completed", counts.get("completed") + 1);
+            if (m.getNextScheduledDate() != null) counts.put("scheduled", counts.get("scheduled") + 1);
         }
         plannedVsCompleted.put("bySede", pvcBySede);
 

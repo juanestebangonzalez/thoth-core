@@ -62,12 +62,20 @@ public class UserController {
 
     @PostMapping("/{id}/reset-password")
     @Operation(summary = "Resetear contrasena y generar una temporal")
-    public ResponseEntity<UserService.ResetPasswordResult> resetPassword(@PathVariable UUID id) {
+    public ResponseEntity<Map<String, Object>> resetPassword(@PathVariable UUID id, Principal principal) {
         UserService.ResetPasswordResult result = userService.resetPassword(id);
         if (!result.success()) {
-            return ResponseEntity.badRequest().body(result);
+            return ResponseEntity.badRequest().body(Map.of("message", result.message(), "success", false));
         }
-        return ResponseEntity.ok(result);
+        // DT-07: Se registra en auditoría la acción de reset.
+        auditService.log("RESET_PASSWORD", "USERS", id.toString(), null,
+            "Contrasena temporal generada. El usuario debera cambiarla al iniciar sesion.",
+            principal != null ? principal.getName() : "system");
+        return ResponseEntity.ok(Map.of(
+            "message", result.message(),
+            "success", true,
+            "newPassword", result.newPassword()
+        ));
     }
 
     @PatchMapping("/{id}/email")
