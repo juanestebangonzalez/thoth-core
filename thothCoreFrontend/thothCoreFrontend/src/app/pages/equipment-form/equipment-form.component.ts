@@ -387,11 +387,11 @@ export class EquipmentFormComponent implements OnInit {
     if (this.isEditMode()) {
       const updateData: any = {
         name: this.equipment.name,
-        inventoryNumber: this.equipment.inventoryNumber,
-        brand: this.equipment.brand,
-        model: this.equipment.model,
-        macAddress: this.equipment.macAddress,
-        assignedTo: this.equipment.assignedTo,
+        inventoryNumber: this.equipment.inventoryNumber || undefined,
+        brand: this.equipment.brand || undefined,
+        model: this.equipment.model || undefined,
+        macAddress: this.equipment.macAddress || undefined,
+        assignedTo: this.equipment.assignedTo || undefined,
         location: this.equipment.location,
         ownershipType: this.equipment.ownershipType,
         rentalInfo: cleanRental,
@@ -410,7 +410,19 @@ export class EquipmentFormComponent implements OnInit {
         }
       });
     } else {
-      const createData: any = { ...this.equipment, rentalInfo: cleanRental, hardware: cleanHardware };
+      const createData: any = {
+        ...this.equipment,
+        serialNumber: this.equipment.serialNumber || undefined,
+        brand: this.equipment.brand || undefined,
+        model: this.equipment.model || undefined,
+        macAddress: this.equipment.macAddress || undefined,
+        purchaseDate: this.equipment.purchaseDate || undefined,
+        purchaseValue: this.equipment.purchaseValue || undefined,
+        assignedTo: this.equipment.assignedTo || undefined,
+        inventoryNumber: this.equipment.inventoryNumber || undefined,
+        rentalInfo: cleanRental,
+        hardware: cleanHardware
+      };
       this.equipmentService.create(createData).subscribe({
         next: () => {
           this.snackBar.open('Equipo registrado exitosamente', 'OK', { duration: 3000 });
