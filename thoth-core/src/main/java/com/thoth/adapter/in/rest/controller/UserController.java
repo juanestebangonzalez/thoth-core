@@ -52,13 +52,13 @@ public class UserController {
 
     @PatchMapping("/{id}/toggle-enabled")
     @Operation(summary = "Activar o desactivar un usuario")
-    public ResponseEntity<UserService.UpdateResult> toggleEnabled(@PathVariable UUID id) {
+    public ResponseEntity<UserService.UpdateResult> toggleEnabled(@PathVariable UUID id, Principal principal) {
         UserService.UpdateResult result = userService.toggleEnabled(id);
         if (!result.success()) {
             return ResponseEntity.badRequest().body(result);
         }
         if (result.success()) {
-            auditService.log("TOGGLE_ENABLED", "USERS", id.toString(), null, result.message(), "system");
+            auditService.log("TOGGLE_ENABLED", "USERS", id.toString(), null, result.message(), principal != null ? principal.getName() : "system");
         }
         return ResponseEntity.ok(result);
     }
@@ -74,6 +74,9 @@ public class UserController {
         auditService.log("RESET_PASSWORD", "USERS", id.toString(), null,
             "Contrasena temporal generada. El usuario debera cambiarla al iniciar sesion.",
             principal != null ? principal.getName() : "system");
+        // DT-07: En un entorno hospitalario sin infraestructura de correo,
+        // la contraseña temporal se entrega al admin vía HTTPS para que
+        // la comunique al usuario. El canal es seguro (TLS en producción).
         return ResponseEntity.ok(Map.of(
             "message", result.message(),
             "success", true,
@@ -97,13 +100,13 @@ public class UserController {
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Eliminar usuario permanentemente")
-    public ResponseEntity<?> deleteUser(@PathVariable java.util.UUID id) {
+    public ResponseEntity<?> deleteUser(@PathVariable java.util.UUID id, Principal principal) {
         return userJpaRepository.findById(id).map(user -> {
             if (user.getUsername().equals("admin")) {
                 return ResponseEntity.badRequest().body(java.util.Map.of("message", "No se puede eliminar el usuario admin"));
             }
             userJpaRepository.delete(user);
-            auditService.log("DELETE_USER", "USERS", id.toString(), user.getUsername(), "Usuario eliminado", "admin");
+            auditService.log("DELETE_USER", "USERS", id.toString(), user.getUsername(), "Usuario eliminado", principal != null ? principal.getName() : "admin");
             return ResponseEntity.ok(java.util.Map.of("message", "Usuario eliminado: " + user.getUsername()));
         }).orElse(ResponseEntity.notFound().build());
     }

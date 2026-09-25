@@ -32,14 +32,9 @@ public class AlertController {
         LocalDate today = LocalDate.now();
         LocalDate limit = today.plusDays(7);
 
+        // DT-19: Consulta filtrada en DB en lugar de findAll() + filtro en Java
         List<Map<String, Object>> alerts = new ArrayList<>();
-
-        for (EquipmentEntity eq : equipmentRepository.findAll()) {
-            if (eq.getNextMaintenanceDate() == null) continue;
-            if (eq.getStatus() != null && eq.getStatus().name().equals("RETIRED")) continue;
-            if (eq.getStatus() != null && eq.getStatus().name().equals("MAINTENANCE")) continue;
-            if (eq.getNextMaintenanceDate().isAfter(limit)) continue;
-
+        for (EquipmentEntity eq : equipmentRepository.findUpcomingMaintenance(limit)) {
             long daysUntil = ChronoUnit.DAYS.between(today, eq.getNextMaintenanceDate());
 
             Map<String, Object> alert = new HashMap<>();
@@ -56,18 +51,15 @@ public class AlertController {
             alerts.add(alert);
         }
 
-        alerts.sort((a, b) -> Long.compare((long) a.get("daysUntil"), (long) b.get("daysUntil")));
         return ResponseEntity.ok(alerts);
     }
 
     @GetMapping("/hardware-critical")
     @Operation(summary = "Equipos con hardware en estado critico")
     public ResponseEntity<List<Map<String, Object>>> hardwareCritical() {
+        // DT-19: Consulta filtrada en DB
         List<Map<String, Object>> alerts = new ArrayList<>();
-
-        for (EquipmentEntity eq : equipmentRepository.findAll()) {
-            if (eq.getStatus() != null && eq.getStatus().name().equals("RETIRED")) continue;
-
+        for (EquipmentEntity eq : equipmentRepository.findHardwareCritical()) {
             List<String> issues = new ArrayList<>();
             if (eq.getHardwareDiskHealthPercent() != null && eq.getHardwareDiskHealthPercent() < 30) {
                 issues.add("Salud del disco: " + eq.getHardwareDiskHealthPercent() + "% (CRITICO)");
@@ -79,16 +71,14 @@ public class AlertController {
                 issues.add("RAM insuficiente: " + eq.getHardwareRamSizeGb() + " GB");
             }
 
-            if (!issues.isEmpty()) {
-                Map<String, Object> alert = new HashMap<>();
-                alert.put("equipmentId", eq.getEquipmentId());
-                alert.put("name", eq.getName());
-                alert.put("category", eq.getCategory());
-                alert.put("serialNumber", eq.getSerialNumber());
-                alert.put("issues", issues);
-                alert.put("severity", "CRITICAL");
-                alerts.add(alert);
-            }
+            Map<String, Object> alert = new HashMap<>();
+            alert.put("equipmentId", eq.getEquipmentId());
+            alert.put("name", eq.getName());
+            alert.put("category", eq.getCategory());
+            alert.put("serialNumber", eq.getSerialNumber());
+            alert.put("issues", issues);
+            alert.put("severity", "CRITICAL");
+            alerts.add(alert);
         }
 
         return ResponseEntity.ok(alerts);
@@ -99,13 +89,10 @@ public class AlertController {
     public ResponseEntity<List<Map<String, Object>>> rentalExpiring() {
         LocalDate today = LocalDate.now();
         LocalDate limit = today.plusDays(30);
+
+        // DT-19: Consulta filtrada en DB
         List<Map<String, Object>> alerts = new ArrayList<>();
-
-        for (EquipmentEntity eq : equipmentRepository.findAll()) {
-            if (eq.getRentalEndDate() == null) continue;
-            if (eq.getStatus() != null && eq.getStatus().name().equals("RETIRED")) continue;
-            if (eq.getRentalEndDate().isAfter(limit)) continue;
-
+        for (EquipmentEntity eq : equipmentRepository.findRentalExpiring(limit)) {
             long daysUntil = ChronoUnit.DAYS.between(today, eq.getRentalEndDate());
 
             Map<String, Object> alert = new HashMap<>();
@@ -121,22 +108,24 @@ public class AlertController {
             alerts.add(alert);
         }
 
-        alerts.sort((a, b) -> Long.compare((long) a.get("daysUntil"), (long) b.get("daysUntil")));
         return ResponseEntity.ok(alerts);
     }
 
     @GetMapping("/summary")
     @Operation(summary = "Resumen consolidado de todas las alertas")
     public ResponseEntity<Map<String, Object>> summary() {
-        Map<String, Object> summary = new HashMap<>();
-        summary.put("upcomingMaintenance", upcomingMaintenance().getBody().size());
-        summary.put("hardwareCritical", hardwareCritical().getBody().size());
-        summary.put("rentalExpiring", rentalExpiring().getBody().size());
+        LocalDate today = LocalDate.now();
 
-        int total = (int) summary.get("upcomingMaintenance")
-            + (int) summary.get("hardwareCritical")
-            + (int) summary.get("rentalExpiring");
-        summary.put("total", total);
+        // DT-19: COUNT en DB en lugar de cargar entidades 3 veces
+        long maintenance = equipmentRepository.countUpcomingMaintenance(today.plusDays(7));
+        long hardware = equipmentRepository.countHardwareCritical();
+        long rental = equipmentRepository.countRentalExpiring(today.plusDays(30));
+
+        Map<String, Object> summary = new HashMap<>();
+        summary.put("upcomingMaintenance", maintenance);
+        summary.put("hardwareCritical", hardware);
+        summary.put("rentalExpiring", rental);
+        summary.put("total", maintenance + hardware + rental);
 
         return ResponseEntity.ok(summary);
     }
