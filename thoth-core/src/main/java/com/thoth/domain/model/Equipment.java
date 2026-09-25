@@ -56,9 +56,7 @@ public class Equipment {
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("Equipment name cannot be blank");
         }
-        if (serialNumber == null || serialNumber.isBlank()) {
-            throw new IllegalArgumentException("Serial number cannot be blank");
-        }
+        // serialNumber is now optional
         if (purchaseValue != null && purchaseValue.signum() < 0) {
             throw new IllegalArgumentException("Purchase value cannot be negative");
         }
@@ -83,7 +81,7 @@ public class Equipment {
             .equipmentId(UUID.randomUUID())
             .name(name.trim())
             .category(category.trim().toUpperCase())
-            .serialNumber(serialNumber.trim())
+            .serialNumber(serialNumber != null ? serialNumber.trim() : null)
             .brand(brand != null ? brand.trim() : "")
             .model(model != null ? model.trim() : "")
             .macAddress(normalizedMac != null ? normalizedMac : "")

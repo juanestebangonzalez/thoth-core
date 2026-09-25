@@ -44,7 +44,7 @@ import { CreateEquipmentRequest } from '../../core/models/equipment.model';
           </mat-form-field>
           <mat-form-field appearance="outline">
             <mat-label>Numero de Serie</mat-label>
-            <input matInput [(ngModel)]="equipment.serialNumber" required [disabled]="isEditMode()">
+            <input matInput [(ngModel)]="equipment.serialNumber" [disabled]="isEditMode()">
           </mat-form-field>
           <mat-form-field appearance="outline">
             <mat-label>N Inventario Interno</mat-label>
@@ -52,7 +52,7 @@ import { CreateEquipmentRequest } from '../../core/models/equipment.model';
           </mat-form-field>
           <mat-form-field appearance="outline">
             <mat-label>Marca</mat-label>
-            <input matInput [(ngModel)]="equipment.brand" required>
+            <input matInput [(ngModel)]="equipment.brand">
           </mat-form-field>
           <mat-form-field appearance="outline">
             <mat-label>Modelo</mat-label>

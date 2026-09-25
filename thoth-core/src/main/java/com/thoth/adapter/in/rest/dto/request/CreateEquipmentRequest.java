@@ -25,11 +25,9 @@ public class CreateEquipmentRequest {
     @Size(max = 200)
     private String category;
 
-    @NotBlank(message = "Serial number is required")
     @Size(max = 200)
     private String serialNumber;
 
-    @NotBlank(message = "Brand is required")
     @Size(max = 200)
     private String brand;
 

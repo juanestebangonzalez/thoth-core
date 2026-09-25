@@ -65,15 +65,15 @@ export interface PageResponse<T> {
 export interface CreateEquipmentRequest {
   name: string;
   category: string;
-  serialNumber: string;
+  serialNumber?: string;
   inventoryNumber?: string;
-  brand: string;
-  model: string;
-  macAddress: string;
+  brand?: string;
+  model?: string;
+  macAddress?: string;
   location: Location;
-  purchaseDate: string;
-  purchaseValue: number;
-  assignedTo: string;
+  purchaseDate?: string;
+  purchaseValue?: number;
+  assignedTo?: string;
   ownershipType?: string;
   rentalInfo?: RentalInfo;
   hardware?: Hardware;

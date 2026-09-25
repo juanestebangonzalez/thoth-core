@@ -32,7 +32,7 @@ public class EquipmentEntity {
     @Column(nullable = false)
     private String category;
 
-    @Column(name = "serial_number", nullable = false, unique = true)
+    @Column(name = "serial_number", unique = true)
     private String serialNumber;
 
     @Column(name = "inventory_number")
