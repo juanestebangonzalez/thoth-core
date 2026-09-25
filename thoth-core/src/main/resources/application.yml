@@ -26,6 +26,16 @@ management:
   endpoint:
     health:
       show-details: when-authorized
+  # DT-31: info endpoint con datos de la app
+  info:
+    env:
+      enabled: true
+
+info:
+  app:
+    name: THOTH C.O.R.E.
+    description: Control, Ordenamiento, Registro de Equipos
+    version: '@project.version@'
 
 springdoc:
   api-docs:

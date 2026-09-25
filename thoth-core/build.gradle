@@ -9,6 +9,10 @@ plugins {
 group = 'com.thoth'
 version = '0.0.1-SNAPSHOT'
 
+springBoot {
+    buildInfo()
+}
+
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(21)

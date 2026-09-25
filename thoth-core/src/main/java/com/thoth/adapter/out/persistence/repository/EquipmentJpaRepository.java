@@ -75,4 +75,11 @@ public interface EquipmentJpaRepository extends JpaRepository<EquipmentEntity, U
            "AND e.rentalEndDate <= :limit " +
            "AND e.status <> com.thoth.domain.valueobject.EquipmentStatus.RETIRED")
     long countRentalExpiring(@Param("limit") LocalDate limit);
+
+    // DT-19/DT-32: Query para el job programado — equipos con mantenimiento vencido o del día
+    @Query("SELECT e FROM EquipmentEntity e WHERE e.nextMaintenanceDate IS NOT NULL " +
+           "AND e.nextMaintenanceDate <= :today " +
+           "AND e.status <> com.thoth.domain.valueobject.EquipmentStatus.RETIRED " +
+           "AND e.status <> com.thoth.domain.valueobject.EquipmentStatus.MAINTENANCE")
+    List<EquipmentEntity> findDueForMaintenance(@Param("today") LocalDate today);
 }

@@ -34,35 +34,40 @@ public class AuditArchiveService {
     @Transactional
     public void archiveOldLogs() {
         LocalDateTime sixMonthsAgo = LocalDateTime.now().minusMonths(6);
-        log.info("Iniciando archivado de audit logs anteriores a {}", sixMonthsAgo);
+        log.info("[ArchivoAuditoria] Iniciando archivado de logs anteriores a {}", sixMonthsAgo);
 
-        List<AuditLogEntity> oldLogs = auditLogRepository.findByPerformedAtBefore(sixMonthsAgo);
+        try {
+            List<AuditLogEntity> oldLogs = auditLogRepository.findByPerformedAtBefore(sixMonthsAgo);
 
-        if (oldLogs.isEmpty()) {
-            log.info("No hay registros para archivar");
-            return;
+            if (oldLogs.isEmpty()) {
+                log.info("[ArchivoAuditoria] No hay registros para archivar");
+                return;
+            }
+
+            LocalDateTime now = LocalDateTime.now();
+            List<AuditLogArchiveEntity> archived = oldLogs.stream()
+                    .map(entry -> AuditLogArchiveEntity.builder()
+                            .id(entry.getId())
+                            .action(entry.getAction())
+                            .module(entry.getModule())
+                            .entityId(entry.getEntityId())
+                            .entityName(entry.getEntityName())
+                            .details(entry.getDetails())
+                            .performedBy(entry.getPerformedBy())
+                            .performedAt(entry.getPerformedAt())
+                            .ipAddress(entry.getIpAddress())
+                            .archivedAt(now)
+                            .build())
+                    .toList();
+
+            archiveRepository.saveAll(archived);
+            auditLogRepository.deleteAll(oldLogs);
+
+            log.info("[ArchivoAuditoria] Archivados {} registros de auditoria", archived.size());
+        } catch (Exception e) {
+            // DT-32: Registrar fallo del job programado
+            log.error("[ArchivoAuditoria] ERROR en archivado programado: {}", e.getMessage(), e);
         }
-
-        LocalDateTime now = LocalDateTime.now();
-        List<AuditLogArchiveEntity> archived = oldLogs.stream()
-                .map(entry -> AuditLogArchiveEntity.builder()
-                        .id(entry.getId())
-                        .action(entry.getAction())
-                        .module(entry.getModule())
-                        .entityId(entry.getEntityId())
-                        .entityName(entry.getEntityName())
-                        .details(entry.getDetails())
-                        .performedBy(entry.getPerformedBy())
-                        .performedAt(entry.getPerformedAt())
-                        .ipAddress(entry.getIpAddress())
-                        .archivedAt(now)
-                        .build())
-                .toList();
-
-        archiveRepository.saveAll(archived);
-        auditLogRepository.deleteAll(oldLogs);
-
-        log.info("Archivados {} registros de auditoria", archived.size());
     }
 
     /**
