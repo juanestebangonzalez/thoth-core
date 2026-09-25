@@ -1,8 +1,8 @@
 @use "@angular/material" as mat;
- 
+
 /* Backup: importar Material Icons directamente en CSS compilado */
 @import url('https://fonts.googleapis.com/icon?family=Material+Icons');
- 
+
 html {
   color-scheme: dark;
   @include mat.theme((
@@ -14,20 +14,20 @@ html {
     density: 0,
   ));
 }
- 
+
 * { box-sizing: border-box; }
- 
+
 html, body {
   height: 100%; margin: 0; padding: 0;
   font-family: 'Roboto', 'Segoe UI', sans-serif;
 }
- 
+
 body {
   background: linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #334155 100%);
   min-height: 100vh;
   color: #E2E8F0;
 }
- 
+
 /* Scrollbar */
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: rgba(30, 41, 59, 0.5); }
@@ -37,7 +37,7 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(180deg, #60A5FA, #2563EB);
 }
- 
+
 /* Cards con glassmorphism */
 .mat-mdc-card {
   background: rgba(30, 41, 59, 0.7) !important;
@@ -46,38 +46,38 @@ body {
   color: #E2E8F0 !important;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
 }
- 
+
 /* Form Fields - INPUTS */
 .mat-mdc-form-field { width: 100%; }
- 
+
 .mat-mdc-form-field .mdc-text-field {
   background-color: rgba(15, 23, 42, 0.5) !important;
   border-radius: 8px;
 }
- 
+
 .mat-mdc-form-field .mdc-text-field--outlined .mdc-notched-outline__leading,
 .mat-mdc-form-field .mdc-text-field--outlined .mdc-notched-outline__notch,
 .mat-mdc-form-field .mdc-text-field--outlined .mdc-notched-outline__trailing {
   border-color: rgba(148, 163, 184, 0.3) !important;
 }
- 
+
 .mat-mdc-form-field.mat-focused .mdc-text-field--outlined .mdc-notched-outline__leading,
 .mat-mdc-form-field.mat-focused .mdc-text-field--outlined .mdc-notched-outline__notch,
 .mat-mdc-form-field.mat-focused .mdc-text-field--outlined .mdc-notched-outline__trailing {
   border-color: #60A5FA !important;
   border-width: 2px !important;
 }
- 
+
 /* Labels de inputs */
 .mat-mdc-form-field .mdc-floating-label,
 .mat-mdc-form-field .mdc-floating-label--float-above {
   color: #94A3B8 !important;
 }
- 
+
 .mat-mdc-form-field.mat-focused .mdc-floating-label {
   color: #60A5FA !important;
 }
- 
+
 /* Texto dentro de inputs */
 .mat-mdc-input-element,
 .mat-mdc-form-field input,
@@ -85,42 +85,42 @@ body {
   color: #F1F5F9 !important;
   caret-color: #60A5FA !important;
 }
- 
+
 /* Placeholder */
 .mat-mdc-input-element::placeholder {
   color: #64748B !important;
 }
- 
+
 /* Select dropdown */
 .mat-mdc-select-value,
 .mat-mdc-select-value-text {
   color: #F1F5F9 !important;
 }
- 
+
 .mat-mdc-select-arrow {
   color: #94A3B8 !important;
 }
- 
+
 /* Panel del select desplegado */
 .mat-mdc-select-panel {
   background: rgba(30, 41, 59, 0.95) !important;
   backdrop-filter: blur(20px);
   border: 1px solid rgba(148, 163, 184, 0.2) !important;
 }
- 
+
 .mat-mdc-option {
   color: #E2E8F0 !important;
 }
- 
+
 .mat-mdc-option:hover:not(.mdc-list-item--disabled) {
   background: rgba(59, 130, 246, 0.15) !important;
 }
- 
+
 .mat-mdc-option.mdc-list-item--selected {
   background: rgba(59, 130, 246, 0.25) !important;
   color: #93C5FD !important;
 }
- 
+
 /* Prefixes / Suffixes en inputs (como el $) */
 .mat-mdc-form-field .mat-mdc-form-field-icon-prefix,
 .mat-mdc-form-field .mat-mdc-form-field-icon-suffix,
@@ -128,61 +128,61 @@ body {
 .mat-mdc-form-field .mat-mdc-form-field-text-suffix {
   color: #94A3B8 !important;
 }
- 
+
 /* Date picker */
 input[type="date"] {
   color: #F1F5F9 !important;
   color-scheme: dark;
 }
- 
+
 /* Hint text */
 .mat-mdc-form-field-hint,
 .mat-mdc-form-field-error {
   color: #94A3B8 !important;
 }
- 
+
 .mat-mdc-form-field-error {
   color: #F87171 !important;
 }
- 
+
 /* Tabs (login) */
 .mat-mdc-tab-header {
   border-bottom: 1px solid rgba(148, 163, 184, 0.1);
 }
- 
+
 .mat-mdc-tab .mdc-tab__text-label {
   color: #94A3B8 !important;
 }
- 
+
 .mat-mdc-tab--active .mdc-tab__text-label {
   color: #60A5FA !important;
 }
- 
+
 .mdc-tab-indicator__content--underline {
   border-color: #60A5FA !important;
 }
- 
+
 /* Botones */
 .mat-mdc-raised-button.mat-primary {
   background-color: #3B82F6 !important;
   color: white !important;
 }
- 
+
 .mat-mdc-raised-button.mat-warn {
   background-color: #EF4444 !important;
   color: white !important;
 }
- 
+
 .mat-mdc-raised-button.mat-accent {
   background-color: #8B5CF6 !important;
   color: white !important;
 }
- 
+
 .mat-mdc-outlined-button {
   color: #E2E8F0 !important;
   border-color: rgba(148, 163, 184, 0.3) !important;
 }
- 
+
 /* Tablas */
 .mat-mdc-table {
   background: rgba(30, 41, 59, 0.6) !important;
@@ -190,11 +190,11 @@ input[type="date"] {
   border-radius: 12px;
   overflow: hidden;
 }
- 
+
 .mat-mdc-header-row {
   background: rgba(15, 23, 42, 0.8) !important;
 }
- 
+
 .mat-mdc-header-cell {
   color: #94A3B8 !important;
   font-weight: 600 !important;
@@ -202,17 +202,17 @@ input[type="date"] {
   font-size: 12px !important;
   letter-spacing: 1px;
 }
- 
+
 .mat-mdc-cell {
   color: #E2E8F0 !important;
   border-bottom-color: rgba(148, 163, 184, 0.1) !important;
 }
- 
+
 .mat-mdc-row:hover {
   background: rgba(59, 130, 246, 0.1) !important;
   cursor: pointer;
 }
- 
+
 /* Toolbar navbar */
 .mat-toolbar {
   background: rgba(15, 23, 42, 0.9) !important;
@@ -220,75 +220,75 @@ input[type="date"] {
   border-bottom: 1px solid rgba(148, 163, 184, 0.1);
   color: #E2E8F0 !important;
 }
- 
+
 .mat-toolbar .mat-mdc-button {
   color: #E2E8F0 !important;
 }
- 
+
 /* Menu desplegable (user menu) */
 .mat-mdc-menu-panel {
   background: rgba(30, 41, 59, 0.95) !important;
   backdrop-filter: blur(20px);
   border: 1px solid rgba(148, 163, 184, 0.2) !important;
 }
- 
+
 .mat-mdc-menu-item {
   color: #E2E8F0 !important;
 }
- 
+
 .mat-mdc-menu-item .mat-icon {
   color: #94A3B8 !important;
 }
- 
+
 .mat-mdc-menu-item:hover {
   background: rgba(59, 130, 246, 0.15) !important;
 }
- 
+
 /* Divider */
 .mat-divider {
   border-top-color: rgba(148, 163, 184, 0.15) !important;
 }
- 
+
 /* Snackbar */
 .mat-mdc-snack-bar-container {
   --mdc-snackbar-container-color: #1E293B;
   --mat-snack-bar-button-color: #60A5FA;
   --mdc-snackbar-supporting-text-color: #E2E8F0;
 }
- 
+
 /* Textos generales dentro de cards */
 .mat-mdc-card h2,
 .mat-mdc-card h3,
 .mat-mdc-card h4 {
   color: #F1F5F9 !important;
 }
- 
+
 .mat-mdc-card p {
   color: #CBD5E1 !important;
 }
- 
+
 /* Icon buttons */
 .mat-mdc-icon-button {
   color: #94A3B8 !important;
 }
- 
+
 .mat-mdc-icon-button:hover {
   color: #E2E8F0 !important;
   background: rgba(59, 130, 246, 0.1) !important;
 }
- 
+
 /* Spinner */
 .mat-mdc-progress-spinner circle {
   stroke: #60A5FA !important;
 }
- 
+
 /* Resultados IA - fondo oscuro y texto legible */
 pre.result {
   background: rgba(15, 23, 42, 0.7) !important;
   color: #E2E8F0 !important;
   border-left: 4px solid #60A5FA !important;
 }
- 
+
 /* Links dentro de tablas */
 .mat-mdc-cell a.link,
 .mat-mdc-table a {
@@ -296,13 +296,13 @@ pre.result {
   font-weight: 600;
   text-decoration: none;
 }
- 
+
 .mat-mdc-cell a.link:hover,
 .mat-mdc-table a:hover {
   color: #93C5FD !important;
   text-decoration: underline;
 }
- 
+
 /* ============ MATERIAL ICONS FIX ============ */
 /* Declaración inline del @font-face como respaldo */
 @font-face {
@@ -312,7 +312,7 @@ pre.result {
   font-display: block;
   src: url(https://fonts.gstatic.com/s/materialicons/v145/flUhRq6tzZclQEJ-Vdg-IuiaDsNZ.ttf) format('truetype');
 }
- 
+
 /* Clase .material-icons con TODAS las propiedades necesarias para ligaduras */
 .material-icons {
   font-family: 'Material Icons' !important;
@@ -332,7 +332,7 @@ pre.result {
   text-rendering: optimizeLegibility;
   -moz-osx-font-smoothing: grayscale;
 }
- 
+
 /* Override global para mat-icon — fuerza Material Icons con ligaduras */
 .mat-icon,
 mat-icon,
@@ -357,7 +357,7 @@ mat-icon,
   -moz-osx-font-smoothing: grayscale;
   overflow: hidden !important;
 }
- 
+
 /* ============ RESPONSIVE TABLES ============ */
 @media (max-width: 900px) {
   .mat-mdc-table {
@@ -371,7 +371,7 @@ mat-icon,
     font-size: 13px !important;
   }
 }
- 
+
 /* ============ RESPONSIVE MOBILE ============ */
 @media (max-width: 768px) {
   .mat-toolbar {
@@ -391,14 +391,14 @@ mat-icon,
   .mat-toolbar .user-info {
     display: none !important;
   }
- 
+
   .dashboard { padding: 16px !important; }
   .welcome-section { flex-direction: column; gap: 16px; text-align: center; padding: 20px !important; }
   .welcome-content h1 { font-size: 22px !important; }
   .actions-grid { grid-template-columns: 1fr !important; }
   .stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
   .stat-number { font-size: 28px !important; }
- 
+
   .detail-page, .form-page, .history-page, .scanner-page, .user-page, .maintenance-page, .equipment-list, .ai-page {
     padding: 12px !important;
   }
@@ -413,12 +413,12 @@ mat-icon,
   .alert-name { font-size: 13px !important; }
   .qr-container { flex-direction: column; align-items: center; text-align: center; }
 }
- 
+
 @media (max-width: 480px) {
   .stats-grid { grid-template-columns: 1fr !important; }
   .welcome-badge { display: none; }
 }
- 
+
 /* Fix overlay z-index para mat-select, mat-dialog, etc */
 .cdk-overlay-container {
   z-index: 2000 !important;
