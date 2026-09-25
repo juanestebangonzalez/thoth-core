@@ -104,11 +104,11 @@ jacocoTestReport {
 jacocoTestCoverageVerification {
     dependsOn jacocoTestReport
     violationRules {
-        // Baseline floor at the current measured instruction coverage (~36%),
-        // not an aspirational target - raise this as coverage genuinely improves.
+        // Raised from 35% to 45% after DT-23 through DT-27 test additions.
+        // Raise again as coverage genuinely improves toward the 60% target.
         rule {
             limit {
-                minimum = 0.35
+                minimum = 0.45
             }
         }
     }
