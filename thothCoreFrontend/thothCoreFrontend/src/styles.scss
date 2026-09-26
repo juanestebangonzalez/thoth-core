@@ -92,10 +92,15 @@ body {
 }
 
 /* Auto-uppercase: todos los inputs de texto se muestran en mayuscula */
-.mat-mdc-input-element:not([type="date"]):not([type="number"]):not([type="email"]):not([type="password"]),
-.mat-mdc-form-field input:not([type="date"]):not([type="number"]):not([type="email"]):not([type="password"]),
-.mat-mdc-form-field textarea {
+.mat-mdc-input-element:not([type="date"]):not([type="number"]):not([type="email"]):not([type="password"]):not(.no-uppercase),
+.mat-mdc-form-field:not(.no-uppercase) input:not([type="date"]):not([type="number"]):not([type="email"]):not([type="password"]),
+.mat-mdc-form-field textarea:not(.no-uppercase) {
   text-transform: uppercase !important;
+}
+/* Asegurar que campos de password nunca sean uppercase, incluyendo cuando se muestran como text */
+.password-field input,
+.mat-mdc-form-field.password-field .mat-mdc-input-element {
+  text-transform: none !important;
 }
 .mat-mdc-input-element::placeholder,
 .mat-mdc-form-field input::placeholder,

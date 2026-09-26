@@ -74,6 +74,9 @@ import { AlertService } from '../../core/services/alert.service';
         <a class="nav-item" routerLink="/maintenance-report" routerLinkActive="active" (click)="closeMobile()">
           <mat-icon>assessment</mat-icon><span>Inf. Mantenim.</span>
         </a>
+        <a class="nav-item" routerLink="/parts-report" routerLinkActive="active" (click)="closeMobile()">
+          <mat-icon>construction</mat-icon><span>Rep. Partes</span>
+        </a>
         }
         @if (auth.canView("QR")) {
         <a class="nav-item" routerLink="/scan" routerLinkActive="active" (click)="closeMobile()">

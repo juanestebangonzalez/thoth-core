@@ -32,7 +32,7 @@ import { IdleService } from '../../core/services/idle.service';
                 <p>Tu contrasena fue reseteada por un administrador. Por favor, establece una nueva contrasena para continuar.</p>
               </div>
             </div>
-            <mat-form-field appearance="outline" class="full-width">
+            <mat-form-field appearance="outline" class="full-width password-field">
               <mat-label>Nueva Contrasena</mat-label>
               <input matInput [(ngModel)]="newPassword" [type]="hideNew ? 'password' : 'text'">
               <mat-icon matPrefix>lock</mat-icon>
@@ -40,7 +40,7 @@ import { IdleService } from '../../core/services/idle.service';
                 <mat-icon>{{ hideNew ? 'visibility_off' : 'visibility' }}</mat-icon>
               </button>
             </mat-form-field>
-            <mat-form-field appearance="outline" class="full-width">
+            <mat-form-field appearance="outline" class="full-width password-field">
               <mat-label>Confirmar Nueva Contrasena</mat-label>
               <input matInput [(ngModel)]="confirmPassword" (keyup.enter)="submitChangePassword()" [type]="hideNew ? 'password' : 'text'">
               <mat-icon matPrefix>lock</mat-icon>
@@ -97,7 +97,7 @@ import { IdleService } from '../../core/services/idle.service';
                   <input matInput [(ngModel)]="loginData.username" placeholder="admin">
                   <mat-icon matPrefix>person</mat-icon>
                 </mat-form-field>
-                <mat-form-field appearance="outline" class="full-width">
+                <mat-form-field appearance="outline" class="full-width password-field">
                   <mat-label>Contrasena</mat-label>
                   <input matInput [(ngModel)]="loginData.password" (keyup.enter)="login()" [type]="hidePassword ? 'password' : 'text'">
                   <mat-icon matPrefix>lock</mat-icon>
@@ -125,7 +125,7 @@ import { IdleService } from '../../core/services/idle.service';
                   <input matInput [(ngModel)]="registerData.email" type="email">
                   <mat-icon matPrefix>email</mat-icon>
                 </mat-form-field>
-                <mat-form-field appearance="outline" class="full-width">
+                <mat-form-field appearance="outline" class="full-width password-field">
                   <mat-label>Contrasena</mat-label>
                   <input matInput [(ngModel)]="registerData.password" (keyup.enter)="register()" type="password" minlength="10">
             <mat-hint>Minimo 10 caracteres, con al menos una letra y un numero</mat-hint>

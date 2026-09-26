@@ -18,6 +18,7 @@ export const routes: Routes = [
   { path: 'alerts', loadComponent: () => import('./pages/alerts/alerts.component').then(m => m.AlertsComponent), canActivate: [permissionGuard('ALERTS')] },
   { path: 'calendar', loadComponent: () => import('./pages/calendar/calendar.component').then(m => m.CalendarComponent), canActivate: [permissionGuard('CALENDAR')] },
   { path: 'maintenance-report', loadComponent: () => import('./pages/maintenance-report/maintenance-report.component').then(m => m.MaintenanceReportComponent), canActivate: [permissionGuard('REPORTS')] },
+  { path: 'parts-report', loadComponent: () => import('./pages/parts-report/parts-report.component').then(m => m.PartsReportComponent), canActivate: [permissionGuard('REPORTS')] },
   { path: 'reports', loadComponent: () => import('./pages/reports/reports.component').then(m => m.ReportsComponent), canActivate: [permissionGuard('REPORTS')] },
   { path: 'scan', loadComponent: () => import('./pages/qr-scanner/qr-scanner.component').then(m => m.QrScannerComponent), canActivate: [permissionGuard('QR')] },
   { path: 'audit-log', loadComponent: () => import('./pages/audit-log/audit-log.component').then(m => m.AuditLogComponent), canActivate: [authGuard] },

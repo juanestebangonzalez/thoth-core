@@ -12,6 +12,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { SignaturePadComponent } from '../../shared/signature-pad/signature-pad.component';
 import { MaintenanceService } from '../../core/services/maintenance.service';
 import { TechnicianService, Technician } from '../../core/services/technician.service';
+import { MaintenanceCategoryService, MaintenanceCategory } from '../../core/services/maintenance-category.service';
 import { CreateMaintenanceRequest, PartReplaced } from '../../core/models/maintenance.model';
 
 @Component({
@@ -36,14 +37,16 @@ import { CreateMaintenanceRequest, PartReplaced } from '../../core/models/mainte
           <mat-form-field appearance="outline">
             <mat-label>Tipo de Mantenimiento</mat-label>
             <mat-select [(ngModel)]="maintenance.maintenanceType" required>
-              <mat-option value="PREVENTIVE">
-                <mat-icon style="color:#3B82F6;">shield</mat-icon>
-                Preventivo
-              </mat-option>
-              <mat-option value="CORRECTIVE">
-                <mat-icon style="color:#F59E0B;">build</mat-icon>
-                Correctivo
-              </mat-option>
+              @for (cat of maintenanceCategories; track cat.id) {
+                <mat-option [value]="cat.name.toUpperCase()">
+                  <mat-icon style="color:#3B82F6;">handyman</mat-icon>
+                  {{ cat.name }}
+                </mat-option>
+              }
+              @if (maintenanceCategories.length === 0) {
+                <mat-option value="PREVENTIVE">Preventivo</mat-option>
+                <mat-option value="CORRECTIVE">Correctivo</mat-option>
+              }
             </mat-select>
           </mat-form-field>
 
@@ -199,6 +202,7 @@ export class AddMaintenanceDialogComponent implements OnInit {
     partsReplaced: []
   };
   technicians: Technician[] = [];
+  maintenanceCategories: MaintenanceCategory[] = [];
   selectedTechnicianId = '';
   parts: PartReplaced[] = [];
   loading = false;
@@ -210,6 +214,7 @@ export class AddMaintenanceDialogComponent implements OnInit {
     private dialogRef: MatDialogRef<AddMaintenanceDialogComponent>,
     private maintenanceService: MaintenanceService,
     private technicianService: TechnicianService,
+    private categoryService: MaintenanceCategoryService,
     private snackBar: MatSnackBar
   ) {
     this.maintenance.equipmentId = data.equipmentId;
@@ -219,6 +224,10 @@ export class AddMaintenanceDialogComponent implements OnInit {
     this.technicianService.list().subscribe({
       next: (techs) => this.technicians = techs,
       error: () => this.technicians = []
+    });
+    this.categoryService.listActive().subscribe({
+      next: (cats) => this.maintenanceCategories = cats,
+      error: () => this.maintenanceCategories = []
     });
   }
 
