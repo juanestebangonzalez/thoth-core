@@ -99,6 +99,8 @@ body {
 }
 /* Asegurar que campos de password nunca sean uppercase, incluyendo cuando se muestran como text */
 .password-field input,
+.password-field .mat-mdc-input-element,
+.mat-mdc-form-field.password-field input:not([type="date"]):not([type="number"]):not([type="email"]),
 .mat-mdc-form-field.password-field .mat-mdc-input-element {
   text-transform: none !important;
 }
