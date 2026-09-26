@@ -2,6 +2,8 @@ package com.thoth.adapter.in.rest.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.thoth.application.service.UserService;
+import com.thoth.adapter.out.persistence.repository.UserJpaRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -23,8 +25,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 class SedeControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+    @Autowired private MockMvc mockMvc;
+    @Autowired private UserJpaRepository userRepository;
+    @Autowired private UserService userService;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -41,8 +44,13 @@ class SedeControllerTest {
             .andExpect(status().isCreated())
             .andReturn().getResponse().getContentAsString();
 
-        // First registered user gets ADMIN role automatically
-        return objectMapper.readTree(body).get("token").asText();
+        String token = objectMapper.readTree(body).get("token").asText();
+
+        // Promote to ADMIN since new users get USER role
+        var user = userRepository.findByUsername(username).orElseThrow();
+        userService.changeRole(user.getId(), "ADMIN");
+
+        return token;
     }
 
     @Test

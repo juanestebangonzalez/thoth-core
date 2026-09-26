@@ -24,5 +24,5 @@ logging:
 
 security:
   rate-limit:
-    max-attempts: 9999
-    window-ms: 1000
+    max-attempts: 50
+    window-ms: 60000

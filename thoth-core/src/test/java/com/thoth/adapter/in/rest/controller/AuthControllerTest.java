@@ -123,7 +123,7 @@ class AuthControllerTest {
             """;
 
         org.springframework.test.web.servlet.ResultActions lastResult = null;
-        for (int i = 0; i < 20; i++) {
+        for (int i = 0; i < 55; i++) {
             lastResult = mockMvc.perform(post("/api/v1/auth/login")
                 .header("X-Forwarded-For", fakeIp)
                 .contentType(MediaType.APPLICATION_JSON)
