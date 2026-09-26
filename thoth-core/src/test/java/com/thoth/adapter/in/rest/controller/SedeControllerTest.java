@@ -33,24 +33,32 @@ class SedeControllerTest {
 
     private String registerAdminAndGetToken() throws Exception {
         String username = "sede_admin_" + UUID.randomUUID().toString().substring(0, 8);
-        String payload = """
+        String regPayload = """
             {"username":"%s","password":"Sup3rSecret!","email":"%s@example.com"}
             """.formatted(username, username);
 
-        String body = mockMvc.perform(post("/api/v1/auth/register")
+        mockMvc.perform(post("/api/v1/auth/register")
                 .header("X-Forwarded-For", randomFakeIp())
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(payload))
-            .andExpect(status().isCreated())
-            .andReturn().getResponse().getContentAsString();
-
-        String token = objectMapper.readTree(body).get("token").asText();
+                .content(regPayload))
+            .andExpect(status().isCreated());
 
         // Promote to ADMIN since new users get USER role
         var user = userRepository.findByUsername(username).orElseThrow();
         userService.changeRole(user.getId(), "ADMIN");
 
-        return token;
+        // Re-login to get a new JWT that includes the ADMIN role
+        String loginPayload = """
+            {"username":"%s","password":"Sup3rSecret!"}
+            """.formatted(username);
+        String loginBody = mockMvc.perform(post("/api/v1/auth/login")
+                .header("X-Forwarded-For", randomFakeIp())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(loginPayload))
+            .andExpect(status().isOk())
+            .andReturn().getResponse().getContentAsString();
+
+        return objectMapper.readTree(loginBody).get("token").asText();
     }
 
     @Test
