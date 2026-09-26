@@ -13,7 +13,7 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PartReplacedRequest {
-    @NotBlank(message = "Part name is required")
+    @NotBlank(message = "El nombre de la parte es obligatorio")
     private String partName;
 
     private String partSerialNumber;

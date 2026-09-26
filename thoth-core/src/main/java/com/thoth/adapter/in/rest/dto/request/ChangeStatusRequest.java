@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ChangeStatusRequest {
-    @NotBlank(message = "Status is required")
+    @NotBlank(message = "El estado es obligatorio")
     @Size(max = 50)
     private String status;
     

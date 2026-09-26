@@ -17,19 +17,19 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CreateMaintenanceHistoryRequest {
-    @NotNull(message = "Equipment ID is required")
+    @NotNull(message = "El ID del equipo es obligatorio")
     private UUID equipmentId;
 
-    @NotBlank(message = "Maintenance type is required (PREVENTIVE or CORRECTIVE)")
+    @NotBlank(message = "El tipo de mantenimiento es obligatorio")
     private String maintenanceType;
 
-    @NotBlank(message = "Technician name is required")
+    @NotBlank(message = "El nombre del tecnico es obligatorio")
     @Size(max = 100)
     private String technicianName;
 
     private UUID technicianId;
 
-    @NotBlank(message = "Reason is required")
+    @NotBlank(message = "El motivo es obligatorio")
     @Size(max = 2000)
     private String reason;
 

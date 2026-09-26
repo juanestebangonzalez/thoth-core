@@ -13,7 +13,7 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CompleteMaintenanceRequest {
-    @NotNull(message = "Completion date is required")
+    @NotNull(message = "La fecha de finalizacion es obligatoria")
     private LocalDate completionDate;
     
     @NotBlank(message = "Notes are required")

@@ -10,7 +10,6 @@ import com.thoth.application.usecase.impl.CreateMaintenanceHistoryUseCaseImpl;
 import com.thoth.domain.model.Equipment;
 import com.thoth.domain.model.MaintenanceHistory;
 import com.thoth.domain.valueobject.EquipmentStatus;
-import com.thoth.domain.valueobject.MaintenanceType;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -137,14 +136,32 @@ class CreateMaintenanceHistoryUseCaseImplTest {
     }
 
     @Test
-    void create_invalidMaintenanceType_throwsException() {
+    void create_blankMaintenanceType_throwsException() {
         CreateMaintenanceHistoryCommand cmd = new CreateMaintenanceHistoryCommand(
-                equipmentId, "INVALID_TYPE", "Tech", null,
+                equipmentId, "  ", "Tech", null,
                 "Motivo", null, null, null, "admin", null, null);
 
         assertThatThrownBy(() -> useCase.create(cmd))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Invalid maintenance type");
+                .hasMessageContaining("tipo de mantenimiento");
+    }
+
+    @Test
+    void create_dynamicMaintenanceType_acceptsAnyNonBlankType() {
+        CreateMaintenanceHistoryCommand cmd = new CreateMaintenanceHistoryCommand(
+                equipmentId, "LOGICO", "Tech", null,
+                "Motivo", null, null, null, "admin", null, null);
+
+        when(equipmentRepository.findById(equipmentId)).thenReturn(Optional.empty());
+        when(repository.save(any(MaintenanceHistory.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(mapper.toDTO(any())).thenReturn(mock(MaintenanceHistoryDTO.class));
+
+        MaintenanceHistoryDTO result = useCase.create(cmd);
+        assertThat(result).isNotNull();
+
+        ArgumentCaptor<MaintenanceHistory> captor = ArgumentCaptor.forClass(MaintenanceHistory.class);
+        verify(repository).save(captor.capture());
+        assertThat(captor.getValue().getMaintenanceType()).isEqualTo("LOGICO");
     }
 
     @Test

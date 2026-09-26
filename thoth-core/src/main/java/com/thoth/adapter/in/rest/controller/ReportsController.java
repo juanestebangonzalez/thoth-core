@@ -149,10 +149,10 @@ public class ReportsController {
             LocalDate monthStart = LocalDate.now().minusMonths(i).withDayOfMonth(1);
             String monthKey = monthStart.format(fmt);
             long preventive = allMaintenance.stream()
-                .filter(m -> m.getPerformedDate() != null && m.getPerformedDate().toLocalDate().format(fmt).equals(monthKey) && m.getMaintenanceType().name().equals("PREVENTIVE"))
+                .filter(m -> m.getPerformedDate() != null && m.getPerformedDate().toLocalDate().format(fmt).equals(monthKey) && "PREVENTIVE".equals(m.getMaintenanceType()))
                 .count();
             long corrective = allMaintenance.stream()
-                .filter(m -> m.getPerformedDate() != null && m.getPerformedDate().toLocalDate().format(fmt).equals(monthKey) && m.getMaintenanceType().name().equals("CORRECTIVE"))
+                .filter(m -> m.getPerformedDate() != null && m.getPerformedDate().toLocalDate().format(fmt).equals(monthKey) && "CORRECTIVE".equals(m.getMaintenanceType()))
                 .count();
             Map<String, Object> month = new LinkedHashMap<>();
             month.put("month", monthKey);
@@ -234,7 +234,7 @@ public class ReportsController {
                     partInfo.put("maintenanceDate", m.getPerformedDate());
                     partInfo.put("equipmentId", m.getEquipmentId());
                     partInfo.put("technicianName", m.getTechnicianName());
-                    partInfo.put("maintenanceType", m.getMaintenanceType() != null ? m.getMaintenanceType().name() : null);
+                    partInfo.put("maintenanceType", m.getMaintenanceType());
                     allParts.add(partInfo);
                 }
             }
@@ -297,8 +297,8 @@ public class ReportsController {
         for (int i = 7; i >= 0; i--) {
             java.time.LocalDate weekStart = today.minusWeeks(i).with(java.time.DayOfWeek.MONDAY);
             java.time.LocalDate weekEnd = weekStart.plusDays(6);
-            long prev = all.stream().filter(m -> m.getPerformedDate() != null && !m.getPerformedDate().toLocalDate().isBefore(weekStart) && !m.getPerformedDate().toLocalDate().isAfter(weekEnd) && m.getMaintenanceType().name().equals("PREVENTIVE")).count();
-            long corr = all.stream().filter(m -> m.getPerformedDate() != null && !m.getPerformedDate().toLocalDate().isBefore(weekStart) && !m.getPerformedDate().toLocalDate().isAfter(weekEnd) && m.getMaintenanceType().name().equals("CORRECTIVE")).count();
+            long prev = all.stream().filter(m -> m.getPerformedDate() != null && !m.getPerformedDate().toLocalDate().isBefore(weekStart) && !m.getPerformedDate().toLocalDate().isAfter(weekEnd) && "PREVENTIVE".equals(m.getMaintenanceType())).count();
+            long corr = all.stream().filter(m -> m.getPerformedDate() != null && !m.getPerformedDate().toLocalDate().isBefore(weekStart) && !m.getPerformedDate().toLocalDate().isAfter(weekEnd) && "CORRECTIVE".equals(m.getMaintenanceType())).count();
             Map<String, Object> week = new LinkedHashMap<>();
             week.put("weekStart", weekStart.toString());
             week.put("weekEnd", weekEnd.toString());
@@ -317,8 +317,8 @@ public class ReportsController {
         for (int i = 11; i >= 0; i--) {
             java.time.LocalDate monthDate = today.minusMonths(i).withDayOfMonth(1);
             String monthKey = monthDate.format(fmt);
-            long prev = all.stream().filter(m -> m.getPerformedDate() != null && m.getPerformedDate().toLocalDate().format(fmt).equals(monthKey) && m.getMaintenanceType().name().equals("PREVENTIVE")).count();
-            long corr = all.stream().filter(m -> m.getPerformedDate() != null && m.getPerformedDate().toLocalDate().format(fmt).equals(monthKey) && m.getMaintenanceType().name().equals("CORRECTIVE")).count();
+            long prev = all.stream().filter(m -> m.getPerformedDate() != null && m.getPerformedDate().toLocalDate().format(fmt).equals(monthKey) && "PREVENTIVE".equals(m.getMaintenanceType())).count();
+            long corr = all.stream().filter(m -> m.getPerformedDate() != null && m.getPerformedDate().toLocalDate().format(fmt).equals(monthKey) && "CORRECTIVE".equals(m.getMaintenanceType())).count();
             Map<String, Object> month = new LinkedHashMap<>();
             month.put("month", monthKey);
             month.put("label", meses[monthDate.getMonthValue() - 1] + " " + monthDate.getYear());
@@ -330,8 +330,8 @@ public class ReportsController {
         report.put("byMonth", byMonth);
 
         // Totales
-        long totalPrev = all.stream().filter(m -> m.getMaintenanceType().name().equals("PREVENTIVE")).count();
-        long totalCorr = all.stream().filter(m -> m.getMaintenanceType().name().equals("CORRECTIVE")).count();
+        long totalPrev = all.stream().filter(m -> "PREVENTIVE".equals(m.getMaintenanceType())).count();
+        long totalCorr = all.stream().filter(m -> "CORRECTIVE".equals(m.getMaintenanceType())).count();
         report.put("totalPreventive", totalPrev);
         report.put("totalCorrective", totalCorr);
         report.put("total", totalPrev + totalCorr);
@@ -356,7 +356,7 @@ public class ReportsController {
             bySede.computeIfAbsent(sede, k -> new LinkedHashMap<>(Map.of("preventive", 0L, "corrective", 0L, "total", 0L)));
             Map<String, Long> counts = bySede.get(sede);
             counts.put("total", counts.get("total") + 1);
-            if (m.getMaintenanceType().name().equals("PREVENTIVE")) {
+            if ("PREVENTIVE".equals(m.getMaintenanceType())) {
                 counts.put("preventive", counts.get("preventive") + 1);
             } else {
                 counts.put("corrective", counts.get("corrective") + 1);
@@ -451,7 +451,7 @@ public class ReportsController {
                 Map<String, Object> item = new LinkedHashMap<>();
                 item.put("id", m.getMaintenanceId());
                 item.put("equipmentId", m.getEquipmentId());
-                item.put("type", m.getMaintenanceType().name());
+                item.put("type", m.getMaintenanceType());
                 item.put("date", m.getPerformedDate());
                 item.put("technician", m.getTechnicianName());
                 item.put("reason", m.getReason());

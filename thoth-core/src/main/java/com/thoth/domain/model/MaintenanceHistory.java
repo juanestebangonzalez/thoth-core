@@ -1,6 +1,5 @@
 package com.thoth.domain.model;
 
-import com.thoth.domain.valueobject.MaintenanceType;
 import com.thoth.domain.valueobject.PartReplaced;
 import lombok.*;
 import java.time.LocalDate;
@@ -18,7 +17,7 @@ public class MaintenanceHistory {
 
     private UUID maintenanceId;
     private UUID equipmentId;
-    private MaintenanceType maintenanceType;
+    private String maintenanceType;
     private LocalDateTime performedDate;
     private String technicianName;
     private UUID technicianId;
@@ -34,7 +33,7 @@ public class MaintenanceHistory {
 
     public static MaintenanceHistory create(
             UUID equipmentId,
-            MaintenanceType type,
+            String type,
             String technicianName,
             String reason,
             String description,
@@ -42,15 +41,15 @@ public class MaintenanceHistory {
             List<PartReplaced> parts,
             String createdBy) {
 
-        if (equipmentId == null) throw new IllegalArgumentException("Equipment ID cannot be null");
-        if (type == null) throw new IllegalArgumentException("Maintenance type cannot be null");
-        if (technicianName == null || technicianName.isBlank()) throw new IllegalArgumentException("Technician name is required");
-        if (reason == null || reason.isBlank()) throw new IllegalArgumentException("Reason is required");
+        if (equipmentId == null) throw new IllegalArgumentException("El ID del equipo es obligatorio");
+        if (type == null || type.isBlank()) throw new IllegalArgumentException("El tipo de mantenimiento es obligatorio");
+        if (technicianName == null || technicianName.isBlank()) throw new IllegalArgumentException("El nombre del tecnico es obligatorio");
+        if (reason == null || reason.isBlank()) throw new IllegalArgumentException("El motivo es obligatorio");
 
         return MaintenanceHistory.builder()
             .maintenanceId(UUID.randomUUID())
             .equipmentId(equipmentId)
-            .maintenanceType(type)
+            .maintenanceType(type.toUpperCase().trim())
             .performedDate(LocalDateTime.now())
             .technicianName(technicianName.trim())
             .reason(reason.trim())

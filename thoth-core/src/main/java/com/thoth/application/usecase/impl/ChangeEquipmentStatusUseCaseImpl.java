@@ -51,7 +51,7 @@ public class ChangeEquipmentStatusUseCaseImpl implements ChangeEquipmentStatusUs
         try {
             return EquipmentStatus.valueOf(status.toUpperCase());
         } catch (IllegalArgumentException e) {
-            throw new InvalidStatusTransitionException("Invalid status: " + status);
+            throw new InvalidStatusTransitionException("Estado invalido: " + status);
         }
     }
 }

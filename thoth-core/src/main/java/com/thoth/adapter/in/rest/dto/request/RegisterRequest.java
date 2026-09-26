@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class RegisterRequest {
-    @NotBlank(message = "Username is required")
+    @NotBlank(message = "El nombre de usuario es obligatorio")
     @Size(min = 3, max = 50)
     private String username;
 
@@ -23,13 +23,13 @@ public class RegisterRequest {
      * El minimo anterior era de 6 caracteres sin ninguna exigencia de
      * composicion, lo que admitia contrasenas como "123456".
      */
-    @NotBlank(message = "Password is required")
+    @NotBlank(message = "La contrasena es obligatoria")
     @Size(min = PasswordPolicy.MIN_LENGTH, max = PasswordPolicy.MAX_LENGTH,
           message = PasswordPolicy.LENGTH_MESSAGE)
     @Pattern(regexp = PasswordPolicy.PATTERN, message = PasswordPolicy.PATTERN_MESSAGE)
     private String password;
 
-    @NotBlank(message = "Email is required")
-    @Email(message = "Invalid email format")
+    @NotBlank(message = "El correo electronico es obligatorio")
+    @Email(message = "Formato de correo electronico invalido")
     private String email;
 }

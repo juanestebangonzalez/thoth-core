@@ -61,12 +61,12 @@ public class AuthService {
     public AuthResult login(LoginCommand command) {
         Optional<UserEntity> optUser = userRepository.findByUsername(command.username());
         if (optUser.isEmpty()) {
-            return new AuthResult(null, null, null, "Invalid username or password", false, false);
+            return new AuthResult(null, null, null, "Usuario o contrasena invalidos", false, false);
         }
 
         UserEntity user = optUser.get();
         if (!passwordEncoder.matches(command.password(), user.getPassword())) {
-            return new AuthResult(null, null, null, "Invalid username or password", false, false);
+            return new AuthResult(null, null, null, "Usuario o contrasena invalidos", false, false);
         }
         if (!user.isEnabled()) {
             return new AuthResult(null, null, null, "La cuenta esta desactivada", false, false);

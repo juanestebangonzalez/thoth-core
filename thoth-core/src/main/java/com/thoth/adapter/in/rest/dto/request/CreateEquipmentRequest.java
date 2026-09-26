@@ -17,11 +17,11 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CreateEquipmentRequest {
-    @NotBlank(message = "Equipment name is required")
+    @NotBlank(message = "El nombre del equipo es obligatorio")
     @Size(max = 200)
     private String name;
 
-    @NotBlank(message = "Category is required")
+    @NotBlank(message = "La categoria es obligatoria")
     @Size(max = 200)
     private String category;
 
@@ -35,7 +35,7 @@ public class CreateEquipmentRequest {
     private String inventoryNumber;
     private String macAddress;
 
-    @NotNull(message = "Location is required")
+    @NotNull(message = "La ubicacion es obligatoria")
     @Valid
     private LocationRequest location;
 

@@ -64,7 +64,7 @@ public class Equipment {
             throw new IllegalArgumentException("Purchase date cannot be in the future");
         }
         if (location == null) {
-            throw new IllegalArgumentException("Location cannot be null");
+            throw new IllegalArgumentException("La ubicacion es obligatoria");
         }
         if (category == null || category.isBlank()) {
             throw new IllegalArgumentException("Category cannot be blank");
@@ -72,7 +72,7 @@ public class Equipment {
 
         String normalizedMac = normalizeMacAddress(macAddress);
         if (normalizedMac != null && !isValidMacAddress(normalizedMac)) {
-            throw new IllegalArgumentException("Invalid MAC address format. Use 12 hex characters (e.g., AABBCCDDEEFF or AA:BB:CC:DD:EE:FF)");
+            throw new IllegalArgumentException("Formato de direccion MAC invalido. Use 12 caracteres hexadecimales (ej: AABBCCDDEEFF o AA:BB:CC:DD:EE:FF)");
         }
 
         LocalDateTime now = LocalDateTime.now();
@@ -169,7 +169,7 @@ public class Equipment {
 
     public void updateLocation(Location newLocation) {
         if (newLocation == null) {
-            throw new IllegalArgumentException("Location cannot be null");
+            throw new IllegalArgumentException("La ubicacion es obligatoria");
         }
         this.location = newLocation;
         this.updatedAt = LocalDateTime.now();

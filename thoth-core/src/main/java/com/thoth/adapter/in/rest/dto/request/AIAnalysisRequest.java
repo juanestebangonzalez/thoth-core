@@ -12,6 +12,6 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AIAnalysisRequest {
-    @NotNull(message = "Equipment ID is required")
+    @NotNull(message = "El ID del equipo es obligatorio")
     private UUID equipmentId;
 }

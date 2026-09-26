@@ -9,7 +9,6 @@ import com.thoth.application.port.output.MaintenanceHistoryRepositoryPort;
 import com.thoth.application.service.MaintenanceSchedulerService;
 import com.thoth.domain.model.Equipment;
 import com.thoth.domain.model.MaintenanceHistory;
-import com.thoth.domain.valueobject.MaintenanceType;
 import com.thoth.domain.valueobject.PartReplaced;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -30,12 +29,11 @@ public class CreateMaintenanceHistoryUseCaseImpl implements CreateMaintenanceHis
 
     @Override
     public MaintenanceHistoryDTO create(CreateMaintenanceHistoryCommand command) {
-        MaintenanceType type;
-        try {
-            type = MaintenanceType.valueOf(command.maintenanceType().toUpperCase());
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Invalid maintenance type. Use PREVENTIVE or CORRECTIVE");
+        String type = command.maintenanceType();
+        if (type == null || type.isBlank()) {
+            throw new IllegalArgumentException("El tipo de mantenimiento es obligatorio");
         }
+        type = type.toUpperCase().trim();
 
         List<PartReplaced> parts = new ArrayList<>();
         if (command.partsReplaced() != null) {
@@ -77,7 +75,7 @@ public class CreateMaintenanceHistoryUseCaseImpl implements CreateMaintenanceHis
             Equipment equipment = equipmentRepository.findById(command.equipmentId()).orElse(null);
             if (equipment != null) {
                 LocalDate nextDate = command.nextScheduledDate();
-                if (nextDate == null && type == MaintenanceType.PREVENTIVE) {
+                if (nextDate == null && "PREVENTIVE".equals(type)) {
                     nextDate = schedulerService.calculateNextMaintenanceDate(equipment.getCategory(), LocalDate.now());
                 }
                 if (nextDate != null) {

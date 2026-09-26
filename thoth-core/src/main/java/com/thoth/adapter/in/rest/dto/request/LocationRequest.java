@@ -11,12 +11,12 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class LocationRequest {
-    @NotBlank(message = "Building is required")
+    @NotBlank(message = "El edificio es obligatorio")
     private String building;
     
-    @NotBlank(message = "Floor is required")
+    @NotBlank(message = "El piso es obligatorio")
     private String floor;
     
-    @NotBlank(message = "Office is required")
+    @NotBlank(message = "La oficina es obligatoria")
     private String office;
 }

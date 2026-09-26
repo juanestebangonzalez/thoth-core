@@ -4,10 +4,10 @@ import java.util.UUID;
 
 public class EquipmentNotFoundException extends BusinessException {
     public EquipmentNotFoundException(UUID equipmentId) {
-        super("Equipment not found: " + equipmentId);
+        super("Equipo no encontrado: " + equipmentId);
     }
     
     public EquipmentNotFoundException(String serialNumber) {
-        super("Equipment not found: " + serialNumber);
+        super("Equipo no encontrado: " + serialNumber);
     }
 }

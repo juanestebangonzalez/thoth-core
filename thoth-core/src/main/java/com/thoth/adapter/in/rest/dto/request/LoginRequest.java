@@ -12,11 +12,11 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class LoginRequest {
-    @NotBlank(message = "Username is required")
+    @NotBlank(message = "El nombre de usuario es obligatorio")
     @Size(max = 100)
     private String username;
 
-    @NotBlank(message = "Password is required")
+    @NotBlank(message = "La contrasena es obligatoria")
     @Size(max = 100)
     private String password;
 }

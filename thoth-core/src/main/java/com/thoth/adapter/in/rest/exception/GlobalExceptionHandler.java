@@ -118,7 +118,7 @@ public class GlobalExceptionHandler {
             .stream()
             .map(e -> e.getField() + ": " + e.getDefaultMessage())
             .reduce((a, b) -> a + ", " + b)
-            .orElse("Validation error");
+            .orElse("Error de validacion");
         ApiErrorResponse error = ApiErrorResponse.builder()
             .status(HttpStatus.BAD_REQUEST.value())
             .error("VALIDATION_ERROR")

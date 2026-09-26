@@ -29,7 +29,7 @@ public class GetMaintenanceHistoryUseCaseImpl implements GetMaintenanceHistoryUs
     @Override
     public MaintenanceHistoryDTO getById(UUID maintenanceId) {
         MaintenanceHistory maintenance = repository.findById(maintenanceId)
-            .orElseThrow(() -> new IllegalArgumentException("Maintenance history not found: " + maintenanceId));
+            .orElseThrow(() -> new IllegalArgumentException("Historial de mantenimiento no encontrado: " + maintenanceId));
         return mapper.toDTO(maintenance);
     }
 

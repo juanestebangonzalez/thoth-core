@@ -18,7 +18,7 @@ public class MaintenanceHistoryDtoMapper {
         return new MaintenanceHistoryDTO(
             h.getMaintenanceId(),
             h.getEquipmentId(),
-            h.getMaintenanceType() != null ? h.getMaintenanceType().name() : null,
+            h.getMaintenanceType(),
             h.getPerformedDate(),
             h.getTechnicianName(),
             h.getTechnicianId(),

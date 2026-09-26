@@ -1,6 +1,5 @@
 package com.thoth.adapter.out.persistence.entity;
 
-import com.thoth.domain.valueobject.MaintenanceType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -27,9 +26,8 @@ public class MaintenanceHistoryEntity {
     @Column(name = "equipment_id", nullable = false)
     private UUID equipmentId;
 
-    @Enumerated(EnumType.STRING)
     @Column(name = "maintenance_type", nullable = false)
-    private MaintenanceType maintenanceType;
+    private String maintenanceType;
 
     @Column(name = "performed_date", nullable = false)
     private LocalDateTime performedDate;
