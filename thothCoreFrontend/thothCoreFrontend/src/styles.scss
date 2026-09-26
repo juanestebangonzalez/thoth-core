@@ -93,7 +93,7 @@ body {
 
 /* Auto-uppercase: todos los inputs de texto se muestran en mayuscula */
 .mat-mdc-input-element:not([type="date"]):not([type="number"]):not([type="email"]):not([type="password"]):not(.no-uppercase),
-.mat-mdc-form-field:not(.no-uppercase) input:not([type="date"]):not([type="number"]):not([type="email"]):not([type="password"]),
+.mat-mdc-form-field:not(.no-uppercase):not(.password-field) input:not([type="date"]):not([type="number"]):not([type="email"]):not([type="password"]),
 .mat-mdc-form-field textarea:not(.no-uppercase) {
   text-transform: uppercase !important;
 }
