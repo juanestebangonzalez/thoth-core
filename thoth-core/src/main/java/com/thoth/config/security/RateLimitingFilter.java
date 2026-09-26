@@ -76,7 +76,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
 
         response.setIntHeader("X-RateLimit-Limit", maxAttempts);
         response.setIntHeader("X-RateLimit-Remaining", remaining);
-        response.setLongHeader("X-RateLimit-Reset", windowResetAt / 1000);
+        response.setHeader("X-RateLimit-Reset", String.valueOf(windowResetAt / 1000));
 
         if (attempts > maxAttempts) {
             response.setStatus(429);
