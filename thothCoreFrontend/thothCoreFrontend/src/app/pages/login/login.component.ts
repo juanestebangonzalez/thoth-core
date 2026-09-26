@@ -72,12 +72,12 @@ import { IdleService } from '../../core/services/idle.service';
                 Volver al Inicio de Sesion
               </button>
             } @else {
-              <mat-form-field appearance="outline" class="full-width">
+              <mat-form-field appearance="outline" class="full-width no-uppercase">
                 <mat-label>Usuario</mat-label>
                 <input matInput [(ngModel)]="forgotData.username">
                 <mat-icon matPrefix>person</mat-icon>
               </mat-form-field>
-              <mat-form-field appearance="outline" class="full-width">
+              <mat-form-field appearance="outline" class="full-width no-uppercase">
                 <mat-label>Correo Electronico</mat-label>
                 <input matInput [(ngModel)]="forgotData.email" type="email" (keyup.enter)="submitForgotPassword()">
                 <mat-icon matPrefix>email</mat-icon>
@@ -92,7 +92,7 @@ import { IdleService } from '../../core/services/idle.service';
           <mat-tab-group>
             <mat-tab label="Iniciar Sesion">
               <div class="form-container">
-                <mat-form-field appearance="outline" class="full-width">
+                <mat-form-field appearance="outline" class="full-width no-uppercase">
                   <mat-label>Usuario</mat-label>
                   <input matInput [(ngModel)]="loginData.username" placeholder="admin">
                   <mat-icon matPrefix>person</mat-icon>
@@ -115,12 +115,12 @@ import { IdleService } from '../../core/services/idle.service';
             </mat-tab>
             <mat-tab label="Registrarse">
               <div class="form-container">
-                <mat-form-field appearance="outline" class="full-width">
+                <mat-form-field appearance="outline" class="full-width no-uppercase">
                   <mat-label>Usuario</mat-label>
                   <input matInput [(ngModel)]="registerData.username">
                   <mat-icon matPrefix>person</mat-icon>
                 </mat-form-field>
-                <mat-form-field appearance="outline" class="full-width">
+                <mat-form-field appearance="outline" class="full-width no-uppercase">
                   <mat-label>Email</mat-label>
                   <input matInput [(ngModel)]="registerData.email" type="email">
                   <mat-icon matPrefix>email</mat-icon>
