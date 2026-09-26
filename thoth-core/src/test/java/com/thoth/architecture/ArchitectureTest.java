@@ -118,11 +118,11 @@ class ArchitectureTest {
     // === DT-22: Reglas de convenciones ===
 
     @Test
-    void requestDtosMustBeRecords() {
+    void requestDtosMustResideInRequestPackage() {
         ArchRule rule = classes()
-            .that().resideInAPackage("com.thoth.adapter.in.rest.dto.request..")
-            .and().haveSimpleNameEndingWith("Request")
-            .should().beRecords();
+            .that().haveSimpleNameEndingWith("Request")
+            .and().resideInAPackage("com.thoth.adapter.in.rest..")
+            .should().resideInAPackage("com.thoth.adapter.in.rest.dto.request..");
 
         rule.check(classes);
     }

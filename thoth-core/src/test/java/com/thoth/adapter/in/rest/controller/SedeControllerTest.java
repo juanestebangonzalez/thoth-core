@@ -1,5 +1,7 @@
 package com.thoth.adapter.in.rest.controller;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -9,17 +11,13 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Architecture regression: SedeController used to return SedeEntity (JPA)
- * directly. It must now return SedeDTO - this exercises the mapping
- * end-to-end (not just that it compiles).
- */
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
@@ -28,14 +26,35 @@ class SedeControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    private String registerAdminAndGetToken() throws Exception {
+        String username = "sede_admin_" + UUID.randomUUID().toString().substring(0, 8);
+        String payload = """
+            {"username":"%s","password":"Sup3rSecret!","email":"%s@example.com"}
+            """.formatted(username, username);
+
+        String body = mockMvc.perform(post("/api/v1/auth/register")
+                .header("X-Forwarded-For", randomFakeIp())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(payload))
+            .andExpect(status().isCreated())
+            .andReturn().getResponse().getContentAsString();
+
+        // First registered user gets ADMIN role automatically
+        return objectMapper.readTree(body).get("token").asText();
+    }
+
     @Test
     void create_thenListActive_returnsDtoWithExpectedFields() throws Exception {
+        String token = registerAdminAndGetToken();
         String name = "Sede Central " + UUID.randomUUID();
         String payload = """
             {"name":"%s","address":"Calle 1","phone":"555-1234"}
             """.formatted(name);
 
         mockMvc.perform(post("/api/v1/sedes")
+                .header("Authorization", "Bearer " + token)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(payload))
             .andExpect(status().isOk())
@@ -45,14 +64,23 @@ class SedeControllerTest {
             .andExpect(jsonPath("$.phone").value("555-1234"))
             .andExpect(jsonPath("$.active").value(true));
 
-        mockMvc.perform(get("/api/v1/sedes"))
+        mockMvc.perform(get("/api/v1/sedes")
+                .header("Authorization", "Bearer " + token))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$[?(@.name == '" + name + "')]").exists());
     }
 
     @Test
     void getById_withUnknownId_returns404() throws Exception {
-        mockMvc.perform(get("/api/v1/sedes/" + UUID.randomUUID()))
+        String token = registerAdminAndGetToken();
+
+        mockMvc.perform(get("/api/v1/sedes/" + UUID.randomUUID())
+                .header("Authorization", "Bearer " + token))
             .andExpect(status().isNotFound());
+    }
+
+    private String randomFakeIp() {
+        ThreadLocalRandom r = ThreadLocalRandom.current();
+        return "10." + r.nextInt(1, 255) + "." + r.nextInt(1, 255) + "." + r.nextInt(1, 255);
     }
 }
