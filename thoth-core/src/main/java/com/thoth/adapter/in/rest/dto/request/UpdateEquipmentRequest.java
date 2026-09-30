@@ -16,6 +16,7 @@ public class UpdateEquipmentRequest {
     private String model;
     private String inventoryNumber;
     private String macAddress;
+    private String macAddress2;
     private String assignedTo;
     @Valid
     private LocationRequest location;

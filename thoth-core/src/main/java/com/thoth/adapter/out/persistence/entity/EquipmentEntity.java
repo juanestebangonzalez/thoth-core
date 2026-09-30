@@ -41,6 +41,9 @@ public class EquipmentEntity {
     @Column(name = "mac_address")
     private String macAddress;
 
+    @Column(name = "mac_address_2")
+    private String macAddress2;
+
     private String brand;
     private String model;
 

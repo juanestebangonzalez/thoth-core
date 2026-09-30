@@ -5,6 +5,7 @@ export interface Equipment {
   serialNumber: string;
   inventoryNumber?: string;
   macAddress: string;
+  macAddress2?: string;
   brand: string;
   model: string;
   status: string;
@@ -70,7 +71,8 @@ export interface CreateEquipmentRequest {
   brand?: string;
   model?: string;
   macAddress?: string;
-  location: Location;
+  macAddress2?: string;
+  location?: Location;
   purchaseDate?: string;
   purchaseValue?: number;
   assignedTo?: string;

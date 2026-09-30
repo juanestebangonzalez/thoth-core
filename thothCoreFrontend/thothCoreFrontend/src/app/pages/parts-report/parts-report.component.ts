@@ -71,6 +71,8 @@ import { environment } from '../../../environments/environment';
                 <thead>
                   <tr>
                     <th>Fecha</th>
+                    <th>Sede</th>
+                    <th>N Inventario</th>
                     <th>Parte</th>
                     <th>Serial</th>
                     <th>Motivo</th>
@@ -84,13 +86,15 @@ import { environment } from '../../../environments/environment';
                   @for (p of data().ultimasPartes; track $index) {
                     <tr>
                       <td>{{ p.maintenanceDate | date:'dd/MM/yyyy' }}</td>
+                      <td>{{ p.sede || '-' }}</td>
+                      <td [title]="p.equipmentName || ''">{{ p.inventoryNumber || '-' }}</td>
                       <td><strong>{{ p.partName }}</strong></td>
                       <td>{{ p.partSerialNumber || '-' }}</td>
                       <td class="reason-cell">{{ p.reason || '-' }}</td>
                       <td>{{ p.technicianName || '-' }}</td>
                       <td>
-                        <span class="badge" [class.prev]="p.maintenanceType === 'PREVENTIVE'" [class.corr]="p.maintenanceType === 'CORRECTIVE'">
-                          {{ p.maintenanceType === 'PREVENTIVE' ? 'PREV' : p.maintenanceType === 'CORRECTIVE' ? 'CORR' : (p.maintenanceType || '-') }}
+                        <span class="badge" [class.prev]="p.maintenanceType === 'PREVENTIVE' || p.maintenanceType === 'PREVENTIVO'" [class.corr]="p.maintenanceType === 'CORRECTIVE' || p.maintenanceType === 'CORRECTIVO'">
+                          {{ (p.maintenanceType === 'PREVENTIVE' || p.maintenanceType === 'PREVENTIVO') ? 'PREV' : (p.maintenanceType === 'CORRECTIVE' || p.maintenanceType === 'CORRECTIVO') ? 'CORR' : (p.maintenanceType || '-') }}
                         </span>
                       </td>
                       <td>{{ p.purchaseDate ? (p.purchaseDate | date:'dd/MM/yyyy') : '-' }}</td>

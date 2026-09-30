@@ -34,13 +34,14 @@ public class UpdateEquipmentUseCaseImpl implements UpdateEquipmentUseCase {
             equipment.reassignTo(command.assignedTo().toUpperCase());
         }
 
-        if (command.building() != null && command.floor() != null && command.office() != null) {
+        if (command.building() != null || command.office() != null) {
             Location newLocation = Location.of(toUpper(command.building()), toUpper(command.floor()), toUpper(command.office()), "");
             equipment.updateLocation(newLocation);
         }
 
         if (command.brand() != null) equipment.setBrand(toUpper(command.brand()));
         if (command.model() != null) equipment.setModel(toUpper(command.model()));
+        if (command.macAddress2() != null) equipment.updateMacAddress2(command.macAddress2());
         if (command.macAddress() != null) equipment.setMacAddress(command.macAddress() != null ? command.macAddress().toUpperCase().trim() : null);
 
         if (command.ownershipType() != null && !command.ownershipType().isBlank()) {

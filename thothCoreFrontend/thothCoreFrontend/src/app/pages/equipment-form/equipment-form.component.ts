@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, signal, computed, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -12,6 +12,7 @@ import { MatRadioModule } from '@angular/material/radio';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatDividerModule } from '@angular/material/divider';
 import { SedeService, Sede } from '../../core/services/sede.service';
+import { AreaService, Area } from '../../core/services/area.service';
 import { DeviceTypeService, DeviceType } from '../../core/services/device-type.service';
 import { EquipmentService } from '../../core/services/equipment.service';
 import { CreateEquipmentRequest } from '../../core/models/equipment.model';
@@ -31,11 +32,11 @@ import { CreateEquipmentRequest } from '../../core/models/equipment.model';
         <h3 class="section-title"><mat-icon>info</mat-icon> Informacion Basica</h3>
         <div class="form-grid">
           <mat-form-field appearance="outline">
-            <mat-label>Nombre</mat-label>
+            <mat-label>Nombre *</mat-label>
             <input matInput [(ngModel)]="equipment.name" required>
           </mat-form-field>
           <mat-form-field appearance="outline">
-            <mat-label>Categoria</mat-label>
+            <mat-label>Categoria *</mat-label>
             <mat-select [(ngModel)]="equipment.category" required [disabled]="isEditMode()">
               @for (dt of deviceTypes(); track dt.id) {
                 <mat-option [value]="dt.name">{{ dt.name }}</mat-option>
@@ -58,11 +59,24 @@ import { CreateEquipmentRequest } from '../../core/models/equipment.model';
             <mat-label>Modelo</mat-label>
             <input matInput [(ngModel)]="equipment.model">
           </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>MAC Address</mat-label>
-            <input matInput [(ngModel)]="equipment.macAddress" (input)="formatMac($event)" placeholder="AABBCCDDEEFF o AA:BB:CC:DD:EE:FF" maxlength="17">
-            <mat-hint>Se formatea automaticamente</mat-hint>
-          </mat-form-field>
+          @if (isLaptop()) {
+            <mat-form-field appearance="outline">
+              <mat-label>MAC Ethernet</mat-label>
+              <input matInput [(ngModel)]="equipment.macAddress" (input)="formatMac($event, 'macAddress')" placeholder="AABBCCDDEEFF o AA:BB:CC:DD:EE:FF" maxlength="17">
+              <mat-hint>Se formatea automaticamente</mat-hint>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>MAC WiFi</mat-label>
+              <input matInput [(ngModel)]="equipment.macAddress2" (input)="formatMac($event, 'macAddress2')" placeholder="AABBCCDDEEFF o AA:BB:CC:DD:EE:FF" maxlength="17">
+              <mat-hint>Se formatea automaticamente</mat-hint>
+            </mat-form-field>
+          } @else {
+            <mat-form-field appearance="outline">
+              <mat-label>MAC Address</mat-label>
+              <input matInput [(ngModel)]="equipment.macAddress" (input)="formatMac($event, 'macAddress')" placeholder="AABBCCDDEEFF o AA:BB:CC:DD:EE:FF" maxlength="17">
+              <mat-hint>Se formatea automaticamente</mat-hint>
+            </mat-form-field>
+          }
           <mat-form-field appearance="outline">
             <mat-label>Fecha de Compra</mat-label>
             <input matInput [(ngModel)]="equipment.purchaseDate" type="date" [disabled]="isEditMode()">
@@ -84,19 +98,21 @@ import { CreateEquipmentRequest } from '../../core/models/equipment.model';
         <div class="form-grid">
           <mat-form-field appearance="outline">
             <mat-label>Sede</mat-label>
-            <mat-select [(ngModel)]="selectedSede" (ngModelChange)="equipment.location.building = $event" required name="sede">
-              @for (sede of sedes(); track sede.id) {
-                <mat-option [value]="sede.name">{{ sede.name }}</mat-option>
+            <mat-select [(ngModel)]="selectedSede" name="sede">
+              <mat-option value="">-- Sin asignar --</mat-option>
+              @for (sede of sedeOptions(); track sede) {
+                <mat-option [value]="sede">{{ sede }}</mat-option>
               }
             </mat-select>
           </mat-form-field>
           <mat-form-field appearance="outline">
-            <mat-label>Piso</mat-label>
-            <input matInput [(ngModel)]="equipment.location.floor" required>
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>Oficina</mat-label>
-            <input matInput [(ngModel)]="equipment.location.office" required>
+            <mat-label>Area</mat-label>
+            <mat-select [(ngModel)]="selectedArea" name="area">
+              <mat-option value="">-- Sin asignar --</mat-option>
+              @for (area of areaOptions(); track area) {
+                <mat-option [value]="area">{{ area }}</mat-option>
+              }
+            </mat-select>
           </mat-form-field>
         </div>
 
@@ -286,9 +302,8 @@ import { CreateEquipmentRequest } from '../../core/models/equipment.model';
 })
 export class EquipmentFormComponent implements OnInit {
   equipment: CreateEquipmentRequest = {
-    name: '', category: '', serialNumber: '', inventoryNumber: '', brand: '', model: '', macAddress: '',
-    location: { building: '', floor: '', office: '' },
-    purchaseDate: '', purchaseValue: 0, assignedTo: '',
+    name: '', category: '', serialNumber: '', inventoryNumber: '', brand: '', model: '', macAddress: '', macAddress2: '',
+    purchaseDate: '', purchaseValue: undefined, assignedTo: '',
     ownershipType: 'OWNED',
     rentalInfo: { rentalCompany: '', contactName: '', contactPhone: '', contactEmail: '', startDate: '', endDate: '', contractNumber: '', contractFileUrl: '', notes: '' },
     hardware: { processor: '', ramSizeGb: undefined, ramType: '', diskType: '', diskSizeGb: undefined, diskHealthPercent: undefined, diskTemperatureCelsius: undefined }
@@ -296,13 +311,29 @@ export class EquipmentFormComponent implements OnInit {
   isEditMode = signal(false);
   sedes = signal<Sede[]>([]);
   deviceTypes = signal<DeviceType[]>([]);
+  areas = signal<Area[]>([]);
   selectedSede = '';
+  selectedArea = '';
+  /** Valores guardados en el equipo que ya no existen en el catalogo (se conservan como opcion). */
+  private legacySede = signal('');
+  private legacyArea = signal('');
+  sedeOptions = computed(() => {
+    const names = this.sedes().map(s => s.name);
+    const extra = this.legacySede();
+    return extra && !names.some(n => n.toUpperCase() === extra.toUpperCase()) ? [extra, ...names] : names;
+  });
+  areaOptions = computed(() => {
+    const names = this.areas().map(a => a.name);
+    const extra = this.legacyArea();
+    return extra && !names.some(n => n.toUpperCase() === extra.toUpperCase()) ? [extra, ...names] : names;
+  });
   loading = signal(false);
   equipmentId = '';
 
   constructor(
     private equipmentService: EquipmentService,
     private sedeService: SedeService,
+    private areaService: AreaService,
     private deviceTypeService: DeviceTypeService,
     private router: Router,
     private route: ActivatedRoute,
@@ -313,6 +344,7 @@ export class EquipmentFormComponent implements OnInit {
   ngOnInit() {
     this.equipmentId = this.route.snapshot.paramMap.get('id') || '';
     this.loadSedes();
+    this.loadAreas();
     this.loadDeviceTypes();
     if (this.equipmentId) {
       this.isEditMode.set(true);
@@ -324,6 +356,18 @@ export class EquipmentFormComponent implements OnInit {
     this.sedeService.listActive().subscribe({
       next: (s) => { this.sedes.set(s); this.cdr.detectChanges(); }
     });
+  }
+
+  loadAreas() {
+    this.areaService.listActive().subscribe({
+      next: (a) => { this.areas.set(a); this.cdr.detectChanges(); }
+    });
+  }
+
+  /** True si la categoria seleccionada corresponde a un portatil (requiere MAC Ethernet y WiFi). */
+  isLaptop(): boolean {
+    const c = (this.equipment.category || '').toUpperCase();
+    return c.includes('LAPTOP') || c.includes('PORTATIL') || c.includes('PORTÁTIL');
   }
 
   loadDeviceTypes() {
@@ -343,11 +387,7 @@ export class EquipmentFormComponent implements OnInit {
           brand: e.brand,
           model: e.model || '',
           macAddress: e.macAddress || '',
-          location: {
-            building: e.location?.building || '',
-            floor: e.location?.floor || '',
-            office: e.location?.office || ''
-          },
+          macAddress2: e.macAddress2 || '',
           purchaseDate: e.purchaseDate,
           purchaseValue: e.purchaseValue,
           assignedTo: e.assignedTo || '',
@@ -373,6 +413,10 @@ export class EquipmentFormComponent implements OnInit {
             diskTemperatureCelsius: e.hardware?.diskTemperatureCelsius
           }
         };
+        this.selectedSede = e.location?.building || '';
+        this.selectedArea = e.location?.office || '';
+        this.legacySede.set(this.selectedSede);
+        this.legacyArea.set(this.selectedArea);
         this.cdr.detectChanges();
       },
       error: () => {
@@ -382,7 +426,23 @@ export class EquipmentFormComponent implements OnInit {
     });
   }
 
+  /** Construye la ubicacion a partir de Sede y Area; undefined si ambas estan vacias. */
+  private buildLocation() {
+    const building = this.selectedSede || '';
+    const office = this.selectedArea || '';
+    if (!building && !office) return undefined;
+    return { building, floor: '', office };
+  }
+
   save() {
+    if (!this.equipment.name?.trim() || !this.equipment.category) {
+      const missing = [!this.equipment.name?.trim() ? 'Nombre' : '', !this.equipment.category ? 'Categoria' : ''].filter(Boolean).join(' y ');
+      this.snackBar.open('Campo obligatorio: ' + missing, 'OK', { duration: 4000 });
+      return;
+    }
+    const laptop = this.isLaptop();
+    const macAddress2 = laptop ? (this.equipment.macAddress2 || undefined) : undefined;
+    const location = this.buildLocation();
     this.loading.set(true);
     const cleanRental = this.hasRentalData() ? this.equipment.rentalInfo : undefined;
     const cleanHardware = this.hasHardwareData() ? this.equipment.hardware : undefined;
@@ -394,8 +454,10 @@ export class EquipmentFormComponent implements OnInit {
         brand: this.equipment.brand || undefined,
         model: this.equipment.model || undefined,
         macAddress: this.equipment.macAddress || undefined,
+        macAddress2,
         assignedTo: this.equipment.assignedTo || undefined,
-        location: this.equipment.location,
+        // En edicion siempre se envia la ubicacion para permitir desasignar Sede/Area
+        location: location ?? { building: '', floor: '', office: '' },
         ownershipType: this.equipment.ownershipType,
         rentalInfo: cleanRental,
         hardware: cleanHardware
@@ -408,7 +470,6 @@ export class EquipmentFormComponent implements OnInit {
         error: (err) => {
           this.loading.set(false);
           this.snackBar.open('Error: ' + (err.error?.message || 'Error al actualizar'), 'OK', { duration: 5000 });
-          this.selectedSede = this.equipment.location?.building || '';
           this.cdr.detectChanges();
         }
       });
@@ -418,7 +479,10 @@ export class EquipmentFormComponent implements OnInit {
         serialNumber: this.equipment.serialNumber || undefined,
         brand: this.equipment.brand || undefined,
         model: this.equipment.model || undefined,
+        name: this.equipment.name.trim(),
         macAddress: this.equipment.macAddress || undefined,
+        macAddress2,
+        location,
         purchaseDate: this.equipment.purchaseDate || undefined,
         purchaseValue: this.equipment.purchaseValue || undefined,
         assignedTo: this.equipment.assignedTo || undefined,
@@ -434,7 +498,6 @@ export class EquipmentFormComponent implements OnInit {
         error: (err) => {
           this.loading.set(false);
           this.snackBar.open('Error: ' + (err.error?.message || 'Error al guardar'), 'OK', { duration: 5000 });
-          this.selectedSede = this.equipment.location?.building || '';
           this.cdr.detectChanges();
         }
       });
@@ -449,7 +512,7 @@ export class EquipmentFormComponent implements OnInit {
 
   hasHardwareData(): boolean {
     const h = this.equipment.hardware!;
-    return !!(h.processor || h.ramSizeGb || h.diskType || h.diskSizeGb || h.diskHealthPercent !== undefined || h.diskTemperatureCelsius !== undefined);
+    return !!(h.processor || h.ramSizeGb || h.diskType || h.diskSizeGb || h.diskHealthPercent != null || h.diskTemperatureCelsius != null);
   }
 
   cancel() {
@@ -460,7 +523,7 @@ export class EquipmentFormComponent implements OnInit {
     }
   }
 
-  formatMac(event: any) {
+  formatMac(event: any, field: 'macAddress' | 'macAddress2' = 'macAddress') {
     let value = event.target.value.replace(/[:\-\s]/g, '').toUpperCase();
     if (value.length > 12) value = value.substring(0, 12);
     if (!/^[0-9A-F]*$/.test(value)) {
@@ -471,7 +534,7 @@ export class EquipmentFormComponent implements OnInit {
       if (i > 0 && i % 2 === 0) formatted += ':';
       formatted += value[i];
     }
-    this.equipment.macAddress = formatted;
+    this.equipment[field] = formatted;
     event.target.value = formatted;
   }
 }

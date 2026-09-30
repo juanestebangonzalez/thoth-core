@@ -121,7 +121,7 @@ import { Equipment } from '../../core/models/equipment.model';
               <span class="status-badge" [class]="getStatusClass(e.status)">{{ e.status }}</span>
             </td>
           </ng-container>
-          <ng-container matColumnDef="assignedTo">n
+          <ng-container matColumnDef="assignedTo">
             <th mat-header-cell *matHeaderCellDef>Asignado</th>
             <td mat-cell *matCellDef="let e">{{ e.assignedTo || '-' }}</td>
           </ng-container>
@@ -273,11 +273,11 @@ export class EquipmentListComponent implements OnInit {
       return;
     }
 
-    const headers = ['Nombre', 'N Inventario', 'Categoria', 'Serial', 'MAC', 'Marca', 'Modelo', 'Estado', 'Fecha Compra', 'Valor', 'Asignado a', 'Edificio', 'Piso', 'Oficina', 'Propiedad', 'Procesador', 'RAM (GB)', 'Tipo RAM', 'Tipo Disco', 'Disco (GB)', 'Salud Disco', 'Temp Disco'];
+    const headers = ['Nombre', 'N Inventario', 'Categoria', 'Serial', 'MAC', 'MAC WiFi', 'Marca', 'Modelo', 'Estado', 'Fecha Compra', 'Valor', 'Asignado a', 'Sede', 'Area', 'Propiedad', 'Procesador', 'RAM (GB)', 'Tipo RAM', 'Tipo Disco', 'Disco (GB)', 'Salud Disco', 'Temp Disco'];
     const rows = data.map(e => [
-      e.name, e.category, e.serialNumber, e.macAddress || '', e.brand, e.model || '',
+      e.name, e.inventoryNumber || '', e.category, e.serialNumber || '', e.macAddress || '', e.macAddress2 || '', e.brand || '', e.model || '',
       e.status, e.purchaseDate, e.purchaseValue,
-      e.assignedTo || '', e.location?.building || '', e.location?.floor || '', e.location?.office || '',
+      e.assignedTo || '', e.location?.building || '', e.location?.office || '',
       e.ownershipType || 'OWNED',
       e.hardware?.processor || '', e.hardware?.ramSizeGb || '', e.hardware?.ramType || '',
       e.hardware?.diskType || '', e.hardware?.diskSizeGb || '', e.hardware?.diskHealthPercent || '',

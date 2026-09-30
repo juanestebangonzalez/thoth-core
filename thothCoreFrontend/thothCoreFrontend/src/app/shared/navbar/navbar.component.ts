@@ -94,6 +94,9 @@ import { AlertService } from '../../core/services/alert.service';
           <a class="nav-item" routerLink="/sedes" routerLinkActive="active" (click)="closeMobile()">
             <mat-icon>business</mat-icon><span>Sedes</span>
           </a>
+          <a class="nav-item" routerLink="/areas" routerLinkActive="active" (click)="closeMobile()">
+            <mat-icon>meeting_room</mat-icon><span>Areas</span>
+          </a>
           <a class="nav-item" routerLink="/device-types" routerLinkActive="active" (click)="closeMobile()">
             <mat-icon>devices</mat-icon><span>Tipos Dispositivo</span>
           </a>

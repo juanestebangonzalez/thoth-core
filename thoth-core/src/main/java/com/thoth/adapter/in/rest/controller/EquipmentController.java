@@ -3,6 +3,7 @@ package com.thoth.adapter.in.rest.controller;
 import com.thoth.adapter.in.rest.dto.request.ChangeStatusRequest;
 import com.thoth.adapter.in.rest.dto.request.CreateEquipmentRequest;
 import com.thoth.adapter.in.rest.dto.request.HardwareRequest;
+import com.thoth.adapter.in.rest.dto.request.LocationRequest;
 import com.thoth.adapter.in.rest.dto.request.RentalInfoRequest;
 import com.thoth.adapter.in.rest.dto.request.UpdateEquipmentRequest;
 import com.thoth.application.command.ChangeStatusCommand;
@@ -49,6 +50,7 @@ public class EquipmentController {
     public ResponseEntity<EquipmentResponseDTO> createEquipment(@Valid @RequestBody CreateEquipmentRequest request, Principal principal) {
         HardwareRequest hw = request.getHardware();
         RentalInfoRequest rental = request.getRentalInfo();
+        LocationRequest loc = request.getLocation();
 
         RegisterEquipmentCommand command = new RegisterEquipmentCommand(
             request.getName(),
@@ -60,9 +62,9 @@ public class EquipmentController {
             request.getMacAddress(),
             request.getPurchaseDate(),
             request.getPurchaseValue(),
-            request.getLocation().getBuilding(),
-            request.getLocation().getFloor(),
-            request.getLocation().getOffice(),
+            loc != null ? loc.getBuilding() : null,
+            loc != null ? loc.getFloor() : null,
+            loc != null ? loc.getOffice() : null,
             request.getAssignedTo(),
             principal != null ? principal.getName() : "SYSTEM",
             request.getOwnershipType(),
@@ -81,11 +83,13 @@ public class EquipmentController {
             hw != null ? hw.getDiskType() : null,
             hw != null ? hw.getDiskSizeGb() : null,
             hw != null ? hw.getDiskHealthPercent() : null,
-            hw != null ? hw.getDiskTemperatureCelsius() : null
+            hw != null ? hw.getDiskTemperatureCelsius() : null,
+            request.getMacAddress2()
         );
         EquipmentResponseDTO response = registerEquipmentUseCase.register(command);
         auditService.log("CREATE", "EQUIPMENT", response.equipmentId().toString(), request.getName(),
-                "Equipo creado: " + request.getName() + " (S/N: " + request.getSerialNumber() + ")",
+                "Equipo creado: " + request.getName()
+                        + (request.getSerialNumber() != null && !request.getSerialNumber().isBlank() ? " (S/N: " + request.getSerialNumber() + ")" : ""),
                 principal != null ? principal.getName() : "SYSTEM");
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -146,7 +150,8 @@ public class EquipmentController {
               hw != null ? hw.getDiskType() : null,
               hw != null ? hw.getDiskSizeGb() : null,
               hw != null ? hw.getDiskHealthPercent() : null,
-              hw != null ? hw.getDiskTemperatureCelsius() : null
+              hw != null ? hw.getDiskTemperatureCelsius() : null,
+              request.getMacAddress2()
           );
         EquipmentResponseDTO updated = updateEquipmentUseCase.update(command);
         auditService.log("UPDATE", "EQUIPMENT", id.toString(), request.getName(),

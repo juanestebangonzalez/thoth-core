@@ -1,4 +1,4 @@
-import { Component, Inject } from '@angular/core';
+import { Component, Inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatDialogModule, MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
@@ -10,6 +10,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { LocationHistoryService } from '../../core/services/location-history.service';
 import { SedeService } from '../../core/services/sede.service';
+import { AreaService, Area } from '../../core/services/area.service';
 
 @Component({
   selector: 'app-transfer-dialog',
@@ -39,13 +40,13 @@ import { SedeService } from '../../core/services/sede.service';
         </mat-form-field>
 
         <mat-form-field appearance="outline">
-          <mat-label>Piso</mat-label>
-          <input matInput [(ngModel)]="toFloor" placeholder="Ej: 2do piso">
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>Oficina / Area</mat-label>
-          <input matInput [(ngModel)]="toOffice" placeholder="Ej: Consultorio 3">
+          <mat-label>Area Destino</mat-label>
+          <mat-select [(ngModel)]="toOffice">
+            <mat-option value="">-- Sin asignar --</mat-option>
+            @for (area of areas; track area.id) {
+              <mat-option [value]="area.name">{{ area.name }}</mat-option>
+            }
+          </mat-select>
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="full-col">
@@ -82,21 +83,27 @@ import { SedeService } from '../../core/services/sede.service';
 })
 export class TransferDialogComponent {
   toBuilding = '';
-  toFloor = '';
   toOffice = '';
   reason = '';
   loading = false;
   sedes: any[] = [];
+  areas: Area[] = [];
 
   constructor(
     @Inject(MAT_DIALOG_DATA) public data: { equipmentId: string, equipmentName: string, currentBuilding: string, currentOffice: string },
     private dialogRef: MatDialogRef<TransferDialogComponent>,
     private locationHistoryService: LocationHistoryService,
     private sedeService: SedeService,
-    private snackBar: MatSnackBar
+    private areaService: AreaService,
+    private snackBar: MatSnackBar,
+    private cdr: ChangeDetectorRef
   ) {
     this.sedeService.listActive().subscribe({
-      next: (s) => this.sedes = s,
+      next: (s) => { this.sedes = s; this.cdr.markForCheck(); },
+      error: () => {}
+    });
+    this.areaService.listActive().subscribe({
+      next: (a) => { this.areas = a; this.cdr.markForCheck(); },
       error: () => {}
     });
   }
@@ -109,7 +116,7 @@ export class TransferDialogComponent {
     this.loading = true;
     this.locationHistoryService.transfer(this.data.equipmentId, {
       toBuilding: this.toBuilding,
-      toFloor: this.toFloor,
+      toFloor: '',
       toOffice: this.toOffice,
       reason: this.reason
     }).subscribe({

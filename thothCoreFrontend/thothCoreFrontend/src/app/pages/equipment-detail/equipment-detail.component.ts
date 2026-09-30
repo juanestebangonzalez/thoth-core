@@ -97,8 +97,14 @@ import { Equipment } from '../../core/models/equipment.model';
             </div>
             <div class="info-item">
               <mat-icon>router</mat-icon>
-              <div><span class="label">MAC Address</span><span class="value">{{ equipment()?.macAddress || '-' }}</span></div>
+              <div><span class="label">{{ equipment()?.macAddress2 ? 'MAC Ethernet' : 'MAC Address' }}</span><span class="value">{{ equipment()?.macAddress || '-' }}</span></div>
             </div>
+            @if (equipment()?.macAddress2) {
+              <div class="info-item">
+                <mat-icon>wifi</mat-icon>
+                <div><span class="label">MAC WiFi</span><span class="value">{{ equipment()?.macAddress2 }}</span></div>
+              </div>
+            }
             <div class="info-item">
               <mat-icon>calendar_today</mat-icon>
               <div><span class="label">Fecha de Compra</span><span class="value">{{ equipment()?.purchaseDate || '-' }}</span></div>
@@ -114,9 +120,8 @@ import { Equipment } from '../../core/models/equipment.model';
             <div class="info-item">
               <mat-icon>location_on</mat-icon>
               <div><span class="label">Ubicacion</span><span class="value">
-                {{ equipment()?.location?.building || '-' }} -
-                Piso {{ equipment()?.location?.floor || '-' }} -
-                {{ equipment()?.location?.office || '-' }}
+                Sede: {{ equipment()?.location?.building || '-' }} -
+                Area: {{ equipment()?.location?.office || '-' }}
               </span></div>
             </div>
             <div class="info-item">

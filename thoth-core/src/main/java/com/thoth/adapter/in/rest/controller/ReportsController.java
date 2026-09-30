@@ -213,6 +213,12 @@ public class ReportsController {
         List<MaintenanceHistoryEntity> allMaintenance = maintenanceRepository.findAll();
         Map<String, Object> report = new LinkedHashMap<>();
 
+        // Equipos indexados por id para mostrar sede y numero de inventario de cada parte
+        Map<Object, EquipmentEntity> equipmentById = new HashMap<>();
+        for (EquipmentEntity e : equipmentRepository.findAll()) {
+            equipmentById.put(e.getEquipmentId(), e);
+        }
+
         LocalDate today = LocalDate.now();
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM");
         String[] meses = {"Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"};
@@ -233,6 +239,10 @@ public class ReportsController {
                     partInfo.put("ticketNumber", part.getTicketNumber());
                     partInfo.put("maintenanceDate", m.getPerformedDate());
                     partInfo.put("equipmentId", m.getEquipmentId());
+                    EquipmentEntity eq = equipmentById.get(m.getEquipmentId());
+                    partInfo.put("equipmentName", eq != null ? eq.getName() : null);
+                    partInfo.put("inventoryNumber", eq != null ? eq.getInventoryNumber() : null);
+                    partInfo.put("sede", eq != null ? eq.getLocationBuilding() : null);
                     partInfo.put("technicianName", m.getTechnicianName());
                     partInfo.put("maintenanceType", m.getMaintenanceType());
                     allParts.add(partInfo);

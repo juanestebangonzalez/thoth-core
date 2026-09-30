@@ -2,7 +2,6 @@ package com.thoth.adapter.in.rest.dto.request;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
@@ -34,8 +33,10 @@ public class CreateEquipmentRequest {
     private String model;
     private String inventoryNumber;
     private String macAddress;
+    /** Segunda MAC (WiFi) para portatiles. Opcional. */
+    private String macAddress2;
 
-    @NotNull(message = "La ubicacion es obligatoria")
+    /** Ubicacion opcional: building = sede, office = area. */
     @Valid
     private LocationRequest location;
 

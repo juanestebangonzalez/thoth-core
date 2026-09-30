@@ -32,7 +32,8 @@ public class EquipmentDtoMapper {
             equipment.getOwnershipType() != null ? equipment.getOwnershipType().name() : "OWNED",
             mapRental(equipment),
             mapHardware(equipment),
-            equipment.getNextMaintenanceDate()
+            equipment.getNextMaintenanceDate(),
+            equipment.getMacAddress2()
         );
     }
 
@@ -57,7 +58,8 @@ public class EquipmentDtoMapper {
             equipment.getOwnershipType() != null ? equipment.getOwnershipType().name() : "OWNED",
             mapRental(equipment),
             mapHardware(equipment),
-            equipment.getNextMaintenanceDate()
+            equipment.getNextMaintenanceDate(),
+            equipment.getMacAddress2()
         );
     }
 

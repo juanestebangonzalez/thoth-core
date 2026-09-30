@@ -25,13 +25,13 @@ class LocationTest {
     }
     
     @Test
-    @DisplayName("Should throw when building is blank")
-    void testCreateLocationThrowsWhenBuildingBlank() {
-        IllegalArgumentException exception = assertThrows(
-            IllegalArgumentException.class,
-            () -> Location.of("", "2", "201", "desc")
-        );
-        assertEquals("Building cannot be blank", exception.getMessage());
+    @DisplayName("Should allow empty location fields (ubicacion opcional)")
+    void testCreateLocationAllowsBlankFields() {
+        Location location = Location.of(null, null, null, null);
+        assertEquals("", location.getBuilding());
+        assertEquals("", location.getFloor());
+        assertEquals("", location.getOffice());
+        assertEquals("", location.getDescription());
     }
     
     @Test

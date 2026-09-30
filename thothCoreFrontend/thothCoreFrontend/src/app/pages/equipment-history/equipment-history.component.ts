@@ -383,7 +383,7 @@ export class EquipmentHistoryComponent implements OnInit {
       <tr><th>N Inventario</th><td>${eq?.inventoryNumber || '-'}</td></tr>
       <tr><th>Marca / Modelo</th><td>${eq?.brand || '-'} ${eq?.model || ''}</td></tr>
       <tr><th>Sede</th><td>${eq?.location?.building || '-'}</td></tr>
-      <tr><th>Piso / Oficina</th><td>${eq?.location?.floor || '-'} / ${eq?.location?.office || '-'}</td></tr>
+      <tr><th>Area</th><td>${eq?.location?.office || '-'}</td></tr>
       <tr><th>Asignado a</th><td>${eq?.assignedTo || '-'}</td></tr>
     </table>
   </div>

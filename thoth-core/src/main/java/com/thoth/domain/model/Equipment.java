@@ -23,6 +23,8 @@ public class Equipment {
     private String serialNumber;
     private String inventoryNumber;
     private String macAddress;
+    /** Segunda MAC (ej: WiFi en portatiles). Opcional. */
+    private String macAddress2;
     private String brand;
     private String model;
     private EquipmentStatus status;
@@ -64,7 +66,7 @@ public class Equipment {
             throw new IllegalArgumentException("Purchase date cannot be in the future");
         }
         if (location == null) {
-            throw new IllegalArgumentException("La ubicacion es obligatoria");
+            location = Location.of(null, null, null, null);
         }
         if (category == null || category.isBlank()) {
             throw new IllegalArgumentException("Category cannot be blank");
@@ -81,7 +83,7 @@ public class Equipment {
             .equipmentId(UUID.randomUUID())
             .name(name.trim())
             .category(category.trim().toUpperCase())
-            .serialNumber(serialNumber != null ? serialNumber.trim() : null)
+            .serialNumber(serialNumber != null && !serialNumber.isBlank() ? serialNumber.trim() : null)
             .brand(brand != null ? brand.trim() : "")
             .model(model != null ? model.trim() : "")
             .macAddress(normalizedMac != null ? normalizedMac : "")
@@ -195,6 +197,16 @@ public class Equipment {
         if (newType == OwnershipType.OWNED) {
             this.rentalInfo = null;
         }
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    /** Asigna la segunda MAC (WiFi) normalizandola y validando su formato. */
+    public void updateMacAddress2(String mac) {
+        String normalized = normalizeMacAddress(mac);
+        if (normalized != null && !isValidMacAddress(normalized)) {
+            throw new IllegalArgumentException("Formato de la segunda direccion MAC invalido. Use 12 caracteres hexadecimales (ej: AABBCCDDEEFF o AA:BB:CC:DD:EE:FF)");
+        }
+        this.macAddress2 = normalized != null ? normalized : "";
         this.updatedAt = LocalDateTime.now();
     }
 

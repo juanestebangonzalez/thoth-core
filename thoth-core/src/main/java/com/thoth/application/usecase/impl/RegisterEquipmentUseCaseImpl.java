@@ -39,6 +39,11 @@ public class RegisterEquipmentUseCaseImpl implements RegisterEquipmentUseCase {
             command.createdBy()
         );
 
+        // Segunda MAC (WiFi) - opcional, usada en portatiles
+        if (command.macAddress2() != null && !command.macAddress2().isBlank()) {
+            equipment.updateMacAddress2(command.macAddress2());
+        }
+
         // Inventory number - validar unicidad
         if (command.inventoryNumber() != null && !command.inventoryNumber().isBlank()) {
             String invNum = command.inventoryNumber().toUpperCase().trim();

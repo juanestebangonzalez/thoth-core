@@ -18,20 +18,12 @@ public class Location implements Serializable {
     private String description;
     
     public static Location of(String building, String floor, String office, String description) {
-        if (building == null || building.isBlank()) {
-            throw new IllegalArgumentException("Building cannot be blank");
-        }
-        if (floor == null || floor.isBlank()) {
-            throw new IllegalArgumentException("Floor cannot be blank");
-        }
-        if (office == null || office.isBlank()) {
-            throw new IllegalArgumentException("Office cannot be blank");
-        }
-        
+        // Todos los campos de ubicacion son opcionales: building = sede, office = area.
+        // El piso (floor) se conserva por compatibilidad con datos existentes.
         return new Location(
-            building.trim(),
-            floor.trim(),
-            office.trim(),
+            building != null ? building.trim() : "",
+            floor != null ? floor.trim() : "",
+            office != null ? office.trim() : "",
             description != null ? description.trim() : ""
         );
     }
