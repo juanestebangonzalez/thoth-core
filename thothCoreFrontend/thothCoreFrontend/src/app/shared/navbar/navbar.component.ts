@@ -77,6 +77,9 @@ import { AlertService } from '../../core/services/alert.service';
         <a class="nav-item" routerLink="/parts-report" routerLinkActive="active" (click)="closeMobile()">
           <mat-icon>construction</mat-icon><span>Rep. Partes</span>
         </a>
+        <a class="nav-item" routerLink="/rented-report" routerLinkActive="active" (click)="closeMobile()">
+          <mat-icon>request_quote</mat-icon><span>Alquilados</span>
+        </a>
         }
         @if (auth.canView("QR")) {
         <a class="nav-item" routerLink="/scan" routerLinkActive="active" (click)="closeMobile()">
@@ -96,6 +99,9 @@ import { AlertService } from '../../core/services/alert.service';
           </a>
           <a class="nav-item" routerLink="/areas" routerLinkActive="active" (click)="closeMobile()">
             <mat-icon>meeting_room</mat-icon><span>Areas</span>
+          </a>
+          <a class="nav-item" routerLink="/cost-centers" routerLinkActive="active" (click)="closeMobile()">
+            <mat-icon>account_balance</mat-icon><span>Centros de Costo</span>
           </a>
           <a class="nav-item" routerLink="/device-types" routerLinkActive="active" (click)="closeMobile()">
             <mat-icon>devices</mat-icon><span>Tipos Dispositivo</span>

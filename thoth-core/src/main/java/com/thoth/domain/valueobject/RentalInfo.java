@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 
@@ -21,6 +22,8 @@ public class RentalInfo {
     private String contractNumber;
     private String contractFileUrl;
     private String notes;
+    /** Valor mensual del alquiler. Opcional. */
+    private BigDecimal monthlyValue;
 
     public boolean isContractExpired() {
         return endDate != null && endDate.isBefore(LocalDate.now());

@@ -30,7 +30,8 @@ public class EquipmentEntityMapper {
             .createdBy(equipment.getCreatedBy())
             .updatedBy(equipment.getLastModifiedBy())
             .ownershipType(equipment.getOwnershipType())
-            .nextMaintenanceDate(equipment.getNextMaintenanceDate());
+            .nextMaintenanceDate(equipment.getNextMaintenanceDate())
+            .costCenter(equipment.getCostCenter());
 
         if (equipment.getLocation() != null) {
             builder.locationBuilding(equipment.getLocation().getBuilding())
@@ -48,7 +49,8 @@ public class EquipmentEntityMapper {
                    .rentalEndDate(r.getEndDate())
                    .rentalContractNumber(r.getContractNumber())
                    .rentalContractFileUrl(r.getContractFileUrl())
-                   .rentalNotes(r.getNotes());
+                   .rentalNotes(r.getNotes())
+                   .rentalMonthlyValue(r.getMonthlyValue());
         }
 
         if (equipment.getHardware() != null) {
@@ -74,7 +76,8 @@ public class EquipmentEntityMapper {
         );
 
         RentalInfo rentalInfo = null;
-        if (entity.getRentalCompany() != null || entity.getRentalStartDate() != null) {
+        if (entity.getRentalCompany() != null || entity.getRentalStartDate() != null
+                || entity.getRentalMonthlyValue() != null) {
             rentalInfo = RentalInfo.builder()
                 .rentalCompany(entity.getRentalCompany())
                 .contactName(entity.getRentalContactName())
@@ -85,6 +88,7 @@ public class EquipmentEntityMapper {
                 .contractNumber(entity.getRentalContractNumber())
                 .contractFileUrl(entity.getRentalContractFileUrl())
                 .notes(entity.getRentalNotes())
+                .monthlyValue(entity.getRentalMonthlyValue())
                 .build();
         }
 
@@ -122,6 +126,7 @@ public class EquipmentEntityMapper {
             .lastModifiedBy(entity.getUpdatedBy())
             .ownershipType(entity.getOwnershipType())
             .nextMaintenanceDate(entity.getNextMaintenanceDate())
+            .costCenter(entity.getCostCenter())
             .rentalInfo(rentalInfo)
             .hardware(hardware)
             .build();

@@ -472,4 +472,114 @@ public class ReportsController {
 
         return ResponseEntity.ok(report);
     }
+
+    // ===================== Informe de equipos alquilados =====================
+
+    private static final String SIN_SEDE = "SIN SEDE";
+    private static final String SIN_CENTRO_COSTO = "SIN CENTRO DE COSTO";
+
+    @GetMapping("/rented-equipment")
+    @Operation(summary = "Informe de equipos alquilados por sede y centro de costo")
+    public ResponseEntity<Map<String, Object>> rentedEquipmentReport() {
+        List<EquipmentEntity> rented = equipmentRepository.findAll().stream()
+            .filter(e -> e.getOwnershipType() == com.thoth.domain.valueobject.OwnershipType.RENTED)
+            .filter(e -> e.getStatus() != com.thoth.domain.valueobject.EquipmentStatus.RETIRED)
+            .collect(Collectors.toList());
+
+        BigDecimal totalMensual = BigDecimal.ZERO;
+        long sinValor = 0;
+        Map<String, BigDecimal[]> porSede = new LinkedHashMap<>();
+        Map<String, BigDecimal[]> porCentro = new LinkedHashMap<>();
+        Map<String, BigDecimal[]> matriz = new LinkedHashMap<>();
+        Map<String, String[]> matrizKeys = new LinkedHashMap<>();
+        List<Map<String, Object>> equipos = new ArrayList<>();
+
+        for (EquipmentEntity e : rented) {
+            String sede = labelOr(e.getLocationBuilding(), SIN_SEDE);
+            String centro = labelOr(e.getCostCenter(), SIN_CENTRO_COSTO);
+            BigDecimal valor = e.getRentalMonthlyValue();
+            BigDecimal valorSuma = valor != null ? valor : BigDecimal.ZERO;
+            if (valor == null) sinValor++;
+            totalMensual = totalMensual.add(valorSuma);
+
+            acumular(porSede, sede, valorSuma);
+            acumular(porCentro, centro, valorSuma);
+            String key = sede + "\t" + centro;
+            acumular(matriz, key, valorSuma);
+            matrizKeys.putIfAbsent(key, new String[]{sede, centro});
+
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("equipmentId", e.getEquipmentId());
+            item.put("name", e.getName());
+            item.put("inventoryNumber", e.getInventoryNumber());
+            item.put("category", e.getCategory());
+            item.put("sede", sede);
+            item.put("area", e.getLocationOffice());
+            item.put("centroCosto", centro);
+            item.put("rentalCompany", e.getRentalCompany());
+            item.put("contractNumber", e.getRentalContractNumber());
+            item.put("monthlyValue", valor);
+            item.put("startDate", e.getRentalStartDate());
+            item.put("endDate", e.getRentalEndDate());
+            equipos.add(item);
+        }
+
+        List<Map<String, Object>> porSedeList = new ArrayList<>();
+        porSede.forEach((k, v) -> {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("sede", k);
+            m.put("cantidad", v[0].longValue());
+            m.put("totalMensual", v[1]);
+            porSedeList.add(m);
+        });
+        List<Map<String, Object>> porCentroList = new ArrayList<>();
+        porCentro.forEach((k, v) -> {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("centroCosto", k);
+            m.put("cantidad", v[0].longValue());
+            m.put("totalMensual", v[1]);
+            porCentroList.add(m);
+        });
+        List<Map<String, Object>> matrizList = new ArrayList<>();
+        matriz.forEach((k, v) -> {
+            String[] parts = matrizKeys.get(k);
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("sede", parts[0]);
+            m.put("centroCosto", parts[1]);
+            m.put("cantidad", v[0].longValue());
+            m.put("totalMensual", v[1]);
+            matrizList.add(m);
+        });
+
+        Comparator<Map<String, Object>> byTotalDesc =
+            Comparator.comparing((Map<String, Object> m) -> (BigDecimal) m.get("totalMensual")).reversed();
+        porSedeList.sort(byTotalDesc);
+        porCentroList.sort(byTotalDesc);
+        matrizList.sort(byTotalDesc);
+        equipos.sort(Comparator
+            .comparing((Map<String, Object> m) -> String.valueOf(m.get("sede")))
+            .thenComparing(m -> String.valueOf(m.get("centroCosto")))
+            .thenComparing(m -> m.get("name") != null ? String.valueOf(m.get("name")) : ""));
+
+        Map<String, Object> report = new LinkedHashMap<>();
+        report.put("totalEquipos", rented.size());
+        report.put("totalMensual", totalMensual);
+        report.put("sinValor", sinValor);
+        report.put("porSede", porSedeList);
+        report.put("porCentroCosto", porCentroList);
+        report.put("matriz", matrizList);
+        report.put("equipos", equipos);
+        return ResponseEntity.ok(report);
+    }
+
+    private static String labelOr(String value, String fallback) {
+        return (value == null || value.isBlank()) ? fallback : value.trim().toUpperCase();
+    }
+
+    /** acc[0] = cantidad, acc[1] = total mensual. */
+    private static void acumular(Map<String, BigDecimal[]> map, String key, BigDecimal valor) {
+        BigDecimal[] acc = map.computeIfAbsent(key, k -> new BigDecimal[]{BigDecimal.ZERO, BigDecimal.ZERO});
+        acc[0] = acc[0].add(BigDecimal.ONE);
+        acc[1] = acc[1].add(valor);
+    }
 }

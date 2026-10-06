@@ -44,6 +44,11 @@ public class RegisterEquipmentUseCaseImpl implements RegisterEquipmentUseCase {
             equipment.updateMacAddress2(command.macAddress2());
         }
 
+        // Centro de costo - opcional, en mayusculas
+        if (command.costCenter() != null && !command.costCenter().isBlank()) {
+            equipment.setCostCenter(command.costCenter().trim().toUpperCase());
+        }
+
         // Inventory number - validar unicidad
         if (command.inventoryNumber() != null && !command.inventoryNumber().isBlank()) {
             String invNum = command.inventoryNumber().toUpperCase().trim();
@@ -73,6 +78,7 @@ public class RegisterEquipmentUseCaseImpl implements RegisterEquipmentUseCase {
                 .contractNumber(toUpper(command.rentalContractNumber()))
                 .contractFileUrl(command.rentalContractFileUrl())
                 .notes(toUpper(command.rentalNotes()))
+                .monthlyValue(command.rentalMonthlyValue())
                 .build();
             equipment.setRentalInfo(rentalInfo);
         }

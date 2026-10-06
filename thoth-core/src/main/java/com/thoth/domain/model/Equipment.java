@@ -41,6 +41,8 @@ public class Equipment {
     private RentalInfo rentalInfo;
     private Hardware hardware;
     private LocalDate nextMaintenanceDate;
+    /** Nombre del centro de costo (catalogo cost_center). Opcional. */
+    private String costCenter;
 
     public static Equipment create(
             String name,
@@ -197,6 +199,13 @@ public class Equipment {
         if (newType == OwnershipType.OWNED) {
             this.rentalInfo = null;
         }
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    /** Asigna el centro de costo (en mayusculas). Cadena vacia o null lo limpia. */
+    public void updateCostCenter(String newCostCenter) {
+        this.costCenter = (newCostCenter == null || newCostCenter.isBlank())
+            ? null : newCostCenter.trim().toUpperCase();
         this.updatedAt = LocalDateTime.now();
     }
 

@@ -125,6 +125,10 @@ import { Equipment } from '../../core/models/equipment.model';
               </span></div>
             </div>
             <div class="info-item">
+              <mat-icon>account_balance</mat-icon>
+              <div><span class="label">Centro de Costo</span><span class="value">{{ equipment()?.costCenter || 'Sin asignar' }}</span></div>
+            </div>
+            <div class="info-item">
               <mat-icon>admin_panel_settings</mat-icon>
               <div><span class="label">Registrado por</span><span class="value">{{ equipment()?.createdBy || 'SYSTEM' }}</span></div>
             </div>
@@ -218,6 +222,10 @@ import { Equipment } from '../../core/models/equipment.model';
               <div class="info-item">
                 <mat-icon>description</mat-icon>
                 <div><span class="label">Contrato N</span><span class="value">{{ equipment()?.rentalInfo?.contractNumber || '-' }}</span></div>
+              </div>
+              <div class="info-item">
+                <mat-icon>request_quote</mat-icon>
+                <div><span class="label">Valor Mensual</span><span class="value">{{ formatCop(equipment()?.rentalInfo?.monthlyValue) }}</span></div>
               </div>
               <div class="info-item">
                 <mat-icon>person</mat-icon>
@@ -432,6 +440,11 @@ import { Equipment } from '../../core/models/equipment.model';
   `]
 })
 export class EquipmentDetailComponent implements OnInit {
+  private copFormatter = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 });
+  /** Formatea un valor como moneda COP sin decimales; '-' si no hay valor. */
+  formatCop(v: number | null | undefined): string {
+    return v === null || v === undefined || isNaN(Number(v)) ? '-' : this.copFormatter.format(Number(v));
+  }
   equipment = signal<Equipment | null>(null);
   equipmentId = '';
   showQrCode = signal(false);

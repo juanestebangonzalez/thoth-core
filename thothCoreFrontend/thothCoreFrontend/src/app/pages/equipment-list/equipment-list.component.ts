@@ -25,6 +25,9 @@ import { Equipment } from '../../core/models/equipment.model';
           <button mat-stroked-button (click)="exportToExcel()" class="export-btn">
             <mat-icon>download</mat-icon> Exportar Excel
           </button>
+          <button mat-stroked-button routerLink="/equipment/import" class="export-btn">
+            <mat-icon>upload_file</mat-icon> Importar
+          </button>
           <button mat-raised-button color="primary" routerLink="/equipment/new">
             <mat-icon>add</mat-icon> Nuevo Equipo
           </button>
@@ -273,11 +276,11 @@ export class EquipmentListComponent implements OnInit {
       return;
     }
 
-    const headers = ['Nombre', 'N Inventario', 'Categoria', 'Serial', 'MAC', 'MAC WiFi', 'Marca', 'Modelo', 'Estado', 'Fecha Compra', 'Valor', 'Asignado a', 'Sede', 'Area', 'Propiedad', 'Procesador', 'RAM (GB)', 'Tipo RAM', 'Tipo Disco', 'Disco (GB)', 'Salud Disco', 'Temp Disco'];
+    const headers = ['Nombre', 'N Inventario', 'Categoria', 'Serial', 'MAC', 'MAC WiFi', 'Marca', 'Modelo', 'Estado', 'Fecha Compra', 'Valor', 'Asignado a', 'Sede', 'Area', 'Centro de Costo', 'Propiedad', 'Procesador', 'RAM (GB)', 'Tipo RAM', 'Tipo Disco', 'Disco (GB)', 'Salud Disco', 'Temp Disco'];
     const rows = data.map(e => [
       e.name, e.inventoryNumber || '', e.category, e.serialNumber || '', e.macAddress || '', e.macAddress2 || '', e.brand || '', e.model || '',
       e.status, e.purchaseDate, e.purchaseValue,
-      e.assignedTo || '', e.location?.building || '', e.location?.office || '',
+      e.assignedTo || '', e.location?.building || '', e.location?.office || '', e.costCenter || '',
       e.ownershipType || 'OWNED',
       e.hardware?.processor || '', e.hardware?.ramSizeGb || '', e.hardware?.ramType || '',
       e.hardware?.diskType || '', e.hardware?.diskSizeGb || '', e.hardware?.diskHealthPercent || '',

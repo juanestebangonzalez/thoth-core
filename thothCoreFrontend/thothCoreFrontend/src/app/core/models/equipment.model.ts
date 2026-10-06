@@ -15,6 +15,7 @@ export interface Equipment {
   assignedTo: string;
   createdBy: string;
   ownershipType?: string;
+  costCenter?: string;
   rentalInfo?: RentalInfo;
   hardware?: Hardware;
   nextMaintenanceDate?: string;
@@ -36,6 +37,7 @@ export interface RentalInfo {
   startDate?: string;
   endDate?: string;
   contractNumber?: string;
+  monthlyValue?: number;
   contractFileUrl?: string;
   notes?: string;
   isExpired?: boolean;
@@ -77,6 +79,7 @@ export interface CreateEquipmentRequest {
   purchaseValue?: number;
   assignedTo?: string;
   ownershipType?: string;
+  costCenter?: string;
   rentalInfo?: RentalInfo;
   hardware?: Hardware;
   nextMaintenanceDate?: string;

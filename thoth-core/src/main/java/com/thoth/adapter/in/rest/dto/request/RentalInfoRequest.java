@@ -1,11 +1,13 @@
 package com.thoth.adapter.in.rest.dto.request;
 
 import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Data
@@ -30,4 +32,7 @@ public class RentalInfoRequest {
     private String contractFileUrl;
     @Size(max = 2000)
     private String notes;
+    /** Valor mensual del alquiler. Opcional, no negativo. */
+    @PositiveOrZero(message = "El valor mensual del alquiler no puede ser negativo")
+    private BigDecimal monthlyValue;
 }

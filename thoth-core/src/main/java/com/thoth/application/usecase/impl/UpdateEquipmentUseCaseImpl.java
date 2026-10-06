@@ -42,6 +42,7 @@ public class UpdateEquipmentUseCaseImpl implements UpdateEquipmentUseCase {
         if (command.brand() != null) equipment.setBrand(toUpper(command.brand()));
         if (command.model() != null) equipment.setModel(toUpper(command.model()));
         if (command.macAddress2() != null) equipment.updateMacAddress2(command.macAddress2());
+        if (command.costCenter() != null) equipment.updateCostCenter(command.costCenter());
         if (command.macAddress() != null) equipment.setMacAddress(command.macAddress() != null ? command.macAddress().toUpperCase().trim() : null);
 
         if (command.ownershipType() != null && !command.ownershipType().isBlank()) {
@@ -62,6 +63,7 @@ public class UpdateEquipmentUseCaseImpl implements UpdateEquipmentUseCase {
                 .contractNumber(toUpper(command.rentalContractNumber()))
                 .contractFileUrl(command.rentalContractFileUrl())
                 .notes(toUpper(command.rentalNotes()))
+                .monthlyValue(command.rentalMonthlyValue())
                 .build();
             equipment.updateRentalInfo(rentalInfo);
         }
@@ -96,7 +98,8 @@ public class UpdateEquipmentUseCaseImpl implements UpdateEquipmentUseCase {
     }
 
     private boolean hasRentalData(UpdateEquipmentCommand cmd) {
-        return cmd.rentalCompany() != null || cmd.rentalStartDate() != null;
+        return cmd.rentalCompany() != null || cmd.rentalStartDate() != null
+            || cmd.rentalMonthlyValue() != null;
     }
 
     private boolean hasHardwareData(UpdateEquipmentCommand cmd) {

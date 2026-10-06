@@ -33,7 +33,8 @@ public class EquipmentDtoMapper {
             mapRental(equipment),
             mapHardware(equipment),
             equipment.getNextMaintenanceDate(),
-            equipment.getMacAddress2()
+            equipment.getMacAddress2(),
+            equipment.getCostCenter()
         );
     }
 
@@ -59,7 +60,8 @@ public class EquipmentDtoMapper {
             mapRental(equipment),
             mapHardware(equipment),
             equipment.getNextMaintenanceDate(),
-            equipment.getMacAddress2()
+            equipment.getMacAddress2(),
+            equipment.getCostCenter()
         );
     }
 
@@ -88,7 +90,8 @@ public class EquipmentDtoMapper {
             r.getNotes(),
             r.getDaysUntilExpiry(),
             r.isContractExpired(),
-            r.isContractExpiringSoon()
+            r.isContractExpiringSoon(),
+            r.getMonthlyValue()
         );
     }
 

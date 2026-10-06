@@ -39,6 +39,7 @@ class SedeControllerTest {
 
         mockMvc.perform(post("/api/v1/auth/register")
                 .header("X-Forwarded-For", randomFakeIp())
+                .with(fakeRemoteAddr())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(regPayload))
             .andExpect(status().isCreated());
@@ -53,6 +54,7 @@ class SedeControllerTest {
             """.formatted(username);
         String loginBody = mockMvc.perform(post("/api/v1/auth/login")
                 .header("X-Forwarded-For", randomFakeIp())
+                .with(fakeRemoteAddr())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(loginPayload))
             .andExpect(status().isOk())
@@ -93,6 +95,13 @@ class SedeControllerTest {
         mockMvc.perform(get("/api/v1/sedes/" + UUID.randomUUID())
                 .header("Authorization", "Bearer " + token))
             .andExpect(status().isNotFound());
+    }
+
+    // RateLimitingFilter usa getRemoteAddr() (ignora X-Forwarded-For), asi que cada
+    // peticion de auth usa una IP propia para no compartir el limite con el resto de la suite.
+    private org.springframework.test.web.servlet.request.RequestPostProcessor fakeRemoteAddr() {
+        String ip = randomFakeIp();
+        return request -> { request.setRemoteAddr(ip); return request; };
     }
 
     private String randomFakeIp() {

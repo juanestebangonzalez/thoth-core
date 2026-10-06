@@ -14,6 +14,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import { SedeService, Sede } from '../../core/services/sede.service';
 import { AreaService, Area } from '../../core/services/area.service';
 import { DeviceTypeService, DeviceType } from '../../core/services/device-type.service';
+import { CostCenterService, CostCenter } from '../../core/services/cost-center.service';
 import { EquipmentService } from '../../core/services/equipment.service';
 import { CreateEquipmentRequest } from '../../core/models/equipment.model';
 
@@ -114,6 +115,15 @@ import { CreateEquipmentRequest } from '../../core/models/equipment.model';
               }
             </mat-select>
           </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Centro de Costo</mat-label>
+            <mat-select [(ngModel)]="selectedCostCenter" name="costCenter">
+              <mat-option value="">-- Sin asignar --</mat-option>
+              @for (cc of costCenterOptions(); track cc) {
+                <mat-option [value]="cc">{{ cc }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
         </div>
 
         <mat-divider></mat-divider>
@@ -145,6 +155,11 @@ import { CreateEquipmentRequest } from '../../core/models/equipment.model';
               <mat-form-field appearance="outline">
                 <mat-label>Numero de Contrato</mat-label>
                 <input matInput [(ngModel)]="equipment.rentalInfo!.contractNumber">
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Valor mensual del alquiler</mat-label>
+                <input matInput [(ngModel)]="equipment.rentalInfo!.monthlyValue" type="number" min="0">
+                <span matPrefix>$&nbsp;</span>
               </mat-form-field>
               <mat-form-field appearance="outline">
                 <mat-label>Contacto (Nombre)</mat-label>
@@ -305,7 +320,7 @@ export class EquipmentFormComponent implements OnInit {
     name: '', category: '', serialNumber: '', inventoryNumber: '', brand: '', model: '', macAddress: '', macAddress2: '',
     purchaseDate: '', purchaseValue: undefined, assignedTo: '',
     ownershipType: 'OWNED',
-    rentalInfo: { rentalCompany: '', contactName: '', contactPhone: '', contactEmail: '', startDate: '', endDate: '', contractNumber: '', contractFileUrl: '', notes: '' },
+    rentalInfo: { rentalCompany: '', contactName: '', contactPhone: '', contactEmail: '', startDate: '', endDate: '', contractNumber: '', monthlyValue: undefined, contractFileUrl: '', notes: '' },
     hardware: { processor: '', ramSizeGb: undefined, ramType: '', diskType: '', diskSizeGb: undefined, diskHealthPercent: undefined, diskTemperatureCelsius: undefined }
   };
   isEditMode = signal(false);
@@ -314,6 +329,14 @@ export class EquipmentFormComponent implements OnInit {
   areas = signal<Area[]>([]);
   selectedSede = '';
   selectedArea = '';
+  costCenters = signal<CostCenter[]>([]);
+  selectedCostCenter = '';
+  private legacyCostCenter = signal('');
+  costCenterOptions = computed(() => {
+    const names = this.costCenters().map(c => c.name);
+    const extra = this.legacyCostCenter();
+    return extra && !names.some(n => n.toUpperCase() === extra.toUpperCase()) ? [extra, ...names] : names;
+  });
   /** Valores guardados en el equipo que ya no existen en el catalogo (se conservan como opcion). */
   private legacySede = signal('');
   private legacyArea = signal('');
@@ -335,6 +358,7 @@ export class EquipmentFormComponent implements OnInit {
     private sedeService: SedeService,
     private areaService: AreaService,
     private deviceTypeService: DeviceTypeService,
+    private costCenterService: CostCenterService,
     private router: Router,
     private route: ActivatedRoute,
     private snackBar: MatSnackBar,
@@ -345,6 +369,7 @@ export class EquipmentFormComponent implements OnInit {
     this.equipmentId = this.route.snapshot.paramMap.get('id') || '';
     this.loadSedes();
     this.loadAreas();
+    this.loadCostCenters();
     this.loadDeviceTypes();
     if (this.equipmentId) {
       this.isEditMode.set(true);
@@ -361,6 +386,12 @@ export class EquipmentFormComponent implements OnInit {
   loadAreas() {
     this.areaService.listActive().subscribe({
       next: (a) => { this.areas.set(a); this.cdr.detectChanges(); }
+    });
+  }
+
+  loadCostCenters() {
+    this.costCenterService.listActive().subscribe({
+      next: (c) => { this.costCenters.set(c); this.cdr.detectChanges(); }
     });
   }
 
@@ -400,6 +431,7 @@ export class EquipmentFormComponent implements OnInit {
             startDate: e.rentalInfo?.startDate || '',
             endDate: e.rentalInfo?.endDate || '',
             contractNumber: e.rentalInfo?.contractNumber || '',
+            monthlyValue: e.rentalInfo?.monthlyValue ?? undefined,
             contractFileUrl: e.rentalInfo?.contractFileUrl || '',
             notes: e.rentalInfo?.notes || ''
           },
@@ -417,6 +449,8 @@ export class EquipmentFormComponent implements OnInit {
         this.selectedArea = e.location?.office || '';
         this.legacySede.set(this.selectedSede);
         this.legacyArea.set(this.selectedArea);
+        this.selectedCostCenter = e.costCenter || '';
+        this.legacyCostCenter.set(this.selectedCostCenter);
         this.cdr.detectChanges();
       },
       error: () => {
@@ -444,7 +478,8 @@ export class EquipmentFormComponent implements OnInit {
     const macAddress2 = laptop ? (this.equipment.macAddress2 || undefined) : undefined;
     const location = this.buildLocation();
     this.loading.set(true);
-    const cleanRental = this.hasRentalData() ? this.equipment.rentalInfo : undefined;
+    const cleanRental = this.hasRentalData() ? { ...this.equipment.rentalInfo!, monthlyValue: this.monthlyValueOrUndefined() } : undefined;
+    const costCenter = this.selectedCostCenter || '';
     const cleanHardware = this.hasHardwareData() ? this.equipment.hardware : undefined;
 
     if (this.isEditMode()) {
@@ -459,6 +494,8 @@ export class EquipmentFormComponent implements OnInit {
         // En edicion siempre se envia la ubicacion para permitir desasignar Sede/Area
         location: location ?? { building: '', floor: '', office: '' },
         ownershipType: this.equipment.ownershipType,
+        // En edicion se envia '' para permitir desasignar el centro de costo
+        costCenter,
         rentalInfo: cleanRental,
         hardware: cleanHardware
       };
@@ -487,6 +524,7 @@ export class EquipmentFormComponent implements OnInit {
         purchaseValue: this.equipment.purchaseValue || undefined,
         assignedTo: this.equipment.assignedTo || undefined,
         inventoryNumber: this.equipment.inventoryNumber || undefined,
+        costCenter: costCenter || undefined,
         rentalInfo: cleanRental,
         hardware: cleanHardware
       };
@@ -507,7 +545,15 @@ export class EquipmentFormComponent implements OnInit {
   hasRentalData(): boolean {
     if (this.equipment.ownershipType !== 'RENTED') return false;
     const r = this.equipment.rentalInfo!;
-    return !!(r.rentalCompany || r.contactName || r.startDate || r.endDate || r.contractNumber);
+    return !!(r.rentalCompany || r.contactName || r.startDate || r.endDate || r.contractNumber || this.monthlyValueOrUndefined() != null);
+  }
+
+  /** Valor mensual del alquiler como numero, o undefined si esta vacio/invalido. */
+  private monthlyValueOrUndefined(): number | undefined {
+    const v: any = this.equipment.rentalInfo?.monthlyValue;
+    if (v === null || v === undefined || v === '') return undefined;
+    const n = Number(v);
+    return isNaN(n) ? undefined : n;
   }
 
   hasHardwareData(): boolean {

@@ -84,7 +84,9 @@ public class EquipmentController {
             hw != null ? hw.getDiskSizeGb() : null,
             hw != null ? hw.getDiskHealthPercent() : null,
             hw != null ? hw.getDiskTemperatureCelsius() : null,
-            request.getMacAddress2()
+            request.getMacAddress2(),
+            request.getCostCenter(),
+            rental != null ? rental.getMonthlyValue() : null
         );
         EquipmentResponseDTO response = registerEquipmentUseCase.register(command);
         auditService.log("CREATE", "EQUIPMENT", response.equipmentId().toString(), request.getName(),
@@ -151,7 +153,9 @@ public class EquipmentController {
               hw != null ? hw.getDiskSizeGb() : null,
               hw != null ? hw.getDiskHealthPercent() : null,
               hw != null ? hw.getDiskTemperatureCelsius() : null,
-              request.getMacAddress2()
+              request.getMacAddress2(),
+              request.getCostCenter(),
+              rental != null ? rental.getMonthlyValue() : null
           );
         EquipmentResponseDTO updated = updateEquipmentUseCase.update(command);
         auditService.log("UPDATE", "EQUIPMENT", id.toString(), request.getName(),

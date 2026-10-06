@@ -45,6 +45,9 @@ public class CreateEquipmentRequest {
     private BigDecimal purchaseValue;
 
     private String assignedTo;
+    /** Centro de costo (nombre del catalogo). Opcional. */
+    @Size(max = 100)
+    private String costCenter;
     private String ownershipType;
     @Valid
     private RentalInfoRequest rentalInfo;

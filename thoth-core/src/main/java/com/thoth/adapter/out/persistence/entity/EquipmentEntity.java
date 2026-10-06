@@ -112,6 +112,12 @@ public class EquipmentEntity {
     @Column(name = "rental_notes", columnDefinition = "TEXT")
     private String rentalNotes;
 
+    @Column(name = "rental_monthly_value", precision = 12, scale = 2)
+    private BigDecimal rentalMonthlyValue;
+
+    @Column(name = "cost_center", length = 100)
+    private String costCenter;
+
     @Column(name = "hardware_processor")
     private String hardwareProcessor;
 

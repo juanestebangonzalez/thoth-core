@@ -35,8 +35,29 @@ public record RegisterEquipmentCommand(
     Integer diskSizeGb,
     Integer diskHealthPercent,
     Integer diskTemperatureCelsius,
-    String macAddress2
+    String macAddress2,
+    String costCenter,
+    BigDecimal rentalMonthlyValue
 ) {
+    /** Constructor de compatibilidad (sin centro de costo ni valor mensual de alquiler). */
+    public RegisterEquipmentCommand(String name, String category, String serialNumber, String inventoryNumber,
+                                    String brand, String model, String macAddress, LocalDate purchaseDate,
+                                    BigDecimal purchaseValue, String building, String floor, String office,
+                                    String assignedTo, String createdBy, String ownershipType,
+                                    String rentalCompany, String rentalContactName, String rentalContactPhone,
+                                    String rentalContactEmail, LocalDate rentalStartDate, LocalDate rentalEndDate,
+                                    String rentalContractNumber, String rentalContractFileUrl, String rentalNotes,
+                                    String processor, Integer ramSizeGb, String ramType, String diskType,
+                                    Integer diskSizeGb, Integer diskHealthPercent, Integer diskTemperatureCelsius,
+                                    String macAddress2) {
+        this(name, category, serialNumber, inventoryNumber, brand, model, macAddress, purchaseDate,
+             purchaseValue, building, floor, office, assignedTo, createdBy, ownershipType,
+             rentalCompany, rentalContactName, rentalContactPhone, rentalContactEmail, rentalStartDate,
+             rentalEndDate, rentalContractNumber, rentalContractFileUrl, rentalNotes, processor,
+             ramSizeGb, ramType, diskType, diskSizeGb, diskHealthPercent, diskTemperatureCelsius,
+             macAddress2, null, null);
+    }
+
     /** Constructor de compatibilidad (sin segunda MAC). */
     public RegisterEquipmentCommand(String name, String category, String serialNumber, String inventoryNumber,
                                     String brand, String model, String macAddress, LocalDate purchaseDate,
@@ -51,6 +72,7 @@ public record RegisterEquipmentCommand(
              purchaseValue, building, floor, office, assignedTo, createdBy, ownershipType,
              rentalCompany, rentalContactName, rentalContactPhone, rentalContactEmail, rentalStartDate,
              rentalEndDate, rentalContractNumber, rentalContractFileUrl, rentalNotes, processor,
-             ramSizeGb, ramType, diskType, diskSizeGb, diskHealthPercent, diskTemperatureCelsius, null);
+             ramSizeGb, ramType, diskType, diskSizeGb, diskHealthPercent, diskTemperatureCelsius,
+             null, null, null);
     }
 }
