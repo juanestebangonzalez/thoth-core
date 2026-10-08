@@ -28,7 +28,9 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         "/api/v1/auth/login",
         "/api/v1/auth/register",
         "/api/v1/auth/change-password",
-        "/api/v1/auth/request-password-reset"
+        "/api/v1/auth/request-password-reset",
+        "/api/v1/auth/reset-password",
+        "/api/v1/auth/reset-password/validate"
     );
 
     private final int maxAttempts;

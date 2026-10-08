@@ -44,8 +44,8 @@ import { CreateMaintenanceRequest, PartReplaced } from '../../core/models/mainte
                 </mat-option>
               }
               @if (maintenanceCategories.length === 0) {
-                <mat-option value="PREVENTIVE">Preventivo</mat-option>
-                <mat-option value="CORRECTIVE">Correctivo</mat-option>
+                <mat-option value="PREVENTIVO">Preventivo</mat-option>
+                <mat-option value="CORRECTIVO">Correctivo</mat-option>
               }
             </mat-select>
           </mat-form-field>

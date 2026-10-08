@@ -40,7 +40,7 @@ public class CostCenterController {
             .map(CostCenterController::toDTO).toList());
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@perm.can(authentication,'CATALOGS','EDIT')")
     @PostMapping
     @Operation(summary = "Crear centro de costo")
     public ResponseEntity<?> create(@Valid @RequestBody CreateCatalogItemRequest body, Principal principal) {
@@ -58,7 +58,7 @@ public class CostCenterController {
         return ResponseEntity.ok(toDTO(saved));
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@perm.can(authentication,'CATALOGS','EDIT')")
     @PutMapping("/{id}")
     @Operation(summary = "Actualizar centro de costo")
     public ResponseEntity<?> update(@PathVariable UUID id, @RequestBody CreateCatalogItemRequest body, Principal principal) {
@@ -80,7 +80,7 @@ public class CostCenterController {
         }).orElse(ResponseEntity.notFound().build());
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@perm.can(authentication,'CATALOGS','EDIT')")
     @DeleteMapping("/{id}")
     @Operation(summary = "Eliminar centro de costo")
     public ResponseEntity<?> delete(@PathVariable UUID id, Principal principal) {

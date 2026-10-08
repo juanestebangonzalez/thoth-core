@@ -20,7 +20,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/maintenance-history")
-@Tag(name = "Maintenance History", description = "Historial de mantenimientos (HV del equipo)")
+@Tag(name = "Historial de mantenimientos", description = "Historial de mantenimientos (HV del equipo)")
 @RequiredArgsConstructor
 public class MaintenanceHistoryController {
 

@@ -10,7 +10,11 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
-      if (error.status === 401) {
+      // En rutas publicas de autenticacion (login, recuperacion de contrasena) un 401
+      // no significa sesion expirada: el componente muestra su propio mensaje.
+      const esRutaAuth = ['/auth/login', '/auth/register', '/auth/change-password',
+        '/auth/request-password-reset', '/auth/reset-password'].some(r => req.url.includes(r));
+      if (error.status === 401 && !esRutaAuth) {
         localStorage.removeItem('token');
         localStorage.removeItem('auth');
         localStorage.removeItem('permissions');

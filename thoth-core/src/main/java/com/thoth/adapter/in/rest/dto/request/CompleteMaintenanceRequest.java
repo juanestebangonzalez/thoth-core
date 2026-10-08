@@ -16,6 +16,6 @@ public class CompleteMaintenanceRequest {
     @NotNull(message = "La fecha de finalizacion es obligatoria")
     private LocalDate completionDate;
     
-    @NotBlank(message = "Notes are required")
+    @NotBlank(message = "Las notas son obligatorias")
     private String notes;
 }

@@ -126,7 +126,8 @@ export class PermissionsDialogComponent implements OnInit {
   moduleIcons: Record<string, string> = {
     EQUIPMENT: 'computer', MAINTENANCE: 'build', AI: 'psychology',
     REPORTS: 'analytics', CALENDAR: 'calendar_month', ALERTS: 'notifications',
-    QR: 'qr_code', DOCUMENTS: 'folder', USERS: 'people'
+    QR: 'qr_code', DOCUMENTS: 'folder', USERS: 'people',
+    CATALOGS: 'category', IMPORT: 'upload_file', AUDIT: 'history', RENTALS: 'request_quote'
   };
 
   actionLabels = [

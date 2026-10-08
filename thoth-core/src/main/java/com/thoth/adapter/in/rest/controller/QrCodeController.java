@@ -15,7 +15,7 @@ import java.util.UUID;
 @PreAuthorize("isAuthenticated()")
 @RestController
 @RequestMapping("/api/v1/qr")
-@Tag(name = "QR Code", description = "Generacion de codigos QR para equipos")
+@Tag(name = "Codigos QR", description = "Generacion de codigos QR para equipos")
 @RequiredArgsConstructor
 public class QrCodeController {
 

@@ -4,6 +4,8 @@ import com.thoth.adapter.out.persistence.entity.EquipmentEntity;
 import com.thoth.adapter.out.persistence.entity.MaintenanceHistoryEntity;
 import com.thoth.adapter.out.persistence.repository.EquipmentJpaRepository;
 import com.thoth.adapter.out.persistence.repository.MaintenanceHistoryJpaRepository;
+import com.thoth.domain.valueobject.Hardware;
+import com.thoth.domain.valueobject.MaintenanceType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +24,7 @@ import java.util.stream.Collectors;
 @PreAuthorize("isAuthenticated()")
 @RestController
 @RequestMapping("/api/v1/reports")
-@Tag(name = "Reports", description = "Reportes y estadisticas para gerencia")
+@Tag(name = "Reportes", description = "Reportes y estadisticas para gerencia")
 @RequiredArgsConstructor
 public class ReportsController {
 
@@ -124,9 +126,9 @@ public class ReportsController {
         List<Map<String, Object>> critical = new ArrayList<>();
         for (EquipmentEntity eq : allEquipments) {
             List<String> issues = new ArrayList<>();
-            if (eq.getHardwareDiskHealthPercent() != null && eq.getHardwareDiskHealthPercent() < 30)
+            if (Hardware.isCriticalDiskHealth(eq.getHardwareDiskHealthPercent()))
                 issues.add("Disco: " + eq.getHardwareDiskHealthPercent() + "%");
-            if (eq.getHardwareDiskTemperatureCelsius() != null && eq.getHardwareDiskTemperatureCelsius() >= 70)
+            if (Hardware.isCriticalTemperature(eq.getHardwareDiskTemperatureCelsius()))
                 issues.add("Temp: " + eq.getHardwareDiskTemperatureCelsius() + "C");
             if (eq.getPurchaseDate() != null && ChronoUnit.YEARS.between(eq.getPurchaseDate(), LocalDate.now()) >= 5)
                 issues.add("Edad: " + ChronoUnit.YEARS.between(eq.getPurchaseDate(), LocalDate.now()) + " anos");
@@ -149,16 +151,19 @@ public class ReportsController {
             LocalDate monthStart = LocalDate.now().minusMonths(i).withDayOfMonth(1);
             String monthKey = monthStart.format(fmt);
             long preventive = allMaintenance.stream()
-                .filter(m -> m.getPerformedDate() != null && m.getPerformedDate().toLocalDate().format(fmt).equals(monthKey) && "PREVENTIVE".equals(m.getMaintenanceType()))
+                .filter(m -> m.getPerformedDate() != null && m.getPerformedDate().toLocalDate().format(fmt).equals(monthKey) && MaintenanceType.isPreventive(m.getMaintenanceType()))
                 .count();
             long corrective = allMaintenance.stream()
-                .filter(m -> m.getPerformedDate() != null && m.getPerformedDate().toLocalDate().format(fmt).equals(monthKey) && "CORRECTIVE".equals(m.getMaintenanceType()))
+                .filter(m -> m.getPerformedDate() != null && m.getPerformedDate().toLocalDate().format(fmt).equals(monthKey) && MaintenanceType.isCorrective(m.getMaintenanceType()))
+                .count();
+            long totalMes = allMaintenance.stream()
+                .filter(m -> m.getPerformedDate() != null && m.getPerformedDate().toLocalDate().format(fmt).equals(monthKey))
                 .count();
             Map<String, Object> month = new LinkedHashMap<>();
             month.put("month", monthKey);
             month.put("preventive", preventive);
             month.put("corrective", corrective);
-            month.put("total", preventive + corrective);
+            month.put("total", totalMes);
             maintByMonth.add(month);
         }
         report.put("mantenimientosPorMes", maintByMonth);
@@ -307,15 +312,16 @@ public class ReportsController {
         for (int i = 7; i >= 0; i--) {
             java.time.LocalDate weekStart = today.minusWeeks(i).with(java.time.DayOfWeek.MONDAY);
             java.time.LocalDate weekEnd = weekStart.plusDays(6);
-            long prev = all.stream().filter(m -> m.getPerformedDate() != null && !m.getPerformedDate().toLocalDate().isBefore(weekStart) && !m.getPerformedDate().toLocalDate().isAfter(weekEnd) && "PREVENTIVE".equals(m.getMaintenanceType())).count();
-            long corr = all.stream().filter(m -> m.getPerformedDate() != null && !m.getPerformedDate().toLocalDate().isBefore(weekStart) && !m.getPerformedDate().toLocalDate().isAfter(weekEnd) && "CORRECTIVE".equals(m.getMaintenanceType())).count();
+            long prev = all.stream().filter(m -> m.getPerformedDate() != null && !m.getPerformedDate().toLocalDate().isBefore(weekStart) && !m.getPerformedDate().toLocalDate().isAfter(weekEnd) && MaintenanceType.isPreventive(m.getMaintenanceType())).count();
+            long corr = all.stream().filter(m -> m.getPerformedDate() != null && !m.getPerformedDate().toLocalDate().isBefore(weekStart) && !m.getPerformedDate().toLocalDate().isAfter(weekEnd) && MaintenanceType.isCorrective(m.getMaintenanceType())).count();
+            long totalSemana = all.stream().filter(m -> m.getPerformedDate() != null && !m.getPerformedDate().toLocalDate().isBefore(weekStart) && !m.getPerformedDate().toLocalDate().isAfter(weekEnd)).count();
             Map<String, Object> week = new LinkedHashMap<>();
             week.put("weekStart", weekStart.toString());
             week.put("weekEnd", weekEnd.toString());
             week.put("label", weekStart.getDayOfMonth() + "-" + weekEnd.getDayOfMonth() + " " + weekStart.getMonth().toString().substring(0, 3));
             week.put("preventive", prev);
             week.put("corrective", corr);
-            week.put("total", prev + corr);
+            week.put("total", totalSemana);
             byWeek.add(week);
         }
         report.put("byWeek", byWeek);
@@ -327,24 +333,40 @@ public class ReportsController {
         for (int i = 11; i >= 0; i--) {
             java.time.LocalDate monthDate = today.minusMonths(i).withDayOfMonth(1);
             String monthKey = monthDate.format(fmt);
-            long prev = all.stream().filter(m -> m.getPerformedDate() != null && m.getPerformedDate().toLocalDate().format(fmt).equals(monthKey) && "PREVENTIVE".equals(m.getMaintenanceType())).count();
-            long corr = all.stream().filter(m -> m.getPerformedDate() != null && m.getPerformedDate().toLocalDate().format(fmt).equals(monthKey) && "CORRECTIVE".equals(m.getMaintenanceType())).count();
+            long prev = all.stream().filter(m -> m.getPerformedDate() != null && m.getPerformedDate().toLocalDate().format(fmt).equals(monthKey) && MaintenanceType.isPreventive(m.getMaintenanceType())).count();
+            long corr = all.stream().filter(m -> m.getPerformedDate() != null && m.getPerformedDate().toLocalDate().format(fmt).equals(monthKey) && MaintenanceType.isCorrective(m.getMaintenanceType())).count();
             Map<String, Object> month = new LinkedHashMap<>();
             month.put("month", monthKey);
+            long totalMes = all.stream().filter(m -> m.getPerformedDate() != null && m.getPerformedDate().toLocalDate().format(fmt).equals(monthKey)).count();
             month.put("label", meses[monthDate.getMonthValue() - 1] + " " + monthDate.getYear());
             month.put("preventive", prev);
             month.put("corrective", corr);
-            month.put("total", prev + corr);
+            month.put("total", totalMes);
             byMonth.add(month);
         }
         report.put("byMonth", byMonth);
 
         // Totales
-        long totalPrev = all.stream().filter(m -> "PREVENTIVE".equals(m.getMaintenanceType())).count();
-        long totalCorr = all.stream().filter(m -> "CORRECTIVE".equals(m.getMaintenanceType())).count();
+        long totalPrev = all.stream().filter(m -> MaintenanceType.isPreventive(m.getMaintenanceType())).count();
+        long totalCorr = all.stream().filter(m -> MaintenanceType.isCorrective(m.getMaintenanceType())).count();
         report.put("totalPreventive", totalPrev);
         report.put("totalCorrective", totalCorr);
-        report.put("total", totalPrev + totalCorr);
+        report.put("total", (long) all.size());
+
+        // Desglose por el tipo real guardado (catalogo de tipos de mantenimiento), sin transformarlo
+        Map<String, Long> byType = all.stream()
+            .collect(Collectors.groupingBy(
+                m -> (m.getMaintenanceType() == null || m.getMaintenanceType().isBlank())
+                    ? "SIN TIPO" : m.getMaintenanceType(),
+                Collectors.counting()));
+        List<Map<String, Object>> porTipo = new ArrayList<>();
+        sortByValue(byType).forEach((tipo, cantidad) -> {
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("tipo", tipo);
+            item.put("cantidad", cantidad);
+            porTipo.add(item);
+        });
+        report.put("porTipo", porTipo);
 
         // Por tecnico
         Map<String, Long> byTech = all.stream()
@@ -366,9 +388,9 @@ public class ReportsController {
             bySede.computeIfAbsent(sede, k -> new LinkedHashMap<>(Map.of("preventive", 0L, "corrective", 0L, "total", 0L)));
             Map<String, Long> counts = bySede.get(sede);
             counts.put("total", counts.get("total") + 1);
-            if ("PREVENTIVE".equals(m.getMaintenanceType())) {
+            if (MaintenanceType.isPreventive(m.getMaintenanceType())) {
                 counts.put("preventive", counts.get("preventive") + 1);
-            } else {
+            } else if (MaintenanceType.isCorrective(m.getMaintenanceType())) {
                 counts.put("corrective", counts.get("corrective") + 1);
             }
         }
@@ -478,6 +500,7 @@ public class ReportsController {
     private static final String SIN_SEDE = "SIN SEDE";
     private static final String SIN_CENTRO_COSTO = "SIN CENTRO DE COSTO";
 
+    @PreAuthorize("@perm.can(authentication,'RENTALS','VIEW')")
     @GetMapping("/rented-equipment")
     @Operation(summary = "Informe de equipos alquilados por sede y centro de costo")
     public ResponseEntity<Map<String, Object>> rentedEquipmentReport() {

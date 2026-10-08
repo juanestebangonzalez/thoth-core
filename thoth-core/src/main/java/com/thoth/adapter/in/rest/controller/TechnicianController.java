@@ -11,7 +11,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/technicians")
-@Tag(name = "Technicians", description = "Lista de tecnicos disponibles")
+@Tag(name = "Tecnicos", description = "Lista de tecnicos disponibles")
 @RequiredArgsConstructor
 public class TechnicianController {
 

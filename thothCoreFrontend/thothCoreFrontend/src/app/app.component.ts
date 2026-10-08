@@ -50,6 +50,7 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   showNavbar(): boolean {
-    return !this.router.url.includes('/login');
+    const url = this.router.url;
+    return !url.includes('/login') && !url.startsWith('/reset-password');
   }
 }

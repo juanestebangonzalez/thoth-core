@@ -15,7 +15,7 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/api/v1/permissions")
-@Tag(name = "Permissions", description = "Gestion de permisos granulares")
+@Tag(name = "Permisos", description = "Gestion de permisos granulares")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('ADMIN')")
 public class PermissionController {
@@ -93,6 +93,10 @@ public class PermissionController {
         moduleLabels.put("QR", "Codigos QR");
         moduleLabels.put("DOCUMENTS", "Documentos");
         moduleLabels.put("USERS", "Usuarios");
+        moduleLabels.put("CATALOGS", "Catalogos");
+        moduleLabels.put("IMPORT", "Importacion masiva");
+        moduleLabels.put("AUDIT", "Auditoria");
+        moduleLabels.put("RENTALS", "Informe de alquilados");
         result.put("moduleLabels", moduleLabels);
 
         Map<String, String> actionLabels = new LinkedHashMap<>();

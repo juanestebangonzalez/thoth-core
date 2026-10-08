@@ -18,13 +18,13 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/equipment")
-@Tag(name = "Equipment Import", description = "Importacion masiva de equipos desde plantilla")
+@Tag(name = "Importacion de equipos", description = "Importacion masiva de equipos desde plantilla")
 @RequiredArgsConstructor
 public class EquipmentImportController {
 
     private final EquipmentImportService importService;
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN')")
+    @PreAuthorize("@perm.can(authentication,'IMPORT','CREATE')")
     @PostMapping("/import")
     @Operation(summary = "Importar equipos masivamente",
                description = "dryRun=true solo valida; dryRun=false importa las filas validas")

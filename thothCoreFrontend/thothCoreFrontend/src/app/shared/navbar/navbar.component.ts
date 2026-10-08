@@ -77,6 +77,8 @@ import { AlertService } from '../../core/services/alert.service';
         <a class="nav-item" routerLink="/parts-report" routerLinkActive="active" (click)="closeMobile()">
           <mat-icon>construction</mat-icon><span>Rep. Partes</span>
         </a>
+        }
+        @if (auth.canView("RENTALS")) {
         <a class="nav-item" routerLink="/rented-report" routerLinkActive="active" (click)="closeMobile()">
           <mat-icon>request_quote</mat-icon><span>Alquilados</span>
         </a>
@@ -87,13 +89,17 @@ import { AlertService } from '../../core/services/alert.service';
         </a>
         }
 
+        @if (auth.canView("AUDIT")) {
         <a class="nav-item" routerLink="/audit-log" routerLinkActive="active" (click)="closeMobile()">
           <mat-icon>history</mat-icon><span>Auditoria</span>
         </a>
+        }
 
-        @if (auth.currentUser()?.role === 'ADMIN') {
+        @if (auth.canView("CATALOGS") || isAdmin()) {
           <div class="nav-divider"></div>
           <span class="nav-section">ADMIN</span>
+        }
+        @if (auth.canView("CATALOGS")) {
           <a class="nav-item" routerLink="/sedes" routerLinkActive="active" (click)="closeMobile()">
             <mat-icon>business</mat-icon><span>Sedes</span>
           </a>
@@ -109,6 +115,8 @@ import { AlertService } from '../../core/services/alert.service';
           <a class="nav-item" routerLink="/maintenance-categories" routerLinkActive="active" (click)="closeMobile()">
             <mat-icon>handyman</mat-icon><span>Tipos Mantenim.</span>
           </a>
+        }
+        @if (isAdmin()) {
           <a class="nav-item" routerLink="/users" routerLinkActive="active" (click)="closeMobile()">
             <mat-icon>people</mat-icon><span>Usuarios</span>
           </a>
@@ -226,6 +234,9 @@ export class NavbarComponent implements OnInit {
       error: () => {}
     });
   }
+
+  /** Usuarios sigue siendo solo para ADMIN (adminGuard). */
+  isAdmin(): boolean { return this.auth.currentUser()?.role === 'ADMIN'; }
 
   toggleSidebar() { this.sidebarOpen.set(!this.sidebarOpen()); }
   closeMobile() { this.sidebarOpen.set(false); }

@@ -30,7 +30,7 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/api/v1/documents")
-@Tag(name = "Documents", description = "Gestion de documentos (facturas, contratos, etc)")
+@Tag(name = "Documentos", description = "Gestion de documentos (facturas, contratos, etc)")
 @RequiredArgsConstructor
 public class DocumentController {
 

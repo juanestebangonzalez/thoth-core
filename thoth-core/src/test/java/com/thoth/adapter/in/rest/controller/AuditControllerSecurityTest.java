@@ -49,14 +49,29 @@ class AuditControllerSecurityTest {
 
     @Test
     @WithMockUser(roles = "VIEWER")
-    void getAuditLog_viewer_returns200() throws Exception {
+    void getAuditLog_viewerWithoutAuditPermission_returns403() throws Exception {
+        // Permiso granular AUDIT/VIEW: el VIEWER no lo tiene por defecto
+        mockMvc.perform(get("/api/v1/audit"))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void getAuditLog_admin_returns200() throws Exception {
         mockMvc.perform(get("/api/v1/audit"))
             .andExpect(status().isOk());
     }
 
     @Test
     @WithMockUser(roles = "VIEWER")
-    void getArchived_viewer_returns200() throws Exception {
+    void getArchived_viewerWithoutAuditPermission_returns403() throws Exception {
+        mockMvc.perform(get("/api/v1/audit/archive"))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void getArchived_admin_returns200() throws Exception {
         mockMvc.perform(get("/api/v1/audit/archive"))
             .andExpect(status().isOk());
     }
@@ -77,7 +92,14 @@ class AuditControllerSecurityTest {
 
     @Test
     @WithMockUser(roles = "VIEWER")
-    void getStats_viewer_returns200() throws Exception {
+    void getStats_viewerWithoutAuditPermission_returns403() throws Exception {
+        mockMvc.perform(get("/api/v1/audit/stats"))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void getStats_admin_returns200() throws Exception {
         mockMvc.perform(get("/api/v1/audit/stats"))
             .andExpect(status().isOk());
     }

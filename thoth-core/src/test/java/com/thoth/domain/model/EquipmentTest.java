@@ -66,7 +66,7 @@ class EquipmentTest {
                 "admin"
             )
         );
-        assertEquals("Equipment name cannot be blank", exception.getMessage());
+        assertEquals("El nombre del equipo no puede estar vacio", exception.getMessage());
     }
     
     @Test
@@ -106,7 +106,7 @@ class EquipmentTest {
             IllegalStateException.class,
             () -> equipment.markAsActive()
         );
-        assertTrue(exception.getMessage().contains("Cannot reactivate retired equipment"));
+        assertTrue(exception.getMessage().contains("No se puede reactivar un equipo retirado"));
         assertEquals(EquipmentStatus.RETIRED, equipment.getStatus());
     }
     

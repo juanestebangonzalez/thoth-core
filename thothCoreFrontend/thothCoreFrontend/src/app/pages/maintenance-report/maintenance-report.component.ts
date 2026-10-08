@@ -6,11 +6,12 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatTabsModule } from '@angular/material/tabs';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
+import { EtiquetaPipe, etiqueta, claseTipoMantenimiento } from '../../core/pipes/etiqueta.pipe';
 
 @Component({
   selector: 'app-maintenance-report',
   standalone: true,
-  imports: [CommonModule, MatCardModule, MatIconModule, MatButtonModule, MatTabsModule],
+  imports: [CommonModule, MatCardModule, MatIconModule, MatButtonModule, MatTabsModule, EtiquetaPipe],
   template: `
     <div class="report-page">
       <div class="header">
@@ -49,6 +50,24 @@ import { environment } from '../../../environments/environment';
             <div class="kpi-label">Preventivos</div>
           </div>
         </div>
+
+        <!-- Desglose por tipo de mantenimiento (porTipo) -->
+        @if (porTipo().length) {
+          <mat-card class="chart-card tipo-card">
+            <h3>Mantenimientos por Tipo</h3>
+            <div class="tech-list">
+              @for (t of porTipo(); track t.tipo) {
+                <div class="tech-row">
+                  <span class="badge tipo-badge" [ngClass]="claseBadge(t.tipo)">{{ t.tipo | etiqueta:'mantenimiento' }}</span>
+                  <div class="tech-bar-track">
+                    <div class="tech-bar-fill" [ngClass]="'fill-' + claseBadge(t.tipo)" [style.width.%]="getTipoPercent(t.cantidad)"></div>
+                  </div>
+                  <span class="tech-count">{{ t.cantidad }}</span>
+                </div>
+              }
+            </div>
+          </mat-card>
+        }
 
         <!-- Planned vs Completed KPIs -->
         @if (data().plannedVsCompleted) {
@@ -320,7 +339,7 @@ import { environment } from '../../../environments/environment';
                     @for (m of data().recent; track m.id) {
                       <tr>
                         <td>{{ m.date | date:'dd/MM/yyyy HH:mm' }}</td>
-                        <td><span class="badge" [class.prev]="m.type === 'PREVENTIVE'" [class.corr]="m.type === 'CORRECTIVE'">{{ m.type === 'PREVENTIVE' ? 'PREV' : 'CORR' }}</span></td>
+                        <td><span class="badge" [ngClass]="claseBadge(m.type)">{{ (m.type | etiqueta:'mantenimiento') || '-' }}</span></td>
                         <td>{{ m.technician }}</td>
                         <td class="reason-cell">{{ m.reason }}</td>
                         <td>
@@ -396,6 +415,12 @@ import { environment } from '../../../environments/environment';
     .badge { padding: 3px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; }
     .badge.prev { background: rgba(59,130,246,0.15); color: #93C5FD; }
     .badge.corr { background: rgba(245,158,11,0.15); color: #FBBF24; }
+    .badge.other { background: rgba(139,92,246,0.15); color: #C4B5FD; }
+    .tipo-card { margin-bottom: 24px; }
+    .tipo-badge { width: 150px; flex-shrink: 0; text-align: center; }
+    .tech-bar-fill.fill-prev { background: linear-gradient(90deg, #3B82F6, #60A5FA); }
+    .tech-bar-fill.fill-corr { background: linear-gradient(90deg, #F59E0B, #FBBF24); }
+    .tech-bar-fill.fill-other { background: linear-gradient(90deg, #8B5CF6, #A78BFA); }
     .badge.green-badge { background: rgba(16,185,129,0.15); color: #6EE7B7; }
     .badge.red-badge { background: rgba(239,68,68,0.15); color: #FCA5A5; }
 
@@ -462,6 +487,27 @@ export class MaintenanceReportComponent implements OnInit {
     return Math.max(5, (value / max) * 100);
   }
 
+  /** Desglose por tipo tal como lo devuelve el backend: [{tipo, cantidad}], ordenado de mayor a menor. */
+  porTipo(): { tipo: string; cantidad: number }[] {
+    const lista = this.data()?.porTipo;
+    if (!Array.isArray(lista)) return [];
+    return lista
+      .filter((t: any) => t && t.tipo)
+      .map((t: any) => ({ tipo: String(t.tipo), cantidad: Number(t.cantidad) || 0 }))
+      .sort((a: any, b: any) => b.cantidad - a.cantidad);
+  }
+
+  getTipoPercent(cantidad: number): number {
+    const max = Math.max(1, ...this.porTipo().map(t => t.cantidad));
+    return Math.max(5, (cantidad / max) * 100);
+  }
+
+  /** Clase del badge: prev (preventivo), corr (correctivo) u other (LOGICO y demas). */
+  claseBadge(tipo: string | null | undefined): string {
+    const c = claseTipoMantenimiento(tipo);
+    return c === 'preventive' ? 'prev' : c === 'corrective' ? 'corr' : 'other';
+  }
+
   getSedePercent(value: number, total: number): number {
     return total > 0 ? (value / total) * 100 : 0;
   }
@@ -481,6 +527,17 @@ export class MaintenanceReportComponent implements OnInit {
     csv += 'RESUMEN GENERAL\n';
     csv += 'Total,Preventivos,Correctivos,% Preventivos\n';
     csv += `${d.total},${d.totalPreventive},${d.totalCorrective},${d.total > 0 ? ((d.totalPreventive / d.total) * 100).toFixed(1) : 0}%\n\n`;
+
+    // Por tipo
+    const tipos = this.porTipo();
+    if (tipos.length) {
+      csv += 'POR TIPO DE MANTENIMIENTO\n';
+      csv += 'Tipo,Cantidad\n';
+      for (const t of tipos) {
+        csv += `${etiqueta(t.tipo, 'mantenimiento')},${t.cantidad}\n`;
+      }
+      csv += '\n';
+    }
 
     // Cumplimiento
     if (d.plannedVsCompleted) {

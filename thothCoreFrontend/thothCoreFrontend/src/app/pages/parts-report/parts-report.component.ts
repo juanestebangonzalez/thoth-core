@@ -6,10 +6,12 @@ import { MatButtonModule } from '@angular/material/button';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 
+import { EtiquetaPipe, claseTipoMantenimiento } from '../../core/pipes/etiqueta.pipe';
+
 @Component({
   selector: 'app-parts-report',
   standalone: true,
-  imports: [CommonModule, MatCardModule, MatIconModule, MatButtonModule],
+  imports: [CommonModule, MatCardModule, MatIconModule, MatButtonModule, EtiquetaPipe],
   template: `
     <div class="report-page">
       <div class="header">
@@ -93,8 +95,8 @@ import { environment } from '../../../environments/environment';
                       <td class="reason-cell">{{ p.reason || '-' }}</td>
                       <td>{{ p.technicianName || '-' }}</td>
                       <td>
-                        <span class="badge" [class.prev]="p.maintenanceType === 'PREVENTIVE' || p.maintenanceType === 'PREVENTIVO'" [class.corr]="p.maintenanceType === 'CORRECTIVE' || p.maintenanceType === 'CORRECTIVO'">
-                          {{ (p.maintenanceType === 'PREVENTIVE' || p.maintenanceType === 'PREVENTIVO') ? 'PREV' : (p.maintenanceType === 'CORRECTIVE' || p.maintenanceType === 'CORRECTIVO') ? 'CORR' : (p.maintenanceType || '-') }}
+                        <span class="badge" [class.prev]="claseTipo(p.maintenanceType) === 'preventive'" [class.corr]="claseTipo(p.maintenanceType) === 'corrective'" [class.other]="claseTipo(p.maintenanceType) === 'other'">
+                          {{ (p.maintenanceType | etiqueta:'mantenimiento') || '-' }}
                         </span>
                       </td>
                       <td>{{ p.purchaseDate ? (p.purchaseDate | date:'dd/MM/yyyy') : '-' }}</td>
@@ -183,6 +185,7 @@ import { environment } from '../../../environments/environment';
     .badge { padding: 3px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; }
     .badge.prev { background: rgba(59,130,246,0.15); color: #93C5FD; }
     .badge.corr { background: rgba(245,158,11,0.15); color: #FBBF24; }
+    .badge.other { background: rgba(139,92,246,0.15); color: #C4B5FD; }
     .badge.blue-badge { background: rgba(59,130,246,0.15); color: #93C5FD; }
 
     .parts-list { display: flex; flex-wrap: wrap; gap: 4px; }
@@ -200,6 +203,7 @@ import { environment } from '../../../environments/environment';
   `]
 })
 export class PartsReportComponent implements OnInit {
+  claseTipo(tipo: string | null | undefined): string { return claseTipoMantenimiento(tipo); }
   data = signal<any>(null);
 
   constructor(private http: HttpClient, private cdr: ChangeDetectorRef) {}

@@ -19,7 +19,8 @@ public class PermissionService {
     private final UserJpaRepository userRepository;
 
     public static final List<String> ALL_MODULES = List.of(
-        "EQUIPMENT", "MAINTENANCE", "AI", "REPORTS", "CALENDAR", "ALERTS", "QR", "DOCUMENTS", "USERS"
+        "EQUIPMENT", "MAINTENANCE", "AI", "REPORTS", "CALENDAR", "ALERTS", "QR", "DOCUMENTS", "USERS",
+        "CATALOGS", "IMPORT", "AUDIT", "RENTALS"
     );
 
     public static final List<String> ALL_ACTIONS = List.of(
@@ -87,6 +88,18 @@ public class PermissionService {
     }
 
     /**
+     * Verifica el permiso de un usuario a partir de su username (el "name" del Authentication).
+     * Devuelve false si el usuario no existe o esta deshabilitado.
+     */
+    public boolean hasPermissionByUsername(String username, String module, String action) {
+        if (username == null || module == null || action == null) return false;
+        return userRepository.findByUsername(username)
+            .filter(UserEntity::isEnabled)
+            .map(u -> hasPermission(u.getId(), module, action))
+            .orElse(false);
+    }
+
+    /**
      * Guardia de autorizacion para usar directamente en controladores: resuelve el
      * username autenticado a su userId y exige el permiso modulo/accion indicado.
      * Lanza AccessDeniedException (403, via GlobalExceptionHandler) si no lo tiene.
@@ -131,6 +144,10 @@ public class PermissionService {
                 perms.put("QR", List.of("VIEW"));
                 perms.put("DOCUMENTS", List.of("VIEW", "CREATE", "DELETE"));
                 perms.put("USERS", List.of());
+                perms.put("CATALOGS", List.of("VIEW"));
+                perms.put("IMPORT", List.of("VIEW", "CREATE"));
+                perms.put("AUDIT", List.of("VIEW"));
+                perms.put("RENTALS", List.of("VIEW"));
                 break;
             case "USER":
                 perms.put("EQUIPMENT", List.of("VIEW"));
@@ -142,6 +159,10 @@ public class PermissionService {
                 perms.put("QR", List.of("VIEW"));
                 perms.put("DOCUMENTS", List.of("VIEW"));
                 perms.put("USERS", List.of());
+                perms.put("CATALOGS", List.of());
+                perms.put("IMPORT", List.of());
+                perms.put("AUDIT", List.of());
+                perms.put("RENTALS", List.of("VIEW"));
                 break;
             case "VIEWER":
                 perms.put("EQUIPMENT", List.of("VIEW"));
@@ -153,6 +174,10 @@ public class PermissionService {
                 perms.put("QR", List.of());
                 perms.put("DOCUMENTS", List.of());
                 perms.put("USERS", List.of());
+                perms.put("CATALOGS", List.of());
+                perms.put("IMPORT", List.of());
+                perms.put("AUDIT", List.of());
+                perms.put("RENTALS", List.of("VIEW"));
                 break;
             default:
                 for (String m : ALL_MODULES) perms.put(m, List.of());

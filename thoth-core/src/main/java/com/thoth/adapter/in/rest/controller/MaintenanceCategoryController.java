@@ -17,7 +17,7 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/api/v1/maintenance-categories")
-@Tag(name = "Maintenance Categories", description = "Gestion de categorias de mantenimiento")
+@Tag(name = "Tipos de mantenimiento", description = "Gestion de categorias de mantenimiento")
 @RequiredArgsConstructor
 public class MaintenanceCategoryController {
 
@@ -52,7 +52,7 @@ public class MaintenanceCategoryController {
             .orElse(ResponseEntity.notFound().build());
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@perm.can(authentication,'CATALOGS','EDIT')")
     @PostMapping
     @Operation(summary = "Crear nueva categoria de mantenimiento")
     public ResponseEntity<?> create(@Valid @RequestBody CreateCatalogItemRequest body, Principal principal) {
@@ -72,7 +72,7 @@ public class MaintenanceCategoryController {
         return ResponseEntity.ok(toDTO(saved));
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@perm.can(authentication,'CATALOGS','EDIT')")
     @PutMapping("/{id}")
     @Operation(summary = "Actualizar categoria de mantenimiento")
     public ResponseEntity<?> update(@PathVariable UUID id, @Valid @RequestBody CreateCatalogItemRequest body, Principal principal) {
@@ -95,7 +95,7 @@ public class MaintenanceCategoryController {
         }).orElse(ResponseEntity.notFound().build());
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@perm.can(authentication,'CATALOGS','EDIT')")
     @DeleteMapping("/{id}")
     @Operation(summary = "Desactivar categoria de mantenimiento (soft delete)")
     public ResponseEntity<?> delete(@PathVariable UUID id, Principal principal) {

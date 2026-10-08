@@ -5,6 +5,18 @@ spring:
     active: dev
   jpa:
     open-in-view: false
+  # Correo saliente (recuperacion de contrasena). Solo se usa si thoth.mail.enabled=true.
+  mail:
+    host: ${MAIL_HOST:}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
 
 server:
   port: 8080
@@ -15,8 +27,8 @@ server:
 
 logging:
   level:
-    root: INFO
-    com.thoth: DEBUG
+    root: WARN
+    com.thoth: INFO
 
 management:
   endpoints:
@@ -26,6 +38,10 @@ management:
   endpoint:
     health:
       show-details: when-authorized
+  # El correo es opcional: que un SMTP no configurado no marque la aplicacion como DOWN
+  health:
+    mail:
+      enabled: false
   # DT-31: info endpoint con datos de la app
   info:
     env:
@@ -43,6 +59,13 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
     enabled: true
+
+thoth:
+  # URL publica del frontend (se usa para armar el enlace de restablecimiento de contrasena)
+  frontend-url: ${FRONTEND_URL:https://thoth-core.netlify.app}
+  mail:
+    enabled: ${MAIL_ENABLED:false}
+    from: ${MAIL_FROM:}
 
 app:
   name: THOTH C.O.R.E

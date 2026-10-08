@@ -17,7 +17,7 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/api/v1/device-types")
-@Tag(name = "Device Types", description = "Gestion de tipos de dispositivos")
+@Tag(name = "Tipos de dispositivo", description = "Gestion de tipos de dispositivos")
 @RequiredArgsConstructor
 public class DeviceTypeController {
 
@@ -52,7 +52,7 @@ public class DeviceTypeController {
             .orElse(ResponseEntity.notFound().build());
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@perm.can(authentication,'CATALOGS','EDIT')")
     @PostMapping
     @Operation(summary = "Crear nuevo tipo de dispositivo")
     public ResponseEntity<?> create(@Valid @RequestBody CreateCatalogItemRequest body, Principal principal) {
@@ -72,7 +72,7 @@ public class DeviceTypeController {
         return ResponseEntity.ok(toDTO(saved));
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@perm.can(authentication,'CATALOGS','EDIT')")
     @PutMapping("/{id}")
     @Operation(summary = "Actualizar tipo de dispositivo")
     public ResponseEntity<?> update(@PathVariable UUID id, @Valid @RequestBody CreateCatalogItemRequest body, Principal principal) {
@@ -95,7 +95,7 @@ public class DeviceTypeController {
         }).orElse(ResponseEntity.notFound().build());
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@perm.can(authentication,'CATALOGS','EDIT')")
     @DeleteMapping("/{id}")
     @Operation(summary = "Desactivar tipo de dispositivo (soft delete)")
     public ResponseEntity<?> delete(@PathVariable UUID id, Principal principal) {

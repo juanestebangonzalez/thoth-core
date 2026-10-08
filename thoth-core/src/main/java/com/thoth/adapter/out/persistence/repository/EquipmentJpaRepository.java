@@ -2,6 +2,7 @@ package com.thoth.adapter.out.persistence.repository;
 
 import com.thoth.adapter.out.persistence.entity.EquipmentEntity;
 import com.thoth.domain.valueobject.EquipmentStatus;
+import com.thoth.domain.valueobject.Hardware;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -46,11 +47,21 @@ public interface EquipmentJpaRepository extends JpaRepository<EquipmentEntity, U
            "ORDER BY e.nextMaintenanceDate ASC")
     List<EquipmentEntity> findUpcomingMaintenance(@Param("limit") LocalDate limit);
 
+    /**
+     * Equipos (no retirados) con alguna alerta de hardware: salud del disco por debajo de
+     * {@code saludAdvertencia}, temperatura por encima de {@code temperaturaAdvertencia} o RAM menor a 4 GB.
+     */
     @Query("SELECT e FROM EquipmentEntity e WHERE e.status <> com.thoth.domain.valueobject.EquipmentStatus.RETIRED " +
-           "AND ((e.hardwareDiskHealthPercent IS NOT NULL AND e.hardwareDiskHealthPercent < 30) " +
-           "OR (e.hardwareDiskTemperatureCelsius IS NOT NULL AND e.hardwareDiskTemperatureCelsius >= 70) " +
+           "AND ((e.hardwareDiskHealthPercent IS NOT NULL AND e.hardwareDiskHealthPercent < :saludAdvertencia) " +
+           "OR (e.hardwareDiskTemperatureCelsius IS NOT NULL AND e.hardwareDiskTemperatureCelsius > :temperaturaAdvertencia) " +
            "OR (e.hardwareRamSizeGb IS NOT NULL AND e.hardwareRamSizeGb < 4))")
-    List<EquipmentEntity> findHardwareCritical();
+    List<EquipmentEntity> findHardwareAlerts(@Param("saludAdvertencia") int saludAdvertencia,
+                                             @Param("temperaturaAdvertencia") int temperaturaAdvertencia);
+
+    /** Alertas de hardware con los umbrales centralizados en {@link Hardware} (desde ADVERTENCIA). */
+    default List<EquipmentEntity> findHardwareCritical() {
+        return findHardwareAlerts(Hardware.DISK_HEALTH_WARNING, Hardware.DISK_TEMP_WARNING);
+    }
 
     @Query("SELECT e FROM EquipmentEntity e WHERE e.rentalEndDate IS NOT NULL " +
            "AND e.rentalEndDate <= :limit " +
@@ -66,10 +77,15 @@ public interface EquipmentJpaRepository extends JpaRepository<EquipmentEntity, U
     long countUpcomingMaintenance(@Param("limit") LocalDate limit);
 
     @Query("SELECT COUNT(e) FROM EquipmentEntity e WHERE e.status <> com.thoth.domain.valueobject.EquipmentStatus.RETIRED " +
-           "AND ((e.hardwareDiskHealthPercent IS NOT NULL AND e.hardwareDiskHealthPercent < 30) " +
-           "OR (e.hardwareDiskTemperatureCelsius IS NOT NULL AND e.hardwareDiskTemperatureCelsius >= 70) " +
+           "AND ((e.hardwareDiskHealthPercent IS NOT NULL AND e.hardwareDiskHealthPercent < :saludAdvertencia) " +
+           "OR (e.hardwareDiskTemperatureCelsius IS NOT NULL AND e.hardwareDiskTemperatureCelsius > :temperaturaAdvertencia) " +
            "OR (e.hardwareRamSizeGb IS NOT NULL AND e.hardwareRamSizeGb < 4))")
-    long countHardwareCritical();
+    long countHardwareAlerts(@Param("saludAdvertencia") int saludAdvertencia,
+                             @Param("temperaturaAdvertencia") int temperaturaAdvertencia);
+
+    default long countHardwareCritical() {
+        return countHardwareAlerts(Hardware.DISK_HEALTH_WARNING, Hardware.DISK_TEMP_WARNING);
+    }
 
     @Query("SELECT COUNT(e) FROM EquipmentEntity e WHERE e.rentalEndDate IS NOT NULL " +
            "AND e.rentalEndDate <= :limit " +

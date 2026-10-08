@@ -43,6 +43,9 @@ public class UpdateEquipmentUseCaseImpl implements UpdateEquipmentUseCase {
         if (command.model() != null) equipment.setModel(toUpper(command.model()));
         if (command.macAddress2() != null) equipment.updateMacAddress2(command.macAddress2());
         if (command.costCenter() != null) equipment.updateCostCenter(command.costCenter());
+        // Sistema operativo: null = sin cambio, "" = limpiar
+        if (command.operatingSystem() != null) equipment.updateOperatingSystem(command.operatingSystem());
+        if (command.osVersion() != null) equipment.updateOsVersion(command.osVersion());
         if (command.macAddress() != null) equipment.setMacAddress(command.macAddress() != null ? command.macAddress().toUpperCase().trim() : null);
 
         if (command.ownershipType() != null && !command.ownershipType().isBlank()) {
@@ -102,8 +105,11 @@ public class UpdateEquipmentUseCaseImpl implements UpdateEquipmentUseCase {
             || cmd.rentalMonthlyValue() != null;
     }
 
+    /** Cualquier campo de hardware informado hace que se actualice el bloque. */
     private boolean hasHardwareData(UpdateEquipmentCommand cmd) {
-        return cmd.processor() != null || cmd.ramSizeGb() != null || cmd.diskType() != null;
+        return cmd.processor() != null || cmd.ramSizeGb() != null || cmd.ramType() != null
+            || cmd.diskType() != null || cmd.diskSizeGb() != null || cmd.diskHealthPercent() != null
+            || cmd.diskTemperatureCelsius() != null;
     }
 
     private RamType parseRamType(String type) {

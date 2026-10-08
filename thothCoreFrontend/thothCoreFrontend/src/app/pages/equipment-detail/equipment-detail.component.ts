@@ -15,11 +15,13 @@ import { LocationHistoryService, LocationHistory } from '../../core/services/loc
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { TransferDialogComponent } from '../../shared/transfer-dialog/transfer-dialog.component';
 import { Equipment } from '../../core/models/equipment.model';
+import { EtiquetaPipe, etiqueta, codigoEstado } from '../../core/pipes/etiqueta.pipe';
+import { HardwareThresholdsService } from '../../core/services/hardware-thresholds.service';
 
 @Component({
   selector: 'app-equipment-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, MatCardModule, MatButtonModule, MatIconModule, MatDividerModule, MatChipsModule, MatSnackBarModule, MatDialogModule, EquipmentDocumentsComponent],
+  imports: [CommonModule, RouterLink, MatCardModule, MatButtonModule, MatIconModule, MatDividerModule, MatChipsModule, MatSnackBarModule, MatDialogModule, EquipmentDocumentsComponent, EtiquetaPipe],
   template: `
     <div class="detail-page">
       <div class="header">
@@ -43,7 +45,7 @@ import { Equipment } from '../../core/models/equipment.model';
                 }
               </p>
             </div>
-            <span class="status-badge" [class]="equipment()?.status?.toLowerCase()">{{ equipment()?.status }}</span>
+            <span class="status-badge" [class]="codigoEstado(equipment()?.status).toLowerCase()">{{ equipment()?.status | etiqueta:'estado' }}</span>
           </div>
 
           @if (maintenanceStatus() !== 'none') {
@@ -147,10 +149,24 @@ import { Equipment } from '../../core/models/equipment.model';
             }
           </div>
 
-          @if (equipment()?.hardware) {
+          @if (equipment()?.hardware || equipment()?.operatingSystem || equipment()?.osVersion) {
             <mat-divider></mat-divider>
             <p class="section-heading"><mat-icon>memory</mat-icon> HARDWARE</p>
             <div class="info-grid">
+              <div class="info-item">
+                <mat-icon>terminal</mat-icon>
+                <div>
+                  <span class="label">Sistema Operativo</span>
+                  <span class="value">{{ equipment()?.operatingSystem ? (equipment()?.operatingSystem | etiqueta:'so') : '-' }}</span>
+                </div>
+              </div>
+              <div class="info-item">
+                <mat-icon>info</mat-icon>
+                <div>
+                  <span class="label">Distribucion / Version</span>
+                  <span class="value">{{ equipment()?.osVersion || '-' }}</span>
+                </div>
+              </div>
               <div class="info-item">
                 <mat-icon>developer_board</mat-icon>
                 <div><span class="label">Procesador</span><span class="value">{{ equipment()?.hardware?.processor || '-' }}</span></div>
@@ -175,11 +191,11 @@ import { Equipment } from '../../core/models/equipment.model';
                   <span class="label">Salud del Disco</span>
                   <span class="value">
                     {{ equipment()?.hardware?.diskHealthPercent !== undefined ? equipment()?.hardware?.diskHealthPercent + '%' : '-' }}
-                    @if (equipment()?.hardware?.diskHealthStatus === 'CRITICO') {
+                    @if (estadoSalud() === 'CRITICO') {
                       <span class="hw-badge critical">CRITICO</span>
-                    } @else if (equipment()?.hardware?.diskHealthStatus === 'ADVERTENCIA') {
+                    } @else if (estadoSalud() === 'ADVERTENCIA') {
                       <span class="hw-badge warning">ADVERTENCIA</span>
-                    } @else if (equipment()?.hardware?.diskHealthStatus === 'OK') {
+                    } @else if (estadoSalud() === 'OK') {
                       <span class="hw-badge ok">OK</span>
                     }
                   </span>
@@ -191,11 +207,11 @@ import { Equipment } from '../../core/models/equipment.model';
                   <span class="label">Temperatura</span>
                   <span class="value">
                     {{ equipment()?.hardware?.diskTemperatureCelsius !== undefined ? equipment()?.hardware?.diskTemperatureCelsius + ' C' : '-' }}
-                    @if (equipment()?.hardware?.diskTemperatureStatus === 'CRITICO') {
+                    @if (estadoTemp() === 'CRITICO') {
                       <span class="hw-badge critical">CRITICO</span>
-                    } @else if (equipment()?.hardware?.diskTemperatureStatus === 'ADVERTENCIA') {
+                    } @else if (estadoTemp() === 'ADVERTENCIA') {
                       <span class="hw-badge warning">ADVERTENCIA</span>
-                    } @else if (equipment()?.hardware?.diskTemperatureStatus === 'OK') {
+                    } @else if (estadoTemp() === 'OK') {
                       <span class="hw-badge ok">OK</span>
                     }
                   </span>
@@ -487,7 +503,7 @@ export class EquipmentDetailComponent implements OnInit {
 
     if (diffDays < 0) return 'Mantenimiento vencido hace ' + Math.abs(diffDays) + ' dias';
     if (diffDays === 0) return 'Mantenimiento programado para HOY';
-    if (diffDays === 1) return 'Mantenimiento programado para MAÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¹ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œANA';
+    if (diffDays === 1) return 'Mantenimiento programado para MANANA';
     if (diffDays <= 7) return 'Mantenimiento en ' + diffDays + ' dias';
     return 'Mantenimiento en ' + diffDays + ' dias';
   });
@@ -499,10 +515,26 @@ export class EquipmentDetailComponent implements OnInit {
     private locationHistoryService: LocationHistoryService,
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
-    private http: HttpClient
+    private http: HttpClient,
+    private thresholdsService: HardwareThresholdsService
   ) {}
 
+  readonly codigoEstado = codigoEstado;
+
+  /** Estado de salud del disco: el que calcula el backend; si no viene, se calcula con los umbrales configurados. */
+  estadoSalud(): string {
+    const hw = this.equipment()?.hardware;
+    return hw?.diskHealthStatus || this.thresholdsService.healthStatus(hw?.diskHealthPercent);
+  }
+
+  /** Estado de temperatura del disco: el del backend o, si no viene, calculado con los umbrales. */
+  estadoTemp(): string {
+    const hw = this.equipment()?.hardware;
+    return hw?.diskTemperatureStatus || this.thresholdsService.tempStatus(hw?.diskTemperatureCelsius);
+  }
+
   ngOnInit() {
+    this.thresholdsService.load().subscribe(() => this.cdr.detectChanges());
     this.equipmentId = this.route.snapshot.paramMap.get('id') || '';
     this.loadEquipment();
     this.loadLocationHistory();
@@ -520,7 +552,7 @@ export class EquipmentDetailComponent implements OnInit {
     const reason = prompt('Motivo del cambio de estado:') || 'Cambio manual';
     this.equipmentService.changeStatus(this.equipmentId, newStatus, reason).subscribe({
       next: () => {
-        this.snackBar.open('Estado actualizado a: ' + newStatus, 'OK', { duration: 3000 });
+        this.snackBar.open('Estado actualizado a: ' + etiqueta(newStatus, 'estado'), 'OK', { duration: 3000 });
         this.loadEquipment();
     this.loadLocationHistory();
       },

@@ -23,26 +23,26 @@ import java.util.UUID;
 @PreAuthorize("isAuthenticated()")
 @RestController
 @RequestMapping("/api/v1/maintenance")
-@Tag(name = "Maintenance", description = "Maintenance Management API")
+@Tag(name = "Mantenimientos", description = "Gestion de mantenimientos")
 @RequiredArgsConstructor
 public class MaintenanceController {
     
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    @Operation(summary = "Create Maintenance", description = "Register maintenance record")
+    @Operation(summary = "Crear mantenimiento", description = "Registrar un mantenimiento")
     public ResponseEntity<?> createMaintenance(
             @Valid @RequestBody CreateMaintenanceRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
     
     @GetMapping("/{id}")
-    @Operation(summary = "Get Maintenance", description = "Retrieve maintenance by ID")
+    @Operation(summary = "Obtener mantenimiento", description = "Consultar un mantenimiento por ID")
     public ResponseEntity<?> getMaintenance(@PathVariable UUID id) {
         return ResponseEntity.ok().build();
     }
     
     @GetMapping
-    @Operation(summary = "List Maintenance", description = "Get all maintenance records")
+    @Operation(summary = "Listar mantenimientos", description = "Consultar todos los mantenimientos")
     public ResponseEntity<?> listMaintenance(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
@@ -50,7 +50,7 @@ public class MaintenanceController {
     }
     
     @PatchMapping("/{id}/complete")
-    @Operation(summary = "Complete Maintenance", description = "Mark maintenance completed")
+    @Operation(summary = "Completar mantenimiento", description = "Marcar el mantenimiento como completado")
     public ResponseEntity<?> completeMaintenance(
             @PathVariable UUID id,
             @Valid @RequestBody CompleteMaintenanceRequest request) {

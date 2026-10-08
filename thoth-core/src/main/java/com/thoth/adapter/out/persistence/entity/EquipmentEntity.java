@@ -118,6 +118,12 @@ public class EquipmentEntity {
     @Column(name = "cost_center", length = 100)
     private String costCenter;
 
+    @Column(name = "operating_system", length = 30)
+    private String operatingSystem;
+
+    @Column(name = "os_version", length = 100)
+    private String osVersion;
+
     @Column(name = "hardware_processor")
     private String hardwareProcessor;
 

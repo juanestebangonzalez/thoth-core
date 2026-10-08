@@ -24,7 +24,7 @@ import java.util.UUID;
 @PreAuthorize("isAuthenticated()")
 @RestController
 @RequestMapping("/api/v1/ai")
-@Tag(name = "AI Analysis", description = "AI-powered equipment analysis")
+@Tag(name = "Analisis IA", description = "Analisis de equipos con el motor de reglas de IA")
 @RequiredArgsConstructor
 public class AIController {
 
@@ -32,7 +32,7 @@ public class AIController {
     private final GetEquipmentUseCase getEquipmentUseCase;
 
     @GetMapping("/maintenance/{equipmentId}")
-    @Operation(summary = "Analyze Maintenance", description = "AI maintenance analysis for equipment")
+    @Operation(summary = "Analizar mantenimiento", description = "Analisis de mantenimiento del equipo con IA")
     public ResponseEntity<AIAnalysisResponse> analyzeMaintenance(@PathVariable UUID equipmentId) {
         EquipmentDTO dto = getEquipmentUseCase.getById(equipmentId);
         Equipment equipment = mapToEquipment(dto);
@@ -41,7 +41,7 @@ public class AIController {
     }
 
     @GetMapping("/predict-failure/{equipmentId}")
-    @Operation(summary = "Predict Failure", description = "AI failure prediction for equipment")
+    @Operation(summary = "Predecir fallos", description = "Prediccion de fallos del equipo con IA")
     public ResponseEntity<AIAnalysisResponse> predictFailure(@PathVariable UUID equipmentId) {
         EquipmentDTO dto = getEquipmentUseCase.getById(equipmentId);
         Equipment equipment = mapToEquipment(dto);
@@ -50,7 +50,7 @@ public class AIController {
     }
 
     @GetMapping("/recommend-replacement/{equipmentId}")
-    @Operation(summary = "Recommend Replacement", description = "AI replacement recommendation")
+    @Operation(summary = "Recomendar reemplazo", description = "Recomendacion de reemplazo del equipo con IA")
     public ResponseEntity<AIAnalysisResponse> recommendReplacement(@PathVariable UUID equipmentId) {
         EquipmentDTO dto = getEquipmentUseCase.getById(equipmentId);
         Equipment equipment = mapToEquipment(dto);

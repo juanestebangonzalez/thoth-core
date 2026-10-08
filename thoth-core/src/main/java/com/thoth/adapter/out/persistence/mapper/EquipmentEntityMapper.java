@@ -31,7 +31,9 @@ public class EquipmentEntityMapper {
             .updatedBy(equipment.getLastModifiedBy())
             .ownershipType(equipment.getOwnershipType())
             .nextMaintenanceDate(equipment.getNextMaintenanceDate())
-            .costCenter(equipment.getCostCenter());
+            .costCenter(equipment.getCostCenter())
+            .operatingSystem(equipment.getOperatingSystem())
+            .osVersion(equipment.getOsVersion());
 
         if (equipment.getLocation() != null) {
             builder.locationBuilding(equipment.getLocation().getBuilding())
@@ -93,7 +95,11 @@ public class EquipmentEntityMapper {
         }
 
         Hardware hardware = null;
-        if (entity.getHardwareProcessor() != null || entity.getHardwareRamSizeGb() != null || entity.getHardwareDiskType() != null) {
+        // Cualquier dato de hardware registrado hace que el bloque se lea
+        if (entity.getHardwareProcessor() != null || entity.getHardwareRamSizeGb() != null
+                || entity.getHardwareRamType() != null || entity.getHardwareDiskType() != null
+                || entity.getHardwareDiskSizeGb() != null || entity.getHardwareDiskHealthPercent() != null
+                || entity.getHardwareDiskTemperatureCelsius() != null) {
             hardware = Hardware.builder()
                 .processor(entity.getHardwareProcessor())
                 .ramSizeGb(entity.getHardwareRamSizeGb())
@@ -127,6 +133,8 @@ public class EquipmentEntityMapper {
             .ownershipType(entity.getOwnershipType())
             .nextMaintenanceDate(entity.getNextMaintenanceDate())
             .costCenter(entity.getCostCenter())
+            .operatingSystem(entity.getOperatingSystem())
+            .osVersion(entity.getOsVersion())
             .rentalInfo(rentalInfo)
             .hardware(hardware)
             .build();

@@ -6,11 +6,13 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ReportService } from '../../core/services/report.service';
+import { HardwareThresholdsService } from '../../core/services/hardware-thresholds.service';
+import { EtiquetaPipe, codigoEstado } from '../../core/pipes/etiqueta.pipe';
 
 @Component({
   selector: 'app-reports',
   standalone: true,
-  imports: [CommonModule, MatCardModule, MatIconModule, MatButtonModule, MatDividerModule, MatProgressSpinnerModule],
+  imports: [CommonModule, MatCardModule, MatIconModule, MatButtonModule, MatDividerModule, MatProgressSpinnerModule, EtiquetaPipe],
   template: `
     <div class="reports-page">
       <div class="header">
@@ -60,7 +62,7 @@ import { ReportService } from '../../core/services/report.service';
                 <div class="donut-item">
                   <div class="donut-bar" [style.width.%]="getPercent(entry[1], data().kpis.totalEquipos)"
                        [style.background]="getStatusColor(entry[0])"></div>
-                  <span class="donut-label">{{ entry[0] }}</span>
+                  <span class="donut-label">{{ entry[0] | etiqueta:'estado' }}</span>
                   <span class="donut-value">{{ entry[1] }}</span>
                 </div>
               }
@@ -124,11 +126,11 @@ import { ReportService } from '../../core/services/report.service';
           <mat-card class="chart-card small">
             <h3>Salud Hardware</h3>
             <div class="hw-metrics">
-              <div class="metric-circle" [class.ok]="data().saludPromedioDisco >= 50" [class.warn]="data().saludPromedioDisco < 50 && data().saludPromedioDisco >= 30" [class.crit]="data().saludPromedioDisco < 30">
+              <div class="metric-circle" [ngClass]="claseMetrica(thresholds.healthStatus(data().saludPromedioDisco))">
                 <span class="metric-value">{{ data().saludPromedioDisco || '-' }}%</span>
                 <span class="metric-label">Salud Disco</span>
               </div>
-              <div class="metric-circle" [class.ok]="data().temperaturaPromedio < 60" [class.warn]="data().temperaturaPromedio >= 60 && data().temperaturaPromedio < 70" [class.crit]="data().temperaturaPromedio >= 70">
+              <div class="metric-circle" [ngClass]="claseMetrica(thresholds.tempStatus(data().temperaturaPromedio))">
                 <span class="metric-value">{{ data().temperaturaPromedio || '-' }} C</span>
                 <span class="metric-label">Temp Prom</span>
               </div>
@@ -322,9 +324,15 @@ export class ReportsComponent implements OnInit {
   data = signal<any>(null);
   loading = signal(true);
 
-  constructor(private reportService: ReportService, private cdr: ChangeDetectorRef) {}
+  constructor(private reportService: ReportService, private cdr: ChangeDetectorRef, public thresholds: HardwareThresholdsService) {}
+
+  /** ok | warn | crit segun el estado calculado con los umbrales configurados ('' si no hay dato). */
+  claseMetrica(estado: string): string {
+    return estado === 'CRITICO' ? 'crit' : estado === 'ADVERTENCIA' ? 'warn' : estado === 'OK' ? 'ok' : '';
+  }
 
   ngOnInit() {
+    this.thresholds.load().subscribe(() => this.cdr.detectChanges());
     this.reportService.getDashboard().subscribe({
       next: (d) => { this.data.set(d); this.loading.set(false); this.cdr.detectChanges(); },
       error: () => { this.loading.set(false); this.cdr.detectChanges(); }
@@ -348,10 +356,10 @@ export class ReportsComponent implements OnInit {
 
   getStatusColor(status: string): string {
     const colors: Record<string, string> = {
-      'Activo': '#10B981', 'Mantenimiento': '#F59E0B',
-      'Inactivo': '#EF4444', 'Retirado': '#64748B'
+      'ACTIVE': '#10B981', 'MAINTENANCE': '#F59E0B',
+      'INACTIVE': '#EF4444', 'RETIRED': '#64748B'
     };
-    return colors[status] || '#3B82F6';
+    return colors[codigoEstado(status)] || '#3B82F6';
   }
 
   formatMoney(value: number): string {

@@ -49,6 +49,14 @@ public class RegisterEquipmentUseCaseImpl implements RegisterEquipmentUseCase {
             equipment.setCostCenter(command.costCenter().trim().toUpperCase());
         }
 
+        // Sistema operativo y version - opcionales, en mayusculas (valida el SO permitido)
+        if (command.operatingSystem() != null && !command.operatingSystem().isBlank()) {
+            equipment.updateOperatingSystem(command.operatingSystem());
+        }
+        if (command.osVersion() != null && !command.osVersion().isBlank()) {
+            equipment.updateOsVersion(command.osVersion());
+        }
+
         // Inventory number - validar unicidad
         if (command.inventoryNumber() != null && !command.inventoryNumber().isBlank()) {
             String invNum = command.inventoryNumber().toUpperCase().trim();
@@ -105,8 +113,13 @@ public class RegisterEquipmentUseCaseImpl implements RegisterEquipmentUseCase {
         return mapper.toResponseDTO(saved);
     }
 
+    /** Cualquier campo de hardware informado hace que se guarde el bloque. */
     private boolean hasHardwareData(RegisterEquipmentCommand cmd) {
-        return cmd.processor() != null || cmd.ramSizeGb() != null || cmd.diskType() != null;
+        return (cmd.processor() != null && !cmd.processor().isBlank()) || cmd.ramSizeGb() != null
+            || (cmd.ramType() != null && !cmd.ramType().isBlank())
+            || (cmd.diskType() != null && !cmd.diskType().isBlank())
+            || cmd.diskSizeGb() != null || cmd.diskHealthPercent() != null
+            || cmd.diskTemperatureCelsius() != null;
     }
 
     private RamType parseRamType(String type) {

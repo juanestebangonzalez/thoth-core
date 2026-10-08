@@ -56,7 +56,7 @@ import { IdleService } from '../../core/services/idle.service';
               <mat-icon>help_outline</mat-icon>
               <div>
                 <strong>Recuperar acceso</strong>
-                <p>Ingresa tu usuario y correo electronico. Si coinciden, se enviara una solicitud al administrador para restablecer tu contrasena.</p>
+                <p>Ingresa tu usuario y correo electronico. Si coinciden, recibiras un correo con un enlace para restablecer tu contrasena.</p>
               </div>
             </div>
 
@@ -65,7 +65,7 @@ import { IdleService } from '../../core/services/idle.service';
                 <mat-icon>check_circle</mat-icon>
                 <div>
                   <strong>Solicitud enviada</strong>
-                  <p>El administrador ha sido notificado. Recibiras una contrasena temporal cuando tu solicitud sea procesada.</p>
+                  <p>{{ resetMessage }}</p>
                 </div>
               </div>
               <button mat-raised-button color="primary" class="full-width" (click)="backToLogin()">
@@ -204,6 +204,8 @@ export class LoginComponent {
   mustChangePassword = false;
   showForgotPassword = false;
   resetRequestSent = false;
+  /** Mensaje generico que devuelve el backend (no revela si el usuario existe). */
+  resetMessage = '';
   tempUsername = '';
   tempPassword = '';
   newPassword = '';
@@ -271,8 +273,9 @@ export class LoginComponent {
     }
     this.loading = true;
     this.auth.requestPasswordReset(this.forgotData).subscribe({
-      next: () => {
+      next: (res) => {
         this.loading = false;
+        this.resetMessage = res?.message || 'Si los datos coinciden, recibiras un correo con instrucciones';
         this.resetRequestSent = true;
       },
       error: (err: any) => {
@@ -286,6 +289,7 @@ export class LoginComponent {
   backToLogin() {
     this.showForgotPassword = false;
     this.resetRequestSent = false;
+    this.resetMessage = '';
     this.forgotData = { username: '', email: '' };
   }
 

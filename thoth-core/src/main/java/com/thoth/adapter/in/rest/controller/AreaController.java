@@ -40,7 +40,7 @@ public class AreaController {
             .map(AreaController::toDTO).toList());
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@perm.can(authentication,'CATALOGS','EDIT')")
     @PostMapping
     @Operation(summary = "Crear area")
     public ResponseEntity<?> create(@Valid @RequestBody CreateCatalogItemRequest body, Principal principal) {
@@ -58,7 +58,7 @@ public class AreaController {
         return ResponseEntity.ok(toDTO(saved));
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@perm.can(authentication,'CATALOGS','EDIT')")
     @PutMapping("/{id}")
     @Operation(summary = "Actualizar area")
     public ResponseEntity<?> update(@PathVariable UUID id, @RequestBody CreateCatalogItemRequest body, Principal principal) {
@@ -80,7 +80,7 @@ public class AreaController {
         }).orElse(ResponseEntity.notFound().build());
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@perm.can(authentication,'CATALOGS','EDIT')")
     @DeleteMapping("/{id}")
     @Operation(summary = "Eliminar area")
     public ResponseEntity<?> delete(@PathVariable UUID id, Principal principal) {

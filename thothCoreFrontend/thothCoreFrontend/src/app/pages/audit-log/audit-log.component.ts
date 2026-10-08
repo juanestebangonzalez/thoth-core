@@ -16,11 +16,16 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { AuditService, AuditEntry, AuditStats } from '../../core/services/audit.service';
 import { AuthService } from '../../core/services/auth.service';
+import { EtiquetaPipe, ETIQUETAS } from '../../core/pipes/etiqueta.pipe';
+
+/** Opciones de filtro: el value conserva el codigo del backend, la etiqueta va en espanol. */
+const aOpciones = (mapa: Record<string, string>, codigos: string[]) =>
+  codigos.map(c => ({ value: c, label: mapa[c] ?? c }));
 
 @Component({
   selector: 'app-audit-log',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, MatTableModule, MatButtonModule, MatIconModule, MatCardModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatPaginatorModule, MatChipsModule, MatSnackBarModule, MatButtonToggleModule, MatTooltipModule],
+  imports: [CommonModule, FormsModule, RouterLink, MatTableModule, MatButtonModule, MatIconModule, MatCardModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatPaginatorModule, MatChipsModule, MatSnackBarModule, MatButtonToggleModule, MatTooltipModule, EtiquetaPipe],
   template: `
     <div class="audit-page">
       <div class="header">
@@ -62,31 +67,18 @@ import { AuthService } from '../../core/services/auth.service';
           <mat-label>Modulo</mat-label>
           <mat-select [(ngModel)]="moduleFilter" (selectionChange)="loadLog()">
             <mat-option value="">Todos</mat-option>
-            <mat-option value="EQUIPMENT">Equipos</mat-option>
-            <mat-option value="MAINTENANCE">Mantenimiento</mat-option>
-            <mat-option value="DOCUMENT">Documentos</mat-option>
-            <mat-option value="USERS">Usuarios</mat-option>
-            <mat-option value="PERMISSIONS">Permisos</mat-option>
-            <mat-option value="SEDE">Sedes</mat-option>
-            <mat-option value="LOCATION">Ubicaciones</mat-option>
-            <mat-option value="AUTH">Autenticacion</mat-option>
+            @for (m of modulosFiltro; track m.value) {
+              <mat-option [value]="m.value">{{ m.label }}</mat-option>
+            }
           </mat-select>
         </mat-form-field>
         <mat-form-field appearance="outline" class="filter-field">
           <mat-label>Accion</mat-label>
           <mat-select [(ngModel)]="actionFilter" (selectionChange)="loadLog()">
             <mat-option value="">Todas</mat-option>
-            <mat-option value="CREATE">Crear</mat-option>
-            <mat-option value="UPDATE">Actualizar</mat-option>
-            <mat-option value="DELETE">Eliminar</mat-option>
-            <mat-option value="UPLOAD">Subir Documento</mat-option>
-            <mat-option value="CHANGE_STATUS">Cambiar Estado</mat-option>
-            <mat-option value="CHANGE_ROLE">Cambiar Rol</mat-option>
-            <mat-option value="TOGGLE_ENABLED">Activar/Desactivar</mat-option>
-            <mat-option value="UPDATE_PERMISSIONS">Cambiar Permisos</mat-option>
-            <mat-option value="DELETE_USER">Eliminar Usuario</mat-option>
-            <mat-option value="TRANSFER">Traslado</mat-option>
-            <mat-option value="LOGIN">Login</mat-option>
+            @for (a of accionesFiltro; track a.value) {
+              <mat-option [value]="a.value">{{ a.label }}</mat-option>
+            }
           </mat-select>
         </mat-form-field>
         <mat-form-field appearance="outline" class="filter-field">
@@ -128,14 +120,14 @@ import { AuthService } from '../../core/services/auth.service';
               <td mat-cell *matCellDef="let e">
                 <span class="action-badge" [class]="getActionClass(e.action)">
                   <mat-icon class="action-icon">{{ getActionIcon(e.action) }}</mat-icon>
-                  {{ e.action }}
+                  {{ e.action | etiqueta:'accion' }}
                 </span>
               </td>
             </ng-container>
             <ng-container matColumnDef="module">
               <th mat-header-cell *matHeaderCellDef>Modulo</th>
               <td mat-cell *matCellDef="let e">
-                <span class="module-badge">{{ e.module }}</span>
+                <span class="module-badge">{{ e.module | etiqueta:'modulo' }}</span>
               </td>
             </ng-container>
             <ng-container matColumnDef="details">
@@ -220,6 +212,15 @@ export class AuditLogComponent implements OnInit {
   stats = signal<AuditStats | null>(null);
   loading = signal(true);
   columns = ['performedAt', 'performedBy', 'action', 'module', 'details'];
+  readonly modulosFiltro = aOpciones(ETIQUETAS.modulo, [
+    'EQUIPMENT', 'MAINTENANCE', 'DOCUMENT', 'LOCATION', 'SEDE', 'AREA', 'COST_CENTER', 'DEVICE_TYPE',
+    'MAINTENANCE_CATEGORY', 'USERS', 'PERMISSIONS', 'AUTH'
+  ]);
+  readonly accionesFiltro = aOpciones(ETIQUETAS.accion, [
+    'CREATE', 'UPDATE', 'DELETE', 'UPLOAD', 'CHANGE_STATUS', 'TRANSFER', 'IMPORT', 'CHANGE_ROLE', 'CHANGE_EMAIL',
+    'TOGGLE_ENABLED', 'UPDATE_PERMISSIONS', 'DELETE_USER', 'RESET_PASSWORD', 'PASSWORD_RESET_REQUEST', 'PASSWORD_RESET',
+    'LOGIN', 'SCHEDULED_JOB', 'SCHEDULED_JOB_ERROR'
+  ]);
   moduleFilter = '';
   actionFilter = '';
   userFilter = '';

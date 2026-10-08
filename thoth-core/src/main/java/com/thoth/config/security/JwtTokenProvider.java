@@ -65,11 +65,11 @@ public class JwtTokenProvider {
                 .parseSignedClaims(token);
             return true;
         } catch (io.jsonwebtoken.ExpiredJwtException e) {
-            log.warn("JWT token expired: {}", e.getMessage());
+            log.warn("Token JWT vencido: {}", e.getMessage());
         } catch (io.jsonwebtoken.security.SignatureException e) {
-            log.warn("Invalid JWT signature: {}", e.getMessage());
+            log.warn("Firma del token JWT invalida: {}", e.getMessage());
         } catch (Exception e) {
-            log.warn("Invalid JWT token: {}", e.getMessage());
+            log.warn("Token JWT invalido: {}", e.getMessage());
         }
         return false;
     }

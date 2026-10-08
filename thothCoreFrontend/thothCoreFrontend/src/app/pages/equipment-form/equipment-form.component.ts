@@ -16,7 +16,8 @@ import { AreaService, Area } from '../../core/services/area.service';
 import { DeviceTypeService, DeviceType } from '../../core/services/device-type.service';
 import { CostCenterService, CostCenter } from '../../core/services/cost-center.service';
 import { EquipmentService } from '../../core/services/equipment.service';
-import { CreateEquipmentRequest } from '../../core/models/equipment.model';
+import { CreateEquipmentRequest, SISTEMAS_OPERATIVOS } from '../../core/models/equipment.model';
+import { HardwareThresholdsService } from '../../core/services/hardware-thresholds.service';
 
 @Component({
   selector: 'app-equipment-form',
@@ -201,7 +202,7 @@ import { CreateEquipmentRequest } from '../../core/models/equipment.model';
               <mat-icon>memory</mat-icon>
               <span>Especificaciones de Hardware</span>
             </mat-panel-title>
-            <mat-panel-description>Opcional - Procesador, RAM, disco</mat-panel-description>
+            <mat-panel-description>Opcional - Procesador, RAM, disco, sistema operativo</mat-panel-description>
           </mat-expansion-panel-header>
           <div class="form-grid">
             <mat-form-field appearance="outline" class="full-column">
@@ -239,12 +240,25 @@ import { CreateEquipmentRequest } from '../../core/models/equipment.model';
             <mat-form-field appearance="outline">
               <mat-label>Salud del Disco (%)</mat-label>
               <input matInput [(ngModel)]="equipment.hardware!.diskHealthPercent" type="number" min="0" max="100">
-              <mat-hint>0-100. Menor a 30% = critico</mat-hint>
+              <mat-hint>{{ hintSalud() }}</mat-hint>
             </mat-form-field>
             <mat-form-field appearance="outline">
               <mat-label>Temperatura del Disco (C)</mat-label>
               <input matInput [(ngModel)]="equipment.hardware!.diskTemperatureCelsius" type="number" min="0" max="120">
-              <mat-hint>Mayor o igual a 70C = critico</mat-hint>
+              <mat-hint>{{ hintTemp() }}</mat-hint>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Sistema Operativo</mat-label>
+              <mat-select [(ngModel)]="equipment.operatingSystem">
+                <mat-option value="">-- Sin especificar --</mat-option>
+                @for (so of sistemasOperativos; track so.value) {
+                  <mat-option [value]="so.value">{{ so.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Distribucion / Version</mat-label>
+              <input matInput [(ngModel)]="equipment.osVersion" placeholder="Ej: WINDOWS 11 PRO 23H2">
             </mat-form-field>
           </div>
         </mat-expansion-panel>
@@ -321,8 +335,11 @@ export class EquipmentFormComponent implements OnInit {
     purchaseDate: '', purchaseValue: undefined, assignedTo: '',
     ownershipType: 'OWNED',
     rentalInfo: { rentalCompany: '', contactName: '', contactPhone: '', contactEmail: '', startDate: '', endDate: '', contractNumber: '', monthlyValue: undefined, contractFileUrl: '', notes: '' },
-    hardware: { processor: '', ramSizeGb: undefined, ramType: '', diskType: '', diskSizeGb: undefined, diskHealthPercent: undefined, diskTemperatureCelsius: undefined }
+    hardware: { processor: '', ramSizeGb: undefined, ramType: '', diskType: '', diskSizeGb: undefined, diskHealthPercent: undefined, diskTemperatureCelsius: undefined },
+    operatingSystem: '',
+    osVersion: ''
   };
+  readonly sistemasOperativos = SISTEMAS_OPERATIVOS;
   isEditMode = signal(false);
   sedes = signal<Sede[]>([]);
   deviceTypes = signal<DeviceType[]>([]);
@@ -362,10 +379,24 @@ export class EquipmentFormComponent implements OnInit {
     private router: Router,
     private route: ActivatedRoute,
     private snackBar: MatSnackBar,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private thresholdsService: HardwareThresholdsService
   ) {}
 
+  /** Texto de ayuda de salud del disco, construido con los umbrales configurados. */
+  hintSalud(): string {
+    const t = this.thresholdsService.thresholds();
+    return `Menor a ${t.diskHealthWarning}% = advertencia, menor a ${t.diskHealthCritical}% = critico`;
+  }
+
+  /** Texto de ayuda de temperatura del disco, construido con los umbrales configurados. */
+  hintTemp(): string {
+    const t = this.thresholdsService.thresholds();
+    return `Mayor a ${t.diskTempWarning}C = advertencia, desde ${t.diskTempCritical}C = critico`;
+  }
+
   ngOnInit() {
+    this.thresholdsService.load().subscribe(() => this.cdr.detectChanges());
     this.equipmentId = this.route.snapshot.paramMap.get('id') || '';
     this.loadSedes();
     this.loadAreas();
@@ -443,7 +474,9 @@ export class EquipmentFormComponent implements OnInit {
             diskSizeGb: e.hardware?.diskSizeGb,
             diskHealthPercent: e.hardware?.diskHealthPercent,
             diskTemperatureCelsius: e.hardware?.diskTemperatureCelsius
-          }
+          },
+          operatingSystem: e.operatingSystem || '',
+          osVersion: e.osVersion || ''
         };
         this.selectedSede = e.location?.building || '';
         this.selectedArea = e.location?.office || '';
@@ -497,7 +530,10 @@ export class EquipmentFormComponent implements OnInit {
         // En edicion se envia '' para permitir desasignar el centro de costo
         costCenter,
         rentalInfo: cleanRental,
-        hardware: cleanHardware
+        hardware: cleanHardware,
+        // En edicion se envia '' para permitir limpiar el sistema operativo
+        operatingSystem: this.equipment.operatingSystem || '',
+        osVersion: (this.equipment.osVersion || '').trim()
       };
       this.equipmentService.update(this.equipmentId, updateData).subscribe({
         next: () => {
@@ -526,7 +562,9 @@ export class EquipmentFormComponent implements OnInit {
         inventoryNumber: this.equipment.inventoryNumber || undefined,
         costCenter: costCenter || undefined,
         rentalInfo: cleanRental,
-        hardware: cleanHardware
+        hardware: cleanHardware,
+        operatingSystem: this.equipment.operatingSystem || undefined,
+        osVersion: (this.equipment.osVersion || '').trim() || undefined
       };
       this.equipmentService.create(createData).subscribe({
         next: () => {

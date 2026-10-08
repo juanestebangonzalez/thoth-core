@@ -12,11 +12,14 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { EquipmentService } from '../../core/services/equipment.service';
 import { Equipment } from '../../core/models/equipment.model';
+import { DeviceTypeService, DeviceType } from '../../core/services/device-type.service';
+import { AuthService } from '../../core/services/auth.service';
+import { EtiquetaPipe, etiqueta, codigoEstado } from '../../core/pipes/etiqueta.pipe';
 
 @Component({
   selector: 'app-equipment-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, MatTableModule, MatButtonModule, MatIconModule, MatChipsModule, MatInputModule, MatFormFieldModule, MatSelectModule, MatSnackBarModule],
+  imports: [CommonModule, FormsModule, RouterLink, MatTableModule, MatButtonModule, MatIconModule, MatChipsModule, MatInputModule, MatFormFieldModule, MatSelectModule, MatSnackBarModule, EtiquetaPipe],
   template: `
     <div class="equipment-list">
       <div class="header">
@@ -25,9 +28,11 @@ import { Equipment } from '../../core/models/equipment.model';
           <button mat-stroked-button (click)="exportToExcel()" class="export-btn">
             <mat-icon>download</mat-icon> Exportar Excel
           </button>
+          @if (auth.hasPermission('IMPORT', 'CREATE')) {
           <button mat-stroked-button routerLink="/equipment/import" class="export-btn">
             <mat-icon>upload_file</mat-icon> Importar
           </button>
+          }
           <button mat-raised-button color="primary" routerLink="/equipment/new">
             <mat-icon>add</mat-icon> Nuevo Equipo
           </button>
@@ -49,25 +54,19 @@ import { Equipment } from '../../core/models/equipment.model';
           <mat-label>Estado</mat-label>
           <mat-select [ngModel]="statusFilter()" (ngModelChange)="statusFilter.set($event)">
             <mat-option value="">Todos</mat-option>
-            <mat-option value="activo">Activos</mat-option>
-            <mat-option value="mantenimiento">Mantenimiento</mat-option>
-            <mat-option value="inactivo">Inactivos</mat-option>
-            <mat-option value="retirado">Retirados</mat-option>
+            <mat-option value="ACTIVE">Activos</mat-option>
+            <mat-option value="MAINTENANCE">Mantenimiento</mat-option>
+            <mat-option value="INACTIVE">Inactivos</mat-option>
+            <mat-option value="RETIRED">Retirados</mat-option>
           </mat-select>
         </mat-form-field>
         <mat-form-field appearance="outline" class="filter-field">
           <mat-label>Categoria</mat-label>
           <mat-select [ngModel]="categoryFilter()" (ngModelChange)="categoryFilter.set($event)">
             <mat-option value="">Todas</mat-option>
-            <mat-option value="LAPTOP">Laptop</mat-option>
-            <mat-option value="DESKTOP">Desktop</mat-option>
-            <mat-option value="SERVER">Servidor</mat-option>
-            <mat-option value="MONITOR">Monitor</mat-option>
-            <mat-option value="PRINTER">Impresora</mat-option>
-            <mat-option value="NETWORK_DEVICE">Red</mat-option>
-            <mat-option value="PERIPHERAL">Periferico</mat-option>
-            <mat-option value="STORAGE">Almacenamiento</mat-option>
-            <mat-option value="UPS">UPS</mat-option>
+            @for (cat of availableCategories(); track cat) {
+              <mat-option [value]="cat">{{ cat }}</mat-option>
+            }
           </mat-select>
         </mat-form-field>
         <mat-form-field appearance="outline" class="filter-field">
@@ -121,7 +120,7 @@ import { Equipment } from '../../core/models/equipment.model';
           <ng-container matColumnDef="status">
             <th mat-header-cell *matHeaderCellDef>Estado</th>
             <td mat-cell *matCellDef="let e">
-              <span class="status-badge" [class]="getStatusClass(e.status)">{{ e.status }}</span>
+              <span class="status-badge" [class]="getStatusClass(e.status)">{{ e.status | etiqueta:'estado' }}</span>
             </td>
           </ng-container>
           <ng-container matColumnDef="assignedTo">
@@ -191,6 +190,20 @@ export class EquipmentListComponent implements OnInit {
   statusFilter = signal('');
   categoryFilter = signal('');
   sedeFilter = signal('');
+  deviceTypes = signal<DeviceType[]>([]);
+
+  /** Categorias del catalogo de tipos de dispositivo, mas las que ya tengan equipos y no esten en el catalogo. */
+  availableCategories = computed(() => {
+    const vistas = new Set<string>();
+    const result: string[] = [];
+    const add = (c?: string) => {
+      const v = (c || '').trim();
+      if (v && !vistas.has(v.toUpperCase())) { vistas.add(v.toUpperCase()); result.push(v); }
+    };
+    this.deviceTypes().forEach(t => add(t.name));
+    this.allEquipments().forEach(e => add(e.category));
+    return result.sort((a, b) => a.localeCompare(b));
+  });
   columns = ['name', 'inventoryNumber', 'category', 'serialNumber', 'status', 'assignedTo', 'location', 'actions'];
 
   availableSedes = computed(() => {
@@ -218,13 +231,12 @@ export class EquipmentListComponent implements OnInit {
       );
     }
     if (this.statusFilter()) {
-      result = result.filter(e => {
-        const s = e.status?.toLowerCase() || '';
-        return s.includes(this.statusFilter());
-      });
+      const estado = this.statusFilter();
+      result = result.filter(e => codigoEstado(e.status) === estado);
     }
     if (this.categoryFilter()) {
-      result = result.filter(e => e.category === this.categoryFilter());
+      const cat = this.categoryFilter().trim().toUpperCase();
+      result = result.filter(e => (e.category || '').trim().toUpperCase() === cat);
     }
     if (this.sedeFilter()) {
       result = result.filter(e => e.location?.building === this.sedeFilter());
@@ -232,9 +244,21 @@ export class EquipmentListComponent implements OnInit {
     return result;
   });
 
-  constructor(private equipmentService: EquipmentService, private snackBar: MatSnackBar, private cdr: ChangeDetectorRef) {}
+  constructor(
+    private equipmentService: EquipmentService,
+    private deviceTypeService: DeviceTypeService,
+    public auth: AuthService,
+    private snackBar: MatSnackBar,
+    private cdr: ChangeDetectorRef
+  ) {}
 
-  ngOnInit() { this.loadEquipments(); }
+  ngOnInit() {
+    this.loadEquipments();
+    this.deviceTypeService.listActive().subscribe({
+      next: (types) => { this.deviceTypes.set(types || []); this.cdr.detectChanges(); },
+      error: () => this.deviceTypes.set([])
+    });
+  }
 
   loadEquipments() {
     this.loading.set(true);
@@ -252,12 +276,13 @@ export class EquipmentListComponent implements OnInit {
   }
 
   getStatusClass(status: string): string {
-    const s = status?.toLowerCase() || '';
-    if (s === 'active' || s === 'activo') return 'status-active';
-    if (s.includes('mantenimiento') || s.includes('maintenance')) return 'status-maintenance';
-    if (s === 'inactive' || s === 'inactivo') return 'status-inactive';
-    if (s === 'retired' || s === 'retirado') return 'status-retired';
-    return '';
+    switch (codigoEstado(status)) {
+      case 'ACTIVE': return 'status-badge status-active';
+      case 'MAINTENANCE': return 'status-badge status-maintenance';
+      case 'INACTIVE': return 'status-badge status-inactive';
+      case 'RETIRED': return 'status-badge status-retired';
+      default: return 'status-badge';
+    }
   }
 
   deleteEquipment(id: string) {
@@ -276,14 +301,16 @@ export class EquipmentListComponent implements OnInit {
       return;
     }
 
-    const headers = ['Nombre', 'N Inventario', 'Categoria', 'Serial', 'MAC', 'MAC WiFi', 'Marca', 'Modelo', 'Estado', 'Fecha Compra', 'Valor', 'Asignado a', 'Sede', 'Area', 'Centro de Costo', 'Propiedad', 'Procesador', 'RAM (GB)', 'Tipo RAM', 'Tipo Disco', 'Disco (GB)', 'Salud Disco', 'Temp Disco'];
+    const headers = ['Nombre', 'N Inventario', 'Categoria', 'Serial', 'MAC', 'MAC WiFi', 'Marca', 'Modelo', 'Estado', 'Fecha Compra', 'Valor', 'Asignado a', 'Sede', 'Area', 'Centro de Costo', 'Propiedad', 'Procesador', 'RAM (GB)', 'Tipo RAM', 'Tipo Disco', 'Disco (GB)', 'Sistema Operativo', 'Distribucion / Version', 'Salud Disco', 'Temp Disco'];
     const rows = data.map(e => [
       e.name, e.inventoryNumber || '', e.category, e.serialNumber || '', e.macAddress || '', e.macAddress2 || '', e.brand || '', e.model || '',
-      e.status, e.purchaseDate, e.purchaseValue,
+      etiqueta(e.status, 'estado'), e.purchaseDate, e.purchaseValue,
       e.assignedTo || '', e.location?.building || '', e.location?.office || '', e.costCenter || '',
-      e.ownershipType || 'OWNED',
+      etiqueta(e.ownershipType || 'OWNED', 'propiedad'),
       e.hardware?.processor || '', e.hardware?.ramSizeGb || '', e.hardware?.ramType || '',
-      e.hardware?.diskType || '', e.hardware?.diskSizeGb || '', e.hardware?.diskHealthPercent || '',
+      e.hardware?.diskType || '', e.hardware?.diskSizeGb || '',
+      e.operatingSystem ? etiqueta(e.operatingSystem, 'so') : '', e.osVersion || '',
+      e.hardware?.diskHealthPercent || '',
       e.hardware?.diskTemperatureCelsius || ''
     ]);
 

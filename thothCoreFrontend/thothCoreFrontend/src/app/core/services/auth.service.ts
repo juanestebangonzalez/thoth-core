@@ -116,6 +116,16 @@ export class AuthService {
     return this.http.post<{ message: string }>(`${this.apiUrl}/request-password-reset`, data);
   }
 
+  /** Valida el token del enlace de recuperacion (publico, sin sesion). */
+  validateResetToken(token: string): Observable<{ valid: boolean }> {
+    return this.http.get<{ valid: boolean }>(`${this.apiUrl}/reset-password/validate`, { params: { token } });
+  }
+
+  /** Establece la nueva contrasena con el token del correo (publico, sin sesion). */
+  resetPassword(token: string, newPassword: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.apiUrl}/reset-password`, { token, newPassword });
+  }
+
   canView(module: string): boolean { return this.hasPermission(module, 'VIEW'); }
   canCreate(module: string): boolean { return this.hasPermission(module, 'CREATE'); }
   canEdit(module: string): boolean { return this.hasPermission(module, 'EDIT'); }

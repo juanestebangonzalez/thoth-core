@@ -34,7 +34,9 @@ public class EquipmentDtoMapper {
             mapHardware(equipment),
             equipment.getNextMaintenanceDate(),
             equipment.getMacAddress2(),
-            equipment.getCostCenter()
+            equipment.getCostCenter(),
+            equipment.getOperatingSystem(),
+            equipment.getOsVersion()
         );
     }
 
@@ -61,7 +63,9 @@ public class EquipmentDtoMapper {
             mapHardware(equipment),
             equipment.getNextMaintenanceDate(),
             equipment.getMacAddress2(),
-            equipment.getCostCenter()
+            equipment.getCostCenter(),
+            equipment.getOperatingSystem(),
+            equipment.getOsVersion()
         );
     }
 
@@ -99,13 +103,9 @@ public class EquipmentDtoMapper {
         if (equipment.getHardware() == null) return null;
         Hardware h = equipment.getHardware();
 
-        String healthStatus = "OK";
-        if (h.hasCriticalDiskHealth()) healthStatus = "CRITICO";
-        else if (h.hasWarningDiskHealth()) healthStatus = "ADVERTENCIA";
-
-        String tempStatus = "OK";
-        if (h.hasCriticalTemperature()) tempStatus = "CRITICO";
-        else if (h.hasWarningTemperature()) tempStatus = "ADVERTENCIA";
+        // Umbrales centralizados en Hardware: "OK" / "ADVERTENCIA" / "CRITICO"
+        String healthStatus = Hardware.diskHealthLevel(h.getDiskHealthPercent());
+        String tempStatus = Hardware.diskTemperatureLevel(h.getDiskTemperatureCelsius());
 
         return new HardwareDTO(
             h.getProcessor(),

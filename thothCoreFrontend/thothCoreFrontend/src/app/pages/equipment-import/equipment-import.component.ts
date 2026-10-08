@@ -20,7 +20,7 @@ import { MaintenanceCategoryService } from '../../core/services/maintenance-cate
 
 /** Tipo de dato de cada columna de la plantilla. */
 type ColType = 'text' | 'number' | 'date';
-type ListKey = 'categorias' | 'sedes' | 'areas' | 'centros' | 'propiedad' | 'ramTypes' | 'diskTypes' | 'mantenimientos';
+type ListKey = 'categorias' | 'sedes' | 'areas' | 'centros' | 'propiedad' | 'ramTypes' | 'diskTypes' | 'sistemas' | 'mantenimientos';
 
 interface ColumnDef {
   key: string;
@@ -59,6 +59,8 @@ const COLUMNS: ColumnDef[] = [
   { key: 'ramType', label: 'Tipo RAM', type: 'text', width: 12, list: 'ramTypes', example: 'DDR4', help: 'Opcional. DDR3, DDR4, DDR5, LPDDR4 o LPDDR5.' },
   { key: 'diskType', label: 'Tipo Disco', type: 'text', width: 12, list: 'diskTypes', example: 'SSD', help: 'Opcional. HDD, SSD o NVME.' },
   { key: 'diskSizeGb', label: 'Disco (GB)', type: 'number', width: 12, example: 512, help: 'Opcional. Numero entero.' },
+  { key: 'operatingSystem', label: 'Sistema Operativo', type: 'text', width: 18, list: 'sistemas', example: 'WINDOWS', help: 'Opcional. WINDOWS, LINUX, MACOS, CHROMEOS, ANDROID, IOS, OTRO o N/A.' },
+  { key: 'osVersion', label: 'Distribucion / Version', type: 'text', width: 24, example: 'WINDOWS 11 PRO 23H2', help: 'Opcional. Texto libre con la distribucion o version del sistema operativo.' },
   { key: 'lastMaintenanceDate', label: 'Fecha Ultimo Mantenimiento', type: 'date', width: 26, example: '2026-06-10', help: 'Opcional. Con esta fecha se calcula el cronograma (proximo mantenimiento).' },
   { key: 'lastMaintenanceType', label: 'Tipo Ultimo Mantenimiento', type: 'text', width: 26, list: 'mantenimientos', example: '', help: 'Opcional. Debe existir en Tipos de Mantenimiento.' },
   { key: 'lastMaintenanceTechnician', label: 'Tecnico Ultimo Mantenimiento', type: 'text', width: 26, example: '', help: 'Opcional. Nombre del tecnico.' },
@@ -68,6 +70,7 @@ const COLUMNS: ColumnDef[] = [
 const MAX_ROWS = 2000;
 const RAM_TYPES = ['DDR3', 'DDR4', 'DDR5', 'LPDDR4', 'LPDDR5'];
 const DISK_TYPES = ['HDD', 'SSD', 'NVME'];
+const OPERATING_SYSTEMS = ['WINDOWS', 'LINUX', 'MACOS', 'CHROMEOS', 'ANDROID', 'IOS', 'OTRO', 'N/A'];
 const OWNERSHIP = ['PROPIO', 'ALQUILADO'];
 const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
@@ -348,11 +351,11 @@ export class EquipmentImportComponent {
       // Hoja de listas (oculta): una columna por catalogo
       const lists: Record<ListKey, string[]> = {
         categorias: cat.categorias, sedes: cat.sedes, areas: cat.areas, centros: cat.centros,
-        propiedad: OWNERSHIP, ramTypes: RAM_TYPES, diskTypes: DISK_TYPES, mantenimientos: cat.mantenimientos
+        propiedad: OWNERSHIP, ramTypes: RAM_TYPES, diskTypes: DISK_TYPES, sistemas: OPERATING_SYSTEMS, mantenimientos: cat.mantenimientos
       };
       const listTitles: Record<ListKey, string> = {
         categorias: 'Categorias', sedes: 'Sedes', areas: 'Areas', centros: 'Centros de Costo',
-        propiedad: 'Propiedad', ramTypes: 'Tipo RAM', diskTypes: 'Tipo Disco', mantenimientos: 'Tipos de Mantenimiento'
+        propiedad: 'Propiedad', ramTypes: 'Tipo RAM', diskTypes: 'Tipo Disco', sistemas: 'Sistema Operativo', mantenimientos: 'Tipos de Mantenimiento'
       };
       const listRef: Partial<Record<ListKey, string>> = {};
       (Object.keys(lists) as ListKey[]).forEach((k, i) => {
@@ -410,7 +413,8 @@ export class EquipmentImportComponent {
         '5. Los valores en pesos van solo con numeros, sin puntos, comas ni simbolos.',
         '6. Si el equipo es ALQUILADO, diligencie los datos del alquiler (empresa, contrato, fechas y valor mensual).',
         '7. El cronograma de mantenimiento se calcula desde la Fecha Ultimo Mantenimiento: si se informa, se registra ese mantenimiento y se programa el proximo automaticamente.',
-        '8. Maximo ' + MAX_ROWS + ' filas por archivo. Antes de importar se muestra una vista previa con los errores de cada fila.',
+        '8. Sistema Operativo es opcional y debe ser uno de: ' + OPERATING_SYSTEMS.join(', ') + ' (use la lista desplegable). En "Distribucion / Version" puede escribir el detalle, por ejemplo WINDOWS 11 PRO 23H2.',
+        '9. Maximo ' + MAX_ROWS + ' filas por archivo. Antes de importar se muestra una vista previa con los errores de cada fila.',
       ].forEach(t => { const r = wi.addRow([t]); wi.mergeCells(`A${r.number}:C${r.number}`); r.alignment = { wrapText: true }; r.height = 30; });
       wi.addRow([]);
       this.styleHeader(wi.addRow(['Columna', 'Obligatorio', 'Descripcion']));
@@ -527,7 +531,7 @@ export class EquipmentImportComponent {
           if (def.type === 'date') val = this.toDateString(raw);
           else if (def.type === 'number') val = this.toNumber(raw);
           else val = this.toText(raw);
-          if (def.key === 'ownershipType' && typeof val === 'string') val = val.toUpperCase();
+          if ((def.key === 'ownershipType' || def.key === 'operatingSystem') && typeof val === 'string') val = val.trim().toUpperCase();
           data[def.key] = val ?? null;
           if (val !== null && val !== undefined && val !== '') hasValue = true;
         });

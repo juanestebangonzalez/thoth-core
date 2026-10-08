@@ -52,7 +52,7 @@ public class SedeController {
             .orElse(ResponseEntity.notFound().build());
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@perm.can(authentication,'CATALOGS','EDIT')")
     @PostMapping
     @Operation(summary = "Crear nueva sede")
     public ResponseEntity<?> create(@Valid @RequestBody CreateCatalogItemRequest body, Principal principal) {
@@ -73,7 +73,7 @@ public class SedeController {
         return ResponseEntity.ok(toDTO(saved));
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@perm.can(authentication,'CATALOGS','EDIT')")
     @PutMapping("/{id}")
     @Operation(summary = "Actualizar sede")
     public ResponseEntity<?> update(@PathVariable UUID id, @Valid @RequestBody CreateCatalogItemRequest body, Principal principal) {
@@ -97,7 +97,7 @@ public class SedeController {
         }).orElse(ResponseEntity.notFound().build());
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@perm.can(authentication,'CATALOGS','EDIT')")
     @DeleteMapping("/{id}")
     @Operation(summary = "Desactivar sede (soft delete)")
     public ResponseEntity<?> delete(@PathVariable UUID id, Principal principal) {

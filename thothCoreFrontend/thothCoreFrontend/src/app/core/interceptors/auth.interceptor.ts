@@ -13,7 +13,8 @@ const RUTAS_AUTH = [
   '/auth/login',
   '/auth/register',
   '/auth/change-password',
-  '/auth/request-password-reset'
+  '/auth/request-password-reset',
+  '/auth/reset-password'
 ];
 
 /**
@@ -35,7 +36,10 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const router = inject(Router);
   const snackBar = inject(MatSnackBar);
 
-  const token = localStorage.getItem('token');
+  // Las rutas publicas de recuperacion de contrasena no llevan token: un token
+  // viejo o vencido en localStorage no debe interferir con el enlace del correo.
+  const esPublica = req.url.includes('/auth/reset-password') || req.url.includes('/auth/request-password-reset');
+  const token = esPublica ? null : localStorage.getItem('token');
   const peticion = token
     ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
     : req;

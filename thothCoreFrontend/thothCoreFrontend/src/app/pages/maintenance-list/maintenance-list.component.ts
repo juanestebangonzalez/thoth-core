@@ -12,6 +12,8 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSortModule, Sort } from '@angular/material/sort';
 import { EquipmentService } from '../../core/services/equipment.service';
 import { Equipment } from '../../core/models/equipment.model';
+import { DeviceTypeService, DeviceType } from '../../core/services/device-type.service';
+import { codigoEstado } from '../../core/pipes/etiqueta.pipe';
 
 @Component({
   selector: 'app-maintenance-list',
@@ -50,13 +52,9 @@ import { Equipment } from '../../core/models/equipment.model';
           <mat-label>Categoria</mat-label>
           <mat-select [ngModel]="categoryFilter()" (ngModelChange)="categoryFilter.set($event)">
             <mat-option value="">Todas</mat-option>
-            <mat-option value="LAPTOP">Laptop</mat-option>
-            <mat-option value="DESKTOP">Desktop</mat-option>
-            <mat-option value="SERVER">Servidor</mat-option>
-            <mat-option value="MONITOR">Monitor</mat-option>
-            <mat-option value="PRINTER">Impresora</mat-option>
-            <mat-option value="NETWORK_DEVICE">Red</mat-option>
-            <mat-option value="PERIPHERAL">Periferico</mat-option>
+            @for (cat of availableCategories(); track cat) {
+              <mat-option [value]="cat">{{ cat }}</mat-option>
+            }
           </mat-select>
         </mat-form-field>
       </div>
@@ -179,7 +177,8 @@ export class MaintenanceListComponent implements OnInit {
       result = result.filter(e => e.location?.building === this.sedeFilter());
     }
     if (this.categoryFilter()) {
-      result = result.filter(e => e.category === this.categoryFilter());
+      const cat = this.categoryFilter().trim().toUpperCase();
+      result = result.filter(e => (e.category || '').trim().toUpperCase() === cat);
     }
     // Sort
     if (this.sortField && this.sortDirection) {
@@ -197,15 +196,31 @@ export class MaintenanceListComponent implements OnInit {
     return result;
   });
 
-  constructor(private equipmentService: EquipmentService, private cdr: ChangeDetectorRef) {}
+  deviceTypes = signal<DeviceType[]>([]);
+
+  /** Categorias del catalogo de tipos de dispositivo mas las de los equipos listados. */
+  availableCategories = computed(() => {
+    const vistas = new Set<string>();
+    const result: string[] = [];
+    const add = (c?: string) => {
+      const v = (c || '').trim();
+      if (v && !vistas.has(v.toUpperCase())) { vistas.add(v.toUpperCase()); result.push(v); }
+    };
+    this.deviceTypes().forEach(t => add(t.name));
+    this.allEquipments().forEach(e => add(e.category));
+    return result.sort((a, b) => a.localeCompare(b));
+  });
+
+  constructor(private equipmentService: EquipmentService, private deviceTypeService: DeviceTypeService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit() {
+    this.deviceTypeService.listActive().subscribe({
+      next: (types) => { this.deviceTypes.set(types || []); this.cdr.detectChanges(); },
+      error: () => this.deviceTypes.set([])
+    });
     this.equipmentService.list(0, 500).subscribe({
       next: (res) => {
-        const inMaintenance = (res.content || []).filter(e => {
-          const s = e.status?.toLowerCase() || '';
-          return s.includes('mantenimiento') || s.includes('maintenance');
-        });
+        const inMaintenance = (res.content || []).filter(e => codigoEstado(e.status) === 'MAINTENANCE');
         this.allEquipments.set(inMaintenance);
         this.loading.set(false);
         this.cdr.detectChanges();

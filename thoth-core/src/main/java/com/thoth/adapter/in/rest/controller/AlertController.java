@@ -2,6 +2,7 @@ package com.thoth.adapter.in.rest.controller;
 
 import com.thoth.adapter.out.persistence.entity.EquipmentEntity;
 import com.thoth.adapter.out.persistence.repository.EquipmentJpaRepository;
+import com.thoth.domain.valueobject.Hardware;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +21,7 @@ import java.util.Map;
 @PreAuthorize("isAuthenticated()")
 @RestController
 @RequestMapping("/api/v1/alerts")
-@Tag(name = "Alerts", description = "Alertas del sistema")
+@Tag(name = "Alertas", description = "Alertas del sistema")
 @RequiredArgsConstructor
 public class AlertController {
 
@@ -55,17 +56,24 @@ public class AlertController {
     }
 
     @GetMapping("/hardware-critical")
-    @Operation(summary = "Equipos con hardware en estado critico")
+    @Operation(summary = "Equipos con hardware en estado de advertencia o critico")
     public ResponseEntity<List<Map<String, Object>>> hardwareCritical() {
-        // DT-19: Consulta filtrada en DB
+        // DT-19: Consulta filtrada en DB (umbrales centralizados en Hardware, desde ADVERTENCIA)
         List<Map<String, Object>> alerts = new ArrayList<>();
         for (EquipmentEntity eq : equipmentRepository.findHardwareCritical()) {
             List<String> issues = new ArrayList<>();
-            if (eq.getHardwareDiskHealthPercent() != null && eq.getHardwareDiskHealthPercent() < 30) {
-                issues.add("Salud del disco: " + eq.getHardwareDiskHealthPercent() + "% (CRITICO)");
+            boolean critico = false;
+            Integer salud = eq.getHardwareDiskHealthPercent();
+            String nivelSalud = Hardware.diskHealthLevel(salud);
+            if (!Hardware.LEVEL_OK.equals(nivelSalud)) {
+                issues.add("Salud del disco: " + salud + "% (" + nivelSalud + ")");
+                critico |= Hardware.LEVEL_CRITICAL.equals(nivelSalud);
             }
-            if (eq.getHardwareDiskTemperatureCelsius() != null && eq.getHardwareDiskTemperatureCelsius() >= 70) {
-                issues.add("Temperatura: " + eq.getHardwareDiskTemperatureCelsius() + "C (CRITICO)");
+            Integer temperatura = eq.getHardwareDiskTemperatureCelsius();
+            String nivelTemp = Hardware.diskTemperatureLevel(temperatura);
+            if (!Hardware.LEVEL_OK.equals(nivelTemp)) {
+                issues.add("Temperatura del disco: " + temperatura + "C (" + nivelTemp + ")");
+                critico |= Hardware.LEVEL_CRITICAL.equals(nivelTemp);
             }
             if (eq.getHardwareRamSizeGb() != null && eq.getHardwareRamSizeGb() < 4) {
                 issues.add("RAM insuficiente: " + eq.getHardwareRamSizeGb() + " GB");
@@ -77,7 +85,8 @@ public class AlertController {
             alert.put("category", eq.getCategory());
             alert.put("serialNumber", eq.getSerialNumber());
             alert.put("issues", issues);
-            alert.put("severity", "CRITICAL");
+            alert.put("severity", critico ? "CRITICAL" : "HIGH");
+            alert.put("level", critico ? Hardware.LEVEL_CRITICAL : Hardware.LEVEL_WARNING);
             alerts.add(alert);
         }
 

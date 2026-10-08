@@ -33,7 +33,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/equipment")
-@Tag(name = "Equipment", description = "Equipment Management API")
+@Tag(name = "Equipos", description = "Gestion de equipos")
 @RequiredArgsConstructor
 public class EquipmentController {
 
@@ -46,7 +46,7 @@ public class EquipmentController {
 
     @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN')")
     @PostMapping
-    @Operation(summary = "Create Equipment", description = "Register a new equipment")
+    @Operation(summary = "Crear equipo", description = "Registrar un nuevo equipo")
     public ResponseEntity<EquipmentResponseDTO> createEquipment(@Valid @RequestBody CreateEquipmentRequest request, Principal principal) {
         HardwareRequest hw = request.getHardware();
         RentalInfoRequest rental = request.getRentalInfo();
@@ -86,7 +86,9 @@ public class EquipmentController {
             hw != null ? hw.getDiskTemperatureCelsius() : null,
             request.getMacAddress2(),
             request.getCostCenter(),
-            rental != null ? rental.getMonthlyValue() : null
+            rental != null ? rental.getMonthlyValue() : null,
+            request.getOperatingSystem(),
+            request.getOsVersion()
         );
         EquipmentResponseDTO response = registerEquipmentUseCase.register(command);
         auditService.log("CREATE", "EQUIPMENT", response.equipmentId().toString(), request.getName(),
@@ -98,14 +100,14 @@ public class EquipmentController {
 
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/{id}")
-    @Operation(summary = "Get Equipment by ID")
+    @Operation(summary = "Obtener equipo por ID")
     public ResponseEntity<EquipmentDTO> getEquipment(@PathVariable UUID id) {
         return ResponseEntity.ok(getEquipmentUseCase.getById(id));
     }
 
     @PreAuthorize("isAuthenticated()")
     @GetMapping
-    @Operation(summary = "List Equipment")
+    @Operation(summary = "Listar equipos", description = "Filtros opcionales: status (ACTIVE, MAINTENANCE, INACTIVE, RETIRED) y category (sin distinguir mayusculas)")
     public ResponseEntity<PageResponseDTO<EquipmentDTO>> listEquipment(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -117,7 +119,7 @@ public class EquipmentController {
 
     @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN')")
     @PutMapping("/{id}")
-    @Operation(summary = "Update Equipment")
+    @Operation(summary = "Actualizar equipo")
     public ResponseEntity<EquipmentResponseDTO> updateEquipment(
             @PathVariable UUID id,
             @Valid @RequestBody UpdateEquipmentRequest request, Principal principal) {
@@ -155,7 +157,9 @@ public class EquipmentController {
               hw != null ? hw.getDiskTemperatureCelsius() : null,
               request.getMacAddress2(),
               request.getCostCenter(),
-              rental != null ? rental.getMonthlyValue() : null
+              rental != null ? rental.getMonthlyValue() : null,
+              request.getOperatingSystem(),
+              request.getOsVersion()
           );
         EquipmentResponseDTO updated = updateEquipmentUseCase.update(command);
         auditService.log("UPDATE", "EQUIPMENT", id.toString(), request.getName(),
@@ -166,7 +170,7 @@ public class EquipmentController {
 
     @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN')")
     @PatchMapping("/{id}/status")
-    @Operation(summary = "Change Equipment Status")
+    @Operation(summary = "Cambiar estado del equipo")
     public ResponseEntity<EquipmentResponseDTO> changeEquipmentStatus(
             @PathVariable UUID id,
             @Valid @RequestBody ChangeStatusRequest request, Principal principal) {
@@ -180,7 +184,7 @@ public class EquipmentController {
 
     @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN')")
     @DeleteMapping("/{id}")
-    @Operation(summary = "Delete Equipment (soft)")
+    @Operation(summary = "Retirar equipo (borrado logico)")
     public ResponseEntity<Void> deleteEquipment(@PathVariable UUID id, Principal principal) {
         ChangeStatusCommand command = new ChangeStatusCommand(id, "RETIRED", principal != null ? principal.getName() : "SYSTEM");
         changeEquipmentStatusUseCase.changeStatus(command);

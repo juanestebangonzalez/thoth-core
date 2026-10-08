@@ -7,11 +7,12 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { EquipmentService } from '../../core/services/equipment.service';
 import { Equipment } from '../../core/models/equipment.model';
+import { EtiquetaPipe, codigoEstado } from '../../core/pipes/etiqueta.pipe';
 
 @Component({
   selector: 'app-equipment-by-status',
   standalone: true,
-  imports: [CommonModule, RouterLink, MatTableModule, MatButtonModule, MatIconModule, MatCardModule],
+  imports: [CommonModule, RouterLink, MatTableModule, MatButtonModule, MatIconModule, MatCardModule, EtiquetaPipe],
   template: `
     <div class="page">
       <div class="header">
@@ -42,6 +43,10 @@ import { Equipment } from '../../core/models/equipment.model';
           <ng-container matColumnDef="serialNumber">
             <th mat-header-cell *matHeaderCellDef>Serial</th>
             <td mat-cell *matCellDef="let e">{{ e.serialNumber }}</td>
+          </ng-container>
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef>Estado</th>
+            <td mat-cell *matCellDef="let e">{{ e.status | etiqueta:'estado' }}</td>
           </ng-container>
           <ng-container matColumnDef="assignedTo">
             <th mat-header-cell *matHeaderCellDef>Asignado a</th>
@@ -82,7 +87,7 @@ export class EquipmentByStatusComponent implements OnInit {
   loading = signal(true);
   statusLabel = signal('');
   icon = signal('inventory_2');
-  columns = ['name', 'category', 'serialNumber', 'assignedTo', 'location', 'actions'];
+  columns = ['name', 'category', 'serialNumber', 'status', 'assignedTo', 'location', 'actions'];
   statusFilter = '';
 
   constructor(
@@ -105,6 +110,10 @@ export class EquipmentByStatusComponent implements OnInit {
         this.statusLabel.set('Activos');
         this.icon.set('check_circle');
         break;
+      case 'maintenance':
+        this.statusLabel.set('en Mantenimiento');
+        this.icon.set('build');
+        break;
       case 'inactive':
         this.statusLabel.set('Inactivos');
         this.icon.set('block');
@@ -118,19 +127,15 @@ export class EquipmentByStatusComponent implements OnInit {
 
   loadEquipments() {
     this.loading.set(true);
-    this.equipmentService.list(0, 100).subscribe({
+    const buscado = codigoEstado(this.statusFilter);
+    this.equipmentService.list(0, 500).subscribe({
       next: (res) => {
-        const filtered = (res.content || []).filter(e => {
-          const s = e.status?.toLowerCase() || '';
-          if (this.statusFilter === 'active') return s === 'active' || s === 'activo';
-          if (this.statusFilter === 'inactive') return s === 'inactive' || s === 'inactivo';
-          if (this.statusFilter === 'retired') return s === 'retired' || s === 'retirado';
-          return false;
-        });
+        const filtered = (res.content || []).filter(e => codigoEstado(e.status) === buscado);
         this.equipments.set(filtered);
         this.loading.set(false);
         this.cdr.detectChanges();
-      }
+      },
+      error: () => { this.equipments.set([]); this.loading.set(false); this.cdr.detectChanges(); }
     });
   }
 }

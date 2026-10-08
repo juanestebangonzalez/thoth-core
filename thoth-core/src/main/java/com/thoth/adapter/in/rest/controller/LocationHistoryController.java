@@ -22,7 +22,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/location-history")
-@Tag(name = "Location History", description = "Historico de ubicaciones de equipos")
+@Tag(name = "Historial de ubicaciones", description = "Historico de ubicaciones de equipos")
 @RequiredArgsConstructor
 public class LocationHistoryController {
 

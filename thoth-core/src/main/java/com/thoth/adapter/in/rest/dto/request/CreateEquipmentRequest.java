@@ -2,6 +2,7 @@ package com.thoth.adapter.in.rest.dto.request;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
@@ -48,6 +49,13 @@ public class CreateEquipmentRequest {
     /** Centro de costo (nombre del catalogo). Opcional. */
     @Size(max = 100)
     private String costCenter;
+    /** Sistema operativo: WINDOWS, LINUX, MACOS, CHROMEOS, ANDROID, IOS, OTRO, N/A (o vacio). */
+    @Pattern(regexp = "(?i)^\\s*(WINDOWS|LINUX|MACOS|CHROMEOS|ANDROID|IOS|OTRO|N/A)?\\s*$",
+             message = "Sistema operativo invalido. Valores permitidos: WINDOWS, LINUX, MACOS, CHROMEOS, ANDROID, IOS, OTRO, N/A")
+    private String operatingSystem;
+    /** Version del sistema operativo (texto libre). */
+    @Size(max = 100, message = "La version del sistema operativo no puede superar 100 caracteres")
+    private String osVersion;
     private String ownershipType;
     @Valid
     private RentalInfoRequest rentalInfo;

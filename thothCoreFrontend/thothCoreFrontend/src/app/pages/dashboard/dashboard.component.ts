@@ -6,6 +6,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { EquipmentService } from '../../core/services/equipment.service';
 import { AuthService } from '../../core/services/auth.service';
+import { codigoEstado } from '../../core/pipes/etiqueta.pipe';
 
 @Component({
   selector: 'app-dashboard',
@@ -140,14 +141,16 @@ export class DashboardComponent implements OnInit {
   ngOnInit() { this.loadStats(); }
 
   loadStats() {
-    this.equipmentService.list(0, 200).subscribe({
+    // Mismo tamano de pagina que la lista de equipos para que los contadores coincidan
+    this.equipmentService.list(0, 500).subscribe({
       next: (res) => {
         const eq = res.content || [];
+        const contar = (codigo: string) => eq.filter(e => codigoEstado(e.status) === codigo).length;
         this.totalEquipment.set(res.totalElements || 0);
-        this.activeCount.set(eq.filter(e => { const s = e.status?.toLowerCase() || ''; return s === 'active' || s === 'activo'; }).length);
-        this.maintenanceCount.set(eq.filter(e => { const s = e.status?.toLowerCase() || ''; return s.includes('mantenimiento') || s.includes('maintenance'); }).length);
-        this.inactiveCount.set(eq.filter(e => { const s = e.status?.toLowerCase() || ''; return s === 'inactive' || s === 'inactivo'; }).length);
-        this.retiredCount.set(eq.filter(e => { const s = e.status?.toLowerCase() || ''; return s === 'retired' || s === 'retirado'; }).length);
+        this.activeCount.set(contar('ACTIVE'));
+        this.maintenanceCount.set(contar('MAINTENANCE'));
+        this.inactiveCount.set(contar('INACTIVE'));
+        this.retiredCount.set(contar('RETIRED'));
         this.cdr.detectChanges();
       }
     });

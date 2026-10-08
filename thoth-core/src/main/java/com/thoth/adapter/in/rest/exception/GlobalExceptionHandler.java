@@ -132,11 +132,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiErrorResponse> handleGeneral(
             Exception ex, WebRequest request) {
-        log.error("Unhandled exception at {}: {}", request.getDescription(false), ex.getMessage(), ex);
+        log.error("Excepcion no controlada en {}: {}", request.getDescription(false), ex.getMessage(), ex);
         ApiErrorResponse error = ApiErrorResponse.builder()
             .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
             .error("INTERNAL_SERVER_ERROR")
-            .message("An unexpected error occurred")
+            .message("Ocurrio un error inesperado. Intente de nuevo o contacte al administrador.")
             .path(request.getDescription(false).replace("uri=", ""))
             .timestamp(LocalDateTime.now())
             .build();

@@ -13,11 +13,12 @@ import { EquipmentService } from '../../core/services/equipment.service';
 import { MaintenanceHistory } from '../../core/models/maintenance.model';
 import { Equipment } from '../../core/models/equipment.model';
 import { AddMaintenanceDialogComponent } from './add-maintenance-dialog.component';
+import { EtiquetaPipe, etiqueta, claseTipoMantenimiento } from '../../core/pipes/etiqueta.pipe';
 
 @Component({
   selector: 'app-equipment-history',
   standalone: true,
-  imports: [CommonModule, RouterLink, MatCardModule, MatButtonModule, MatIconModule, MatChipsModule, MatDividerModule, MatDialogModule, MatSnackBarModule],
+  imports: [CommonModule, RouterLink, MatCardModule, MatButtonModule, MatIconModule, MatChipsModule, MatDividerModule, MatDialogModule, MatSnackBarModule, EtiquetaPipe],
   template: `
     <div class="history-page">
       <div class="header">
@@ -65,16 +66,16 @@ import { AddMaintenanceDialogComponent } from './add-maintenance-dialog.componen
       } @else {
         <div class="timeline">
           @for (item of history(); track item.maintenanceId; let idx = $index) {
-            <div class="timeline-item" [class.preventive]="item.maintenanceType === 'PREVENTIVE'" [class.corrective]="item.maintenanceType === 'CORRECTIVE'">
+            <div class="timeline-item" [ngClass]="claseTipo(item.maintenanceType)">
               <div class="timeline-marker">
-                <mat-icon>{{ item.maintenanceType === 'PREVENTIVE' ? 'shield' : 'build' }}</mat-icon>
+                <mat-icon>{{ iconoTipo(item.maintenanceType) }}</mat-icon>
               </div>
               <div class="timeline-content">
                 <mat-card>
                   <div class="timeline-header">
                     <div>
-                      <span class="type-badge" [class.preventive]="item.maintenanceType === 'PREVENTIVE'" [class.corrective]="item.maintenanceType === 'CORRECTIVE'">
-                        {{ item.maintenanceType === 'PREVENTIVE' ? 'PREVENTIVO' : 'CORRECTIVO' }}
+                      <span class="type-badge" [ngClass]="claseTipo(item.maintenanceType)">
+                        {{ (item.maintenanceType | etiqueta:'mantenimiento') || '-' }}
                       </span>
                       <span class="date">{{ item.performedDate | date:'dd/MM/yyyy HH:mm' }}</span>
                     </div>
@@ -206,6 +207,10 @@ import { AddMaintenanceDialogComponent } from './add-maintenance-dialog.componen
       background: linear-gradient(135deg, #F59E0B, #D97706);
       box-shadow: 0 4px 16px rgba(245, 158, 11, 0.4);
     }
+    .timeline-item.other .timeline-marker {
+      background: linear-gradient(135deg, #8B5CF6, #6D28D9);
+      box-shadow: 0 4px 16px rgba(139, 92, 246, 0.4);
+    }
     .timeline-marker mat-icon { color: white; }
 
     .timeline-content mat-card { padding: 20px; }
@@ -221,6 +226,7 @@ import { AddMaintenanceDialogComponent } from './add-maintenance-dialog.componen
     }
     .type-badge.preventive { background: rgba(59, 130, 246, 0.2); color: #93C5FD; }
     .type-badge.corrective { background: rgba(245, 158, 11, 0.2); color: #FBBF24; }
+    .type-badge.other { background: rgba(139, 92, 246, 0.2); color: #C4B5FD; }
     .date { color: #94A3B8; font-size: 13px; }
     .tech-info {
       display: flex; align-items: center; gap: 6px;
@@ -277,6 +283,18 @@ export class EquipmentHistoryComponent implements OnInit {
   history = signal<MaintenanceHistory[]>([]);
   loading = signal(true);
   equipmentId = '';
+
+  /** Clase de color del tipo: preventive, corrective u other (LOGICO y demas tipos del catalogo). */
+  claseTipo(tipo: string | null | undefined): string { return claseTipoMantenimiento(tipo); }
+
+  iconoTipo(tipo: string | null | undefined): string {
+    const c = claseTipoMantenimiento(tipo);
+    return c === 'preventive' ? 'shield' : c === 'corrective' ? 'build' : 'handyman';
+  }
+
+  private escHtml(v: string): string {
+    return String(v ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch] as string));
+  }
 
   constructor(
     private route: ActivatedRoute,
@@ -355,6 +373,7 @@ export class EquipmentHistoryComponent implements OnInit {
     .type-badge { display: inline-block; padding: 3px 12px; border-radius: 12px; font-size: 11px; font-weight: bold; }
     .preventive { background: #D4EFDF; color: #1E8449; }
     .corrective { background: #FADBD8; color: #C0392B; }
+    .other { background: #E8DAEF; color: #6C3483; }
     .parts-table th { background: #EBF5FB; }
     .signature-section { margin-top: 30px; page-break-inside: avoid; }
     .signature-box { display: flex; justify-content: space-between; margin-top: 20px; }
@@ -391,7 +410,7 @@ export class EquipmentHistoryComponent implements OnInit {
   <div class="section">
     <div class="section-title">DETALLE DEL MANTENIMIENTO</div>
     <table>
-      <tr><th>Tipo</th><td><span class="type-badge ${item.maintenanceType === 'PREVENTIVE' ? 'preventive' : 'corrective'}">${item.maintenanceType === 'PREVENTIVE' ? 'PREVENTIVO' : 'CORRECTIVO'}</span></td></tr>
+      <tr><th>Tipo</th><td><span class="type-badge ${claseTipoMantenimiento(item.maintenanceType)}">${this.escHtml(etiqueta(item.maintenanceType, 'mantenimiento') || '-')}</span></td></tr>
       <tr><th>Fecha</th><td>${new Date(item.performedDate).toLocaleString('es-CO')}</td></tr>
       <tr><th>Tecnico</th><td>${item.technicianName || '-'}</td></tr>
       <tr><th>Motivo</th><td>${item.reason || '-'}</td></tr>

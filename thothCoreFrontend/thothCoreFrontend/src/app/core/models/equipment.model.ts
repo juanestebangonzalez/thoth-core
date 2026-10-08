@@ -19,7 +19,22 @@ export interface Equipment {
   rentalInfo?: RentalInfo;
   hardware?: Hardware;
   nextMaintenanceDate?: string;
+  /** WINDOWS | LINUX | MACOS | CHROMEOS | ANDROID | IOS | OTRO | N/A */
+  operatingSystem?: string;
+  osVersion?: string;
 }
+
+/** Valores de sistema operativo aceptados por el backend. */
+export const SISTEMAS_OPERATIVOS: { value: string; label: string }[] = [
+  { value: 'WINDOWS', label: 'Windows' },
+  { value: 'LINUX', label: 'Linux' },
+  { value: 'MACOS', label: 'macOS' },
+  { value: 'CHROMEOS', label: 'ChromeOS' },
+  { value: 'ANDROID', label: 'Android' },
+  { value: 'IOS', label: 'iOS' },
+  { value: 'OTRO', label: 'Otro' },
+  { value: 'N/A', label: 'N/A' }
+];
 
 export interface Location {
   building: string;
@@ -83,4 +98,6 @@ export interface CreateEquipmentRequest {
   rentalInfo?: RentalInfo;
   hardware?: Hardware;
   nextMaintenanceDate?: string;
+  operatingSystem?: string;
+  osVersion?: string;
 }

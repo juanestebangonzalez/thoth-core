@@ -43,6 +43,10 @@ public class Equipment {
     private LocalDate nextMaintenanceDate;
     /** Nombre del centro de costo (catalogo cost_center). Opcional. */
     private String costCenter;
+    /** Sistema operativo (WINDOWS, LINUX, MACOS, CHROMEOS, ANDROID, IOS, OTRO, N/A). Opcional. */
+    private String operatingSystem;
+    /** Version del sistema operativo (texto libre, max. 100). Opcional. */
+    private String osVersion;
 
     public static Equipment create(
             String name,
@@ -58,20 +62,20 @@ public class Equipment {
             String createdBy) {
 
         if (name == null || name.isBlank()) {
-            throw new IllegalArgumentException("Equipment name cannot be blank");
+            throw new IllegalArgumentException("El nombre del equipo no puede estar vacio");
         }
         // serialNumber is now optional
         if (purchaseValue != null && purchaseValue.signum() < 0) {
-            throw new IllegalArgumentException("Purchase value cannot be negative");
+            throw new IllegalArgumentException("El valor de compra no puede ser negativo");
         }
         if (purchaseDate != null && purchaseDate.isAfter(LocalDate.now())) {
-            throw new IllegalArgumentException("Purchase date cannot be in the future");
+            throw new IllegalArgumentException("La fecha de compra no puede ser futura");
         }
         if (location == null) {
             location = Location.of(null, null, null, null);
         }
         if (category == null || category.isBlank()) {
-            throw new IllegalArgumentException("Category cannot be blank");
+            throw new IllegalArgumentException("La categoria no puede estar vacia");
         }
 
         String normalizedMac = normalizeMacAddress(macAddress);
@@ -104,7 +108,7 @@ public class Equipment {
 
     public void markForMaintenance() {
         if (this.status == EquipmentStatus.RETIRED) {
-            throw new IllegalStateException("Cannot mark retired equipment for maintenance. Equipment: " + this.name);
+            throw new IllegalStateException("No se puede enviar a mantenimiento un equipo retirado. Equipo: " + this.name);
         }
         if (this.status != EquipmentStatus.MAINTENANCE) {
             this.status = EquipmentStatus.MAINTENANCE;
@@ -114,7 +118,7 @@ public class Equipment {
 
     public void markAsActive() {
         if (this.status == EquipmentStatus.RETIRED) {
-            throw new IllegalStateException("Cannot reactivate retired equipment. Equipment: " + this.name);
+            throw new IllegalStateException("No se puede reactivar un equipo retirado. Equipo: " + this.name);
         }
         this.status = EquipmentStatus.ACTIVE;
         this.updatedAt = LocalDateTime.now();
@@ -122,7 +126,7 @@ public class Equipment {
 
     public void markAsInactive() {
         if (this.status == EquipmentStatus.RETIRED) {
-            throw new IllegalStateException("Cannot mark retired equipment as inactive. Equipment: " + this.name);
+            throw new IllegalStateException("No se puede marcar como inactivo un equipo retirado. Equipo: " + this.name);
         }
         this.status = EquipmentStatus.INACTIVE;
         this.updatedAt = LocalDateTime.now();
@@ -165,7 +169,7 @@ public class Equipment {
 
     public void rename(String newName) {
         if (newName == null || newName.isBlank()) {
-            throw new IllegalArgumentException("Equipment name cannot be blank");
+            throw new IllegalArgumentException("El nombre del equipo no puede estar vacio");
         }
         this.name = newName.trim();
         this.updatedAt = LocalDateTime.now();
@@ -206,6 +210,30 @@ public class Equipment {
     public void updateCostCenter(String newCostCenter) {
         this.costCenter = (newCostCenter == null || newCostCenter.isBlank())
             ? null : newCostCenter.trim().toUpperCase();
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    /**
+     * Asigna el sistema operativo (en mayusculas). Cadena vacia o null lo limpia.
+     * Lanza IllegalArgumentException si no es uno de los valores permitidos.
+     */
+    public void updateOperatingSystem(String newOperatingSystem) {
+        String normalized = OperatingSystemCatalog.normalize(newOperatingSystem);
+        if (normalized != null && !OperatingSystemCatalog.VALUES.contains(normalized)) {
+            throw new IllegalArgumentException(OperatingSystemCatalog.invalidMessage(newOperatingSystem));
+        }
+        this.operatingSystem = normalized;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    /** Asigna la version del sistema operativo (en mayusculas, max. 100). Cadena vacia o null la limpia. */
+    public void updateOsVersion(String newOsVersion) {
+        String normalized = (newOsVersion == null || newOsVersion.isBlank()) ? null : newOsVersion.trim().toUpperCase();
+        if (normalized != null && normalized.length() > OperatingSystemCatalog.OS_VERSION_MAX_LENGTH) {
+            throw new IllegalArgumentException("La version del sistema operativo no puede superar "
+                + OperatingSystemCatalog.OS_VERSION_MAX_LENGTH + " caracteres");
+        }
+        this.osVersion = normalized;
         this.updatedAt = LocalDateTime.now();
     }
 

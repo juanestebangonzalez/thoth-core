@@ -41,6 +41,8 @@ public class EquipmentImportRowDTO {
     private Object ramType;
     private Object diskType;
     private Object diskSizeGb;
+    private Object operatingSystem;
+    private Object osVersion;
     private Object lastMaintenanceDate;
     private Object lastMaintenanceType;
     private Object lastMaintenanceTechnician;

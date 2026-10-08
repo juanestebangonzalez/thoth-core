@@ -18,7 +18,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/audit")
-@Tag(name = "Audit Log", description = "Log de auditoria del sistema")
+@Tag(name = "Auditoria", description = "Log de auditoria del sistema")
 @RequiredArgsConstructor
 public class AuditController {
 
@@ -26,7 +26,7 @@ public class AuditController {
     private final AuditArchiveService archiveService;
 
     @GetMapping
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("@perm.can(authentication,'AUDIT','VIEW')")
     @Operation(summary = "Obtener log de auditoria con filtros")
     public ResponseEntity<Map<String, Object>> getAuditLog(
             @RequestParam(defaultValue = "0") int page,
@@ -50,7 +50,7 @@ public class AuditController {
     }
 
     @GetMapping("/archive")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("@perm.can(authentication,'AUDIT','VIEW')")
     @Operation(summary = "Consultar logs archivados (> 6 meses)")
     public ResponseEntity<Map<String, Object>> getArchivedLog(
             @RequestParam(defaultValue = "0") int page,
@@ -80,7 +80,7 @@ public class AuditController {
     }
 
     @GetMapping("/stats")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("@perm.can(authentication,'AUDIT','VIEW')")
     @Operation(summary = "Estadisticas de auditoria (activos vs archivados)")
     public ResponseEntity<Map<String, Object>> getStats() {
         return ResponseEntity.ok(archiveService.getStats());

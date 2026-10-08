@@ -16,6 +16,7 @@ import com.thoth.application.dto.EquipmentImportRowDTO;
 import com.thoth.application.dto.EquipmentImportRowResultDTO;
 import com.thoth.application.port.output.EquipmentRepositoryPort;
 import com.thoth.domain.valueobject.DiskType;
+import com.thoth.domain.valueobject.OperatingSystemCatalog;
 import com.thoth.domain.valueobject.RamType;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -90,6 +91,8 @@ public class EquipmentImportService {
         String ramType;
         String diskType;
         Integer diskSizeGb;
+        String operatingSystem;
+        String osVersion;
         LocalDate lastMaintenanceDate;
         String lastMaintenanceType;
         String lastMaintenanceTechnician;
@@ -290,6 +293,20 @@ public class EquipmentImportService {
             else row.warnings.add("El tipo de disco '" + diskType + "' no es reconocido; se ignorara");
         }
 
+        // Sistema operativo (debe ser uno de los valores permitidos) y version (texto libre)
+        String os = upper(str(raw.getOperatingSystem()));
+        if (os != null) {
+            if (OperatingSystemCatalog.VALUES.contains(os)) row.operatingSystem = os;
+            else errors.add("El sistema operativo '" + os + "' no es valido (use "
+                + String.join(", ", OperatingSystemCatalog.VALUES) + ")");
+        }
+        row.osVersion = upper(str(raw.getOsVersion()));
+        if (row.osVersion != null && row.osVersion.length() > OperatingSystemCatalog.OS_VERSION_MAX_LENGTH) {
+            errors.add("La version del sistema operativo no puede superar "
+                + OperatingSystemCatalog.OS_VERSION_MAX_LENGTH + " caracteres");
+            row.osVersion = null;
+        }
+
         // Ultimo mantenimiento
         row.lastMaintenanceDate = parseDate(str(raw.getLastMaintenanceDate()), "fecha del ultimo mantenimiento", errors);
         if (row.lastMaintenanceDate != null && row.lastMaintenanceDate.isAfter(today)) {
@@ -362,7 +379,9 @@ public class EquipmentImportService {
             null,
             r.macAddress2,
             r.costCenter,
-            rented ? r.rentalMonthlyValue : null
+            rented ? r.rentalMonthlyValue : null,
+            r.operatingSystem,
+            r.osVersion
         );
     }
 
