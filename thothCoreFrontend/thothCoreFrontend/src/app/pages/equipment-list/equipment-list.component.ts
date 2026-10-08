@@ -56,7 +56,7 @@ import { EtiquetaPipe, etiqueta, codigoEstado } from '../../core/pipes/etiqueta.
             <mat-option value="">Todos</mat-option>
             <mat-option value="ACTIVE">Activos</mat-option>
             <mat-option value="MAINTENANCE">Mantenimiento</mat-option>
-            <mat-option value="INACTIVE">Inactivos</mat-option>
+            <mat-option value="INACTIVE">Inactivos / En bodega</mat-option>
             <mat-option value="RETIRED">Retirados</mat-option>
           </mat-select>
         </mat-form-field>
@@ -301,17 +301,19 @@ export class EquipmentListComponent implements OnInit {
       return;
     }
 
-    const headers = ['Nombre', 'N Inventario', 'Categoria', 'Serial', 'MAC', 'MAC WiFi', 'Marca', 'Modelo', 'Estado', 'Fecha Compra', 'Valor', 'Asignado a', 'Sede', 'Area', 'Centro de Costo', 'Propiedad', 'Procesador', 'RAM (GB)', 'Tipo RAM', 'Tipo Disco', 'Disco (GB)', 'Sistema Operativo', 'Distribucion / Version', 'Salud Disco', 'Temp Disco'];
+    const headers = ['Nombre', 'N Inventario', 'Categoria', 'Serial', 'MAC', 'MAC WiFi', 'Direccion IP', 'Asignacion IP', 'Marca', 'Modelo', 'Estado', 'Fecha Compra', 'Valor', 'Asignado a', 'Cargo Responsable', 'Documento Responsable', 'Celular Responsable', 'Correo Responsable', 'Sede', 'Area', 'Centro de Costo', 'Propiedad', 'Procesador', 'RAM (GB)', 'Tipo RAM', 'Tipo Disco', 'Disco (GB)', 'Sistema Operativo', 'Distribucion / Version', 'Salud Disco', 'Temp Disco', 'PC Asociado'];
     const rows = data.map(e => [
-      e.name, e.inventoryNumber || '', e.category, e.serialNumber || '', e.macAddress || '', e.macAddress2 || '', e.brand || '', e.model || '',
+      e.name, e.inventoryNumber || '', e.category, e.serialNumber || '', e.macAddress || '', e.macAddress2 || '', e.ipAddress || '', e.ipAssignment || '', e.brand || '', e.model || '',
       etiqueta(e.status, 'estado'), e.purchaseDate, e.purchaseValue,
-      e.assignedTo || '', e.location?.building || '', e.location?.office || '', e.costCenter || '',
+      e.assignedTo || '', e.responsiblePosition || '', e.responsibleDocument || '', e.responsiblePhone || '', e.responsibleEmail || '',
+      e.location?.building || '', e.location?.office || '', e.costCenter || '',
       etiqueta(e.ownershipType || 'OWNED', 'propiedad'),
       e.hardware?.processor || '', e.hardware?.ramSizeGb || '', e.hardware?.ramType || '',
       e.hardware?.diskType || '', e.hardware?.diskSizeGb || '',
       e.operatingSystem ? etiqueta(e.operatingSystem, 'so') : '', e.osVersion || '',
       e.hardware?.diskHealthPercent || '',
-      e.hardware?.diskTemperatureCelsius || ''
+      e.hardware?.diskTemperatureCelsius || '',
+      e.associatedEquipmentName ? e.associatedEquipmentName + (e.associatedEquipmentInventory ? ' (' + e.associatedEquipmentInventory + ')' : '') : ''
     ]);
 
     let csv = '\uFEFF';

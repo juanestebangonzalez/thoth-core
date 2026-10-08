@@ -5,15 +5,24 @@ import com.thoth.application.dto.EquipmentResponseDTO;
 import com.thoth.application.dto.HardwareDTO;
 import com.thoth.application.dto.LocationDTO;
 import com.thoth.application.dto.RentalInfoDTO;
+import com.thoth.application.dto.UsefulLifeDTO;
 import com.thoth.domain.model.Equipment;
 import com.thoth.domain.valueobject.Hardware;
 import com.thoth.domain.valueobject.RentalInfo;
+import com.thoth.domain.valueobject.UsefulLife;
 import org.springframework.stereotype.Component;
 
 @Component
 public class EquipmentDtoMapper {
 
     public EquipmentDTO toDTO(Equipment equipment) {
+        return toDTO(equipment, null);
+    }
+
+    /**
+     * @param associated equipo al que esta asociado el monitor (para nombre e inventario); puede ser null.
+     */
+    public EquipmentDTO toDTO(Equipment equipment, Equipment associated) {
         return new EquipmentDTO(
             equipment.getEquipmentId(),
             equipment.getName(),
@@ -36,11 +45,26 @@ public class EquipmentDtoMapper {
             equipment.getMacAddress2(),
             equipment.getCostCenter(),
             equipment.getOperatingSystem(),
-            equipment.getOsVersion()
+            equipment.getOsVersion(),
+            equipment.getResponsiblePosition(),
+            equipment.getResponsibleDocument(),
+            equipment.getResponsiblePhone(),
+            equipment.getResponsibleEmail(),
+            equipment.getIpAddress(),
+            equipment.getIpAssignment(),
+            equipment.getAssociatedEquipmentId(),
+            associatedName(equipment, associated),
+            associatedInventory(equipment, associated),
+            mapUsefulLife(equipment),
+            equipment.calculateCriticality()
         );
     }
 
     public EquipmentResponseDTO toResponseDTO(Equipment equipment) {
+        return toResponseDTO(equipment, null);
+    }
+
+    public EquipmentResponseDTO toResponseDTO(Equipment equipment, Equipment associated) {
         return new EquipmentResponseDTO(
             equipment.getEquipmentId(),
             equipment.getName(),
@@ -65,8 +89,39 @@ public class EquipmentDtoMapper {
             equipment.getMacAddress2(),
             equipment.getCostCenter(),
             equipment.getOperatingSystem(),
-            equipment.getOsVersion()
+            equipment.getOsVersion(),
+            equipment.getResponsiblePosition(),
+            equipment.getResponsibleDocument(),
+            equipment.getResponsiblePhone(),
+            equipment.getResponsibleEmail(),
+            equipment.getIpAddress(),
+            equipment.getIpAssignment(),
+            equipment.getAssociatedEquipmentId(),
+            associatedName(equipment, associated),
+            associatedInventory(equipment, associated),
+            mapUsefulLife(equipment),
+            equipment.calculateCriticality()
         );
+    }
+
+    /** Vida util calculada (no se persiste). */
+    public UsefulLifeDTO mapUsefulLife(Equipment equipment) {
+        UsefulLife life = equipment.calculateUsefulLife();
+        return new UsefulLifeDTO(life.getYears(), life.getAgeYears(), life.getConsumedPercent(),
+            life.getRemainingYears(), life.isEstimated());
+    }
+
+    private static boolean matchesAssociated(Equipment equipment, Equipment associated) {
+        return associated != null && equipment.getAssociatedEquipmentId() != null
+            && equipment.getAssociatedEquipmentId().equals(associated.getEquipmentId());
+    }
+
+    private static String associatedName(Equipment equipment, Equipment associated) {
+        return matchesAssociated(equipment, associated) ? associated.getName() : null;
+    }
+
+    private static String associatedInventory(Equipment equipment, Equipment associated) {
+        return matchesAssociated(equipment, associated) ? associated.getInventoryNumber() : null;
     }
 
     private LocationDTO mapLocation(Equipment equipment) {

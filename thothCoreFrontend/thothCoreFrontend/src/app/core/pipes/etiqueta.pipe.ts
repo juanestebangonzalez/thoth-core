@@ -13,7 +13,7 @@ export const ETIQUETAS: Record<TipoEtiqueta, Record<string, string>> = {
   estado: {
     ACTIVE: 'Activo',
     MAINTENANCE: 'En mantenimiento',
-    INACTIVE: 'Inactivo',
+    INACTIVE: 'Inactivo / En bodega',
     RETIRED: 'Retirado'
   },
   propiedad: {

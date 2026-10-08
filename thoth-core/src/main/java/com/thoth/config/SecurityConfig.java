@@ -63,10 +63,18 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/v1/maintenance-categories/**").authenticated()
                 .requestMatchers(HttpMethod.PUT, "/api/v1/maintenance-categories/**").authenticated()
                 .requestMatchers(HttpMethod.DELETE, "/api/v1/maintenance-categories/**").authenticated()
+                .requestMatchers(HttpMethod.GET, "/api/v1/peripheral-types/**").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/v1/peripheral-types/**").authenticated()
+                .requestMatchers(HttpMethod.PUT, "/api/v1/peripheral-types/**").authenticated()
+                .requestMatchers(HttpMethod.DELETE, "/api/v1/peripheral-types/**").authenticated()
                 .requestMatchers("/api/v1/users/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.GET, "/api/v1/equipment/**").authenticated()
                 // Importacion masiva: la decide @PreAuthorize con el permiso granular IMPORT/CREATE
                 .requestMatchers(HttpMethod.POST, "/api/v1/equipment/import").authenticated()
+                // Perifericos del equipo: los decide @PreAuthorize con EQUIPMENT/CREATE, EDIT y DELETE
+                .requestMatchers(HttpMethod.POST, "/api/v1/equipment/*/peripherals", "/api/v1/equipment/*/peripherals/**").authenticated()
+                .requestMatchers(HttpMethod.PUT, "/api/v1/equipment/*/peripherals/**").authenticated()
+                .requestMatchers(HttpMethod.DELETE, "/api/v1/equipment/*/peripherals/**").authenticated()
                 .requestMatchers(HttpMethod.POST, "/api/v1/equipment/**").hasAnyRole("ADMIN", "TECHNICIAN")
                 .requestMatchers(HttpMethod.PUT, "/api/v1/equipment/**").hasAnyRole("ADMIN", "TECHNICIAN")
                 .requestMatchers(HttpMethod.PATCH, "/api/v1/equipment/**").hasAnyRole("ADMIN", "TECHNICIAN")

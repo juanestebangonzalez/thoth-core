@@ -11,18 +11,19 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { SedeService, Sede } from '../../core/services/sede.service';
 import { AreaService, Area } from '../../core/services/area.service';
 import { DeviceTypeService, DeviceType } from '../../core/services/device-type.service';
 import { CostCenterService, CostCenter } from '../../core/services/cost-center.service';
 import { EquipmentService } from '../../core/services/equipment.service';
-import { CreateEquipmentRequest, SISTEMAS_OPERATIVOS } from '../../core/models/equipment.model';
+import { CreateEquipmentRequest, SISTEMAS_OPERATIVOS, Equipment, esMonitor } from '../../core/models/equipment.model';
 import { HardwareThresholdsService } from '../../core/services/hardware-thresholds.service';
 
 @Component({
   selector: 'app-equipment-form',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatCardModule, MatInputModule, MatSelectModule, MatButtonModule, MatIconModule, MatSnackBarModule, MatRadioModule, MatExpansionModule, MatDividerModule],
+  imports: [CommonModule, FormsModule, MatCardModule, MatInputModule, MatSelectModule, MatButtonModule, MatIconModule, MatSnackBarModule, MatRadioModule, MatExpansionModule, MatDividerModule, MatAutocompleteModule],
   template: `
     <div class="form-page">
       <mat-card class="form-card">
@@ -61,6 +62,60 @@ import { HardwareThresholdsService } from '../../core/services/hardware-threshol
             <mat-label>Modelo</mat-label>
             <input matInput [(ngModel)]="equipment.model">
           </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Fecha de Compra</mat-label>
+            <input matInput [(ngModel)]="equipment.purchaseDate" type="date" [disabled]="isEditMode()">
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Valor de Compra</mat-label>
+            <input matInput [(ngModel)]="equipment.purchaseValue" type="number" [disabled]="isEditMode()">
+            <span matPrefix>$&nbsp;</span>
+          </mat-form-field>
+        </div>
+
+        <mat-divider></mat-divider>
+
+        <h3 class="section-title"><mat-icon>person</mat-icon> Responsable</h3>
+        <div class="form-grid">
+          <mat-form-field appearance="outline">
+            <mat-label>Asignado a</mat-label>
+            <input matInput [(ngModel)]="equipment.assignedTo">
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Cargo</mat-label>
+            <input matInput [(ngModel)]="equipment.responsiblePosition">
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Documento de identidad</mat-label>
+            <input matInput [(ngModel)]="equipment.responsibleDocument" maxlength="20">
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Celular</mat-label>
+            <input matInput [(ngModel)]="equipment.responsiblePhone" (input)="onlyDigits($event)" inputmode="numeric" maxlength="10" placeholder="3001234567">
+            @if (phoneError()) {
+              <mat-hint class="hint-error">Debe tener 10 digitos (solo numeros)</mat-hint>
+            } @else {
+              <mat-hint>10 digitos, solo numeros</mat-hint>
+            }
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="full-column">
+            <mat-label>Correo electronico</mat-label>
+            <input matInput [(ngModel)]="equipment.responsibleEmail" type="email" placeholder="nombre@dominio.com">
+            @if (emailError()) {
+              <mat-hint class="hint-error">Correo electronico no valido</mat-hint>
+            }
+          </mat-form-field>
+        </div>
+
+        <mat-divider></mat-divider>
+
+        <h3 class="section-title"><mat-icon>lan</mat-icon> Red</h3>
+        <div class="form-grid">
+          <mat-form-field appearance="outline">
+            <mat-label>Hostname</mat-label>
+            <input matInput [value]="equipment.name || ''" readonly>
+            <mat-hint>Igual al nombre del equipo</mat-hint>
+          </mat-form-field>
           @if (isLaptop()) {
             <mat-form-field appearance="outline">
               <mat-label>MAC Ethernet</mat-label>
@@ -80,19 +135,47 @@ import { HardwareThresholdsService } from '../../core/services/hardware-threshol
             </mat-form-field>
           }
           <mat-form-field appearance="outline">
-            <mat-label>Fecha de Compra</mat-label>
-            <input matInput [(ngModel)]="equipment.purchaseDate" type="date" [disabled]="isEditMode()">
+            <mat-label>Direccion IP</mat-label>
+            <input matInput [(ngModel)]="equipment.ipAddress" placeholder="192.168.1.10" maxlength="15">
+            @if (ipError()) {
+              <mat-hint class="hint-error">Direccion IPv4 no valida</mat-hint>
+            }
           </mat-form-field>
           <mat-form-field appearance="outline">
-            <mat-label>Valor de Compra</mat-label>
-            <input matInput [(ngModel)]="equipment.purchaseValue" type="number" [disabled]="isEditMode()">
-            <span matPrefix>$&nbsp;</span>
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>Asignado a</mat-label>
-            <input matInput [(ngModel)]="equipment.assignedTo">
+            <mat-label>Asignacion IP</mat-label>
+            <mat-select [(ngModel)]="equipment.ipAssignment">
+              <mat-option value="">-- Sin especificar --</mat-option>
+              <mat-option value="DHCP">DHCP</mat-option>
+              <mat-option value="FIJA">Fija</mat-option>
+            </mat-select>
           </mat-form-field>
         </div>
+
+        @if (isMonitor()) {
+          <mat-divider></mat-divider>
+          <h3 class="section-title"><mat-icon>desktop_windows</mat-icon> PC asociado</h3>
+          <div class="form-grid">
+            <mat-form-field appearance="outline" class="full-column">
+              <mat-label>PC asociado</mat-label>
+              <input matInput [ngModel]="pcText()" (ngModelChange)="onPcInput($event)" [matAutocomplete]="pcAuto" placeholder="Buscar por nombre o N inventario">
+              @if (equipment.associatedEquipmentId || pcText()) {
+                <button mat-icon-button matSuffix type="button" (click)="clearPc()" title="Quitar asociacion">
+                  <mat-icon>close</mat-icon>
+                </button>
+              }
+              <mat-autocomplete #pcAuto="matAutocomplete">
+                @for (pc of pcOptions(); track pc.equipmentId) {
+                  <mat-option [value]="pcLabel(pc)" (onSelectionChange)="$event.isUserInput && selectPc(pc)">{{ pcLabel(pc) }}</mat-option>
+                }
+              </mat-autocomplete>
+              @if (pcError()) {
+                <mat-hint class="hint-error">Seleccione un PC de la lista o deje el campo vacio</mat-hint>
+              } @else {
+                <mat-hint>Solo equipos que no son monitores ni estan retirados</mat-hint>
+              }
+            </mat-form-field>
+          </div>
+        }
 
         <mat-divider></mat-divider>
 
@@ -327,6 +410,7 @@ import { HardwareThresholdsService } from '../../core/services/hardware-threshol
     /* Auto-uppercase para inputs de texto */
     input:not([type="date"]):not([type="number"]):not([type="email"]) { text-transform: uppercase; }
     textarea { text-transform: uppercase; }
+    .hint-error { color: #F87171; }
   `]
 })
 export class EquipmentFormComponent implements OnInit {
@@ -337,8 +421,20 @@ export class EquipmentFormComponent implements OnInit {
     rentalInfo: { rentalCompany: '', contactName: '', contactPhone: '', contactEmail: '', startDate: '', endDate: '', contractNumber: '', monthlyValue: undefined, contractFileUrl: '', notes: '' },
     hardware: { processor: '', ramSizeGb: undefined, ramType: '', diskType: '', diskSizeGb: undefined, diskHealthPercent: undefined, diskTemperatureCelsius: undefined },
     operatingSystem: '',
-    osVersion: ''
+    osVersion: '',
+    responsiblePosition: '', responsibleDocument: '', responsiblePhone: '', responsibleEmail: '',
+    ipAddress: '', ipAssignment: '', associatedEquipmentId: ''
   };
+  /** Equipos candidatos a PC asociado (no monitores, no retirados). */
+  private pcCandidates = signal<Equipment[]>([]);
+  private pcCandidatesLoaded = false;
+  pcText = signal('');
+  pcOptions = computed(() => {
+    const q = this.pcText().trim().toUpperCase();
+    const list = this.pcCandidates();
+    const filtered = q ? list.filter(e => (e.name || '').toUpperCase().includes(q) || (e.inventoryNumber || '').toUpperCase().includes(q)) : list;
+    return filtered.slice(0, 50);
+  });
   readonly sistemasOperativos = SISTEMAS_OPERATIVOS;
   isEditMode = signal(false);
   sedes = signal<Sede[]>([]);
@@ -432,6 +528,82 @@ export class EquipmentFormComponent implements OnInit {
     return c.includes('LAPTOP') || c.includes('PORTATIL') || c.includes('PORTÁTIL');
   }
 
+  /** True si la categoria seleccionada es un monitor (permite asociarlo a un PC). */
+  isMonitor(): boolean {
+    const m = esMonitor(this.equipment.category);
+    if (m && !this.pcCandidatesLoaded) this.loadPcCandidates();
+    return m;
+  }
+
+  private loadPcCandidates() {
+    this.pcCandidatesLoaded = true;
+    this.equipmentService.list(0, 2000).subscribe({
+      next: (res) => {
+        const list = (res.content || []).filter(e =>
+          !esMonitor(e.category) && (e.status || '').toUpperCase() !== 'RETIRED' && e.equipmentId !== this.equipmentId);
+        list.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+        this.pcCandidates.set(list);
+        this.cdr.detectChanges();
+      },
+      error: () => { this.pcCandidatesLoaded = false; }
+    });
+  }
+
+  pcLabel(e: { name?: string; inventoryNumber?: string }): string {
+    return (e.name || '') + (e.inventoryNumber ? ' (' + e.inventoryNumber + ')' : '');
+  }
+
+  onPcInput(v: string) {
+    this.pcText.set(typeof v === 'string' ? v : '');
+    // Si el texto ya no corresponde al PC seleccionado, se pierde la seleccion
+    if (this.equipment.associatedEquipmentId && this.pcText() !== this.selectedPcLabel) {
+      this.equipment.associatedEquipmentId = '';
+    }
+  }
+
+  private selectedPcLabel = '';
+
+  selectPc(pc: Equipment) {
+    this.equipment.associatedEquipmentId = pc.equipmentId;
+    this.selectedPcLabel = this.pcLabel(pc);
+    this.pcText.set(this.selectedPcLabel);
+  }
+
+  clearPc() {
+    this.equipment.associatedEquipmentId = '';
+    this.selectedPcLabel = '';
+    this.pcText.set('');
+  }
+
+  /** Deja solo digitos en el celular. */
+  onlyDigits(event: any) {
+    const v = String(event.target.value || '').replace(/\D/g, '').substring(0, 10);
+    this.equipment.responsiblePhone = v;
+    event.target.value = v;
+  }
+
+  phoneError(): boolean {
+    const v = (this.equipment.responsiblePhone || '').trim();
+    return !!v && !/^\d{10}$/.test(v);
+  }
+
+  emailError(): boolean {
+    const v = (this.equipment.responsibleEmail || '').trim();
+    return !!v && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+  }
+
+  ipError(): boolean {
+    const v = (this.equipment.ipAddress || '').trim();
+    if (!v) return false;
+    const m = v.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+    return !m || m.slice(1).some(o => Number(o) > 255 || (o.length > 1 && o.startsWith('0')));
+  }
+
+  /** Hay texto en PC asociado que no corresponde a un PC seleccionado. */
+  pcError(): boolean {
+    return this.isMonitor() && !!this.pcText().trim() && !this.equipment.associatedEquipmentId;
+  }
+
   loadDeviceTypes() {
     this.deviceTypeService.listActive().subscribe({
       next: (types) => { this.deviceTypes.set(types); this.cdr.detectChanges(); }
@@ -476,8 +648,20 @@ export class EquipmentFormComponent implements OnInit {
             diskTemperatureCelsius: e.hardware?.diskTemperatureCelsius
           },
           operatingSystem: e.operatingSystem || '',
-          osVersion: e.osVersion || ''
+          osVersion: e.osVersion || '',
+          responsiblePosition: e.responsiblePosition || '',
+          responsibleDocument: e.responsibleDocument || '',
+          responsiblePhone: e.responsiblePhone || '',
+          responsibleEmail: e.responsibleEmail || '',
+          ipAddress: e.ipAddress || '',
+          ipAssignment: (e.ipAssignment || '').toUpperCase(),
+          associatedEquipmentId: e.associatedEquipmentId || ''
         };
+        if (e.associatedEquipmentId) {
+          this.selectedPcLabel = this.pcLabel({ name: e.associatedEquipmentName || '', inventoryNumber: e.associatedEquipmentInventory });
+          this.pcText.set(this.selectedPcLabel || e.associatedEquipmentId);
+          if (!this.selectedPcLabel) this.selectedPcLabel = e.associatedEquipmentId;
+        }
         this.selectedSede = e.location?.building || '';
         this.selectedArea = e.location?.office || '';
         this.legacySede.set(this.selectedSede);
@@ -507,6 +691,17 @@ export class EquipmentFormComponent implements OnInit {
       this.snackBar.open('Campo obligatorio: ' + missing, 'OK', { duration: 4000 });
       return;
     }
+    const errores: string[] = [];
+    if (this.phoneError()) errores.push('Celular (10 digitos, solo numeros)');
+    if (this.emailError()) errores.push('Correo electronico');
+    if (this.ipError()) errores.push('Direccion IP (IPv4)');
+    if (this.pcError()) errores.push('PC asociado (seleccione de la lista)');
+    if (errores.length) {
+      this.snackBar.open('Corrija los campos: ' + errores.join(', '), 'OK', { duration: 5000 });
+      return;
+    }
+    const monitor = esMonitor(this.equipment.category);
+    const t = (v: string | undefined) => (v || '').trim();
     const laptop = this.isLaptop();
     const macAddress2 = laptop ? (this.equipment.macAddress2 || undefined) : undefined;
     const location = this.buildLocation();
@@ -533,7 +728,15 @@ export class EquipmentFormComponent implements OnInit {
         hardware: cleanHardware,
         // En edicion se envia '' para permitir limpiar el sistema operativo
         operatingSystem: this.equipment.operatingSystem || '',
-        osVersion: (this.equipment.osVersion || '').trim()
+        osVersion: (this.equipment.osVersion || '').trim(),
+        // En edicion se envia '' para permitir limpiar responsable, red y PC asociado
+        responsiblePosition: t(this.equipment.responsiblePosition),
+        responsibleDocument: t(this.equipment.responsibleDocument),
+        responsiblePhone: t(this.equipment.responsiblePhone),
+        responsibleEmail: t(this.equipment.responsibleEmail),
+        ipAddress: t(this.equipment.ipAddress),
+        ipAssignment: this.equipment.ipAssignment || '',
+        associatedEquipmentId: monitor ? (this.equipment.associatedEquipmentId || '') : undefined
       };
       this.equipmentService.update(this.equipmentId, updateData).subscribe({
         next: () => {
@@ -564,7 +767,14 @@ export class EquipmentFormComponent implements OnInit {
         rentalInfo: cleanRental,
         hardware: cleanHardware,
         operatingSystem: this.equipment.operatingSystem || undefined,
-        osVersion: (this.equipment.osVersion || '').trim() || undefined
+        osVersion: (this.equipment.osVersion || '').trim() || undefined,
+        responsiblePosition: t(this.equipment.responsiblePosition) || undefined,
+        responsibleDocument: t(this.equipment.responsibleDocument) || undefined,
+        responsiblePhone: t(this.equipment.responsiblePhone) || undefined,
+        responsibleEmail: t(this.equipment.responsibleEmail) || undefined,
+        ipAddress: t(this.equipment.ipAddress) || undefined,
+        ipAssignment: this.equipment.ipAssignment || undefined,
+        associatedEquipmentId: monitor ? (this.equipment.associatedEquipmentId || undefined) : undefined
       };
       this.equipmentService.create(createData).subscribe({
         next: () => {

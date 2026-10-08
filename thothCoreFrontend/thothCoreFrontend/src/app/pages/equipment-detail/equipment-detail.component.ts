@@ -17,11 +17,14 @@ import { TransferDialogComponent } from '../../shared/transfer-dialog/transfer-d
 import { Equipment } from '../../core/models/equipment.model';
 import { EtiquetaPipe, etiqueta, codigoEstado } from '../../core/pipes/etiqueta.pipe';
 import { HardwareThresholdsService } from '../../core/services/hardware-thresholds.service';
+import { AuthService } from '../../core/services/auth.service';
+import { EquipmentExtraInfoComponent } from './equipment-extra-info.component';
+import { EquipmentPeripheralsComponent } from './equipment-peripherals.component';
 
 @Component({
   selector: 'app-equipment-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, MatCardModule, MatButtonModule, MatIconModule, MatDividerModule, MatChipsModule, MatSnackBarModule, MatDialogModule, EquipmentDocumentsComponent, EtiquetaPipe],
+  imports: [CommonModule, RouterLink, MatCardModule, MatButtonModule, MatIconModule, MatDividerModule, MatChipsModule, MatSnackBarModule, MatDialogModule, EquipmentDocumentsComponent, EtiquetaPipe, EquipmentExtraInfoComponent, EquipmentPeripheralsComponent],
   template: `
     <div class="detail-page">
       <div class="header">
@@ -73,7 +76,7 @@ import { HardwareThresholdsService } from '../../core/services/hardware-threshol
                 <mat-icon>build</mat-icon> Mantenimiento
               </button>
               <button mat-stroked-button class="btn-inactive" (click)="changeStatus('INACTIVE')">
-                <mat-icon>block</mat-icon> Inactivo
+                <mat-icon>block</mat-icon> Inactivo / En bodega
               </button>
               <button mat-stroked-button class="btn-retired" (click)="changeStatus('RETIRED')">
                 <mat-icon>archive</mat-icon> Retirar
@@ -98,26 +101,12 @@ import { HardwareThresholdsService } from '../../core/services/hardware-threshol
               <div><span class="label">Modelo</span><span class="value">{{ equipment()?.model || '-' }}</span></div>
             </div>
             <div class="info-item">
-              <mat-icon>router</mat-icon>
-              <div><span class="label">{{ equipment()?.macAddress2 ? 'MAC Ethernet' : 'MAC Address' }}</span><span class="value">{{ equipment()?.macAddress || '-' }}</span></div>
-            </div>
-            @if (equipment()?.macAddress2) {
-              <div class="info-item">
-                <mat-icon>wifi</mat-icon>
-                <div><span class="label">MAC WiFi</span><span class="value">{{ equipment()?.macAddress2 }}</span></div>
-              </div>
-            }
-            <div class="info-item">
               <mat-icon>calendar_today</mat-icon>
               <div><span class="label">Fecha de Compra</span><span class="value">{{ equipment()?.purchaseDate || '-' }}</span></div>
             </div>
             <div class="info-item">
               <mat-icon>attach_money</mat-icon>
               <div><span class="label">Valor de Compra</span><span class="value">$ {{ equipment()?.purchaseValue || 0 }}</span></div>
-            </div>
-            <div class="info-item">
-              <mat-icon>person</mat-icon>
-              <div><span class="label">Asignado a</span><span class="value">{{ equipment()?.assignedTo || 'Sin asignar' }}</span></div>
             </div>
             <div class="info-item">
               <mat-icon>location_on</mat-icon>
@@ -148,6 +137,8 @@ import { HardwareThresholdsService } from '../../core/services/hardware-threshol
               </div>
             }
           </div>
+
+          <app-equipment-extra-info [equipment]="equipment()!"></app-equipment-extra-info>
 
           @if (equipment()?.hardware || equipment()?.operatingSystem || equipment()?.osVersion) {
             <mat-divider></mat-divider>
@@ -275,6 +266,8 @@ import { HardwareThresholdsService } from '../../core/services/hardware-threshol
             </div>
           }
 
+          <app-equipment-peripherals [equipmentId]="equipmentId" [equipmentName]="equipment()?.name || ''"></app-equipment-peripherals>
+
           <mat-divider></mat-divider>
 
           @if (showQrCode()) {
@@ -335,6 +328,11 @@ import { HardwareThresholdsService } from '../../core/services/hardware-threshol
           <mat-divider></mat-divider>
 
           <div class="actions">
+            @if (auth.hasPermission('EQUIPMENT', 'VIEW')) {
+              <button mat-raised-button style="background:#B91C1C;color:white;" (click)="downloadHojaVida()" [disabled]="generatingPdf()">
+                <mat-icon>picture_as_pdf</mat-icon> {{ generatingPdf() ? 'Generando...' : 'Hoja de Vida PDF' }}
+              </button>
+            }
             <button mat-raised-button style="background:#059669;color:white;" (click)="showQr()">
               <mat-icon>qr_code</mat-icon> Ver QR
             </button>
@@ -464,6 +462,7 @@ export class EquipmentDetailComponent implements OnInit {
   equipment = signal<Equipment | null>(null);
   equipmentId = '';
   showQrCode = signal(false);
+  generatingPdf = signal(false);
   locationHistory = signal<LocationHistory[]>([]);
   qrUrl = '';
 
@@ -516,8 +515,35 @@ export class EquipmentDetailComponent implements OnInit {
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
     private http: HttpClient,
-    private thresholdsService: HardwareThresholdsService
+    private thresholdsService: HardwareThresholdsService,
+    public auth: AuthService
   ) {}
+
+  /** Consulta los datos de la hoja de vida y genera el PDF en el navegador. */
+  downloadHojaVida() {
+    if (this.generatingPdf()) return;
+    this.generatingPdf.set(true);
+    this.cdr.detectChanges();
+    this.equipmentService.getHojaVida(this.equipmentId).subscribe({
+      next: async (hv) => {
+        try {
+          const { descargarHojaVidaPdf } = await import('../../core/utils/hoja-vida-pdf');
+          await descargarHojaVidaPdf(hv);
+        } catch (e) {
+          console.error(e);
+          this.snackBar.open('Error al generar el PDF de la hoja de vida', 'OK', { duration: 4000 });
+        } finally {
+          this.generatingPdf.set(false);
+          this.cdr.detectChanges();
+        }
+      },
+      error: (err) => {
+        this.generatingPdf.set(false);
+        this.snackBar.open('Error: ' + (err.error?.message || 'No se pudo obtener la hoja de vida'), 'OK', { duration: 5000 });
+        this.cdr.detectChanges();
+      }
+    });
+  }
 
   readonly codigoEstado = codigoEstado;
 
@@ -535,9 +561,17 @@ export class EquipmentDetailComponent implements OnInit {
 
   ngOnInit() {
     this.thresholdsService.load().subscribe(() => this.cdr.detectChanges());
-    this.equipmentId = this.route.snapshot.paramMap.get('id') || '';
-    this.loadEquipment();
-    this.loadLocationHistory();
+    // Se escucha el parametro para recargar al navegar entre equipos (PC <-> monitores)
+    this.route.paramMap.subscribe(params => {
+      const id = params.get('id') || '';
+      if (id === this.equipmentId && this.equipment()) return;
+      this.equipmentId = id;
+      this.equipment.set(null);
+      this.showQrCode.set(false);
+      this.locationHistory.set([]);
+      this.loadEquipment();
+      this.loadLocationHistory();
+    });
   }
 
   loadEquipment() {

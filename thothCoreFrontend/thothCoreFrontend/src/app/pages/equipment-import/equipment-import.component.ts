@@ -20,7 +20,7 @@ import { MaintenanceCategoryService } from '../../core/services/maintenance-cate
 
 /** Tipo de dato de cada columna de la plantilla. */
 type ColType = 'text' | 'number' | 'date';
-type ListKey = 'categorias' | 'sedes' | 'areas' | 'centros' | 'propiedad' | 'ramTypes' | 'diskTypes' | 'sistemas' | 'mantenimientos';
+type ListKey = 'categorias' | 'sedes' | 'areas' | 'centros' | 'propiedad' | 'ramTypes' | 'diskTypes' | 'sistemas' | 'mantenimientos' | 'ipAsignacion';
 
 interface ColumnDef {
   key: string;
@@ -42,10 +42,16 @@ const COLUMNS: ColumnDef[] = [
   { key: 'model', label: 'Modelo', type: 'text', width: 18, example: 'OPTIPLEX 7090', help: 'Opcional.' },
   { key: 'macAddress', label: 'MAC Ethernet', type: 'text', width: 20, example: 'AA:BB:CC:DD:EE:01', help: 'Opcional. Formato AA:BB:CC:DD:EE:FF o AABBCCDDEEFF.' },
   { key: 'macAddress2', label: 'MAC WiFi', type: 'text', width: 20, example: '', help: 'Opcional. Solo para portatiles.' },
+  { key: 'ipAddress', label: 'Direccion IP', type: 'text', width: 18, example: '192.168.1.10', help: 'Opcional. Direccion IPv4, por ejemplo 192.168.1.10.' },
+  { key: 'ipAssignment', label: 'Asignacion IP', type: 'text', width: 16, list: 'ipAsignacion', example: 'DHCP', help: 'Opcional. DHCP o FIJA.' },
   { key: 'sede', label: 'Sede', type: 'text', width: 20, list: 'sedes', example: '', help: 'Opcional. Debe existir en el catalogo de Sedes.' },
   { key: 'area', label: 'Area', type: 'text', width: 20, list: 'areas', example: '', help: 'Opcional. Debe existir en el catalogo de Areas.' },
   { key: 'costCenter', label: 'Centro de Costo', type: 'text', width: 20, list: 'centros', example: '', help: 'Opcional. Debe existir en el catalogo de Centros de Costo.' },
   { key: 'assignedTo', label: 'Asignado a', type: 'text', width: 22, example: 'JUAN PEREZ', help: 'Opcional. Persona o responsable.' },
+  { key: 'responsiblePosition', label: 'Cargo Responsable', type: 'text', width: 22, example: 'AUXILIAR ADMINISTRATIVO', help: 'Opcional. Cargo de la persona responsable.' },
+  { key: 'responsibleDocument', label: 'Documento Responsable', type: 'text', width: 20, example: '1012345678', help: 'Opcional. Documento de identidad del responsable.' },
+  { key: 'responsiblePhone', label: 'Celular Responsable', type: 'text', width: 18, example: '3001234567', help: 'Opcional. Celular de 10 digitos, solo numeros.' },
+  { key: 'responsibleEmail', label: 'Correo Responsable', type: 'text', width: 26, example: 'juan.perez@hospital.gov.co', help: 'Opcional. Correo electronico del responsable.' },
   { key: 'ownershipType', label: 'Propiedad (PROPIO/ALQUILADO)', type: 'text', width: 26, list: 'propiedad', example: 'PROPIO', help: 'Opcional. PROPIO o ALQUILADO (por defecto PROPIO).' },
   { key: 'purchaseDate', label: 'Fecha de Compra (AAAA-MM-DD)', type: 'date', width: 26, example: '2024-03-15', help: 'Opcional. Formato AAAA-MM-DD o fecha de Excel.' },
   { key: 'purchaseValue', label: 'Valor de Compra', type: 'number', width: 16, example: 3500000, help: 'Opcional. Solo numeros, sin puntos ni simbolos.' },
@@ -65,6 +71,7 @@ const COLUMNS: ColumnDef[] = [
   { key: 'lastMaintenanceType', label: 'Tipo Ultimo Mantenimiento', type: 'text', width: 26, list: 'mantenimientos', example: '', help: 'Opcional. Debe existir en Tipos de Mantenimiento.' },
   { key: 'lastMaintenanceTechnician', label: 'Tecnico Ultimo Mantenimiento', type: 'text', width: 26, example: '', help: 'Opcional. Nombre del tecnico.' },
   { key: 'lastMaintenanceDescription', label: 'Descripcion Ultimo Mantenimiento', type: 'text', width: 34, example: '', help: 'Opcional. Descripcion del trabajo realizado.' },
+  { key: 'associatedInventoryNumber', label: 'PC Asociado (N Inventario)', type: 'text', width: 26, example: '', help: 'Solo para monitores. N Inventario Interno del PC al que se conecta el monitor.' },
 ];
 
 const MAX_ROWS = 2000;
@@ -72,6 +79,7 @@ const RAM_TYPES = ['DDR3', 'DDR4', 'DDR5', 'LPDDR4', 'LPDDR5'];
 const DISK_TYPES = ['HDD', 'SSD', 'NVME'];
 const OPERATING_SYSTEMS = ['WINDOWS', 'LINUX', 'MACOS', 'CHROMEOS', 'ANDROID', 'IOS', 'OTRO', 'N/A'];
 const OWNERSHIP = ['PROPIO', 'ALQUILADO'];
+const IP_ASSIGNMENT = ['DHCP', 'FIJA'];
 const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
 interface ImportRowResult {
@@ -351,11 +359,11 @@ export class EquipmentImportComponent {
       // Hoja de listas (oculta): una columna por catalogo
       const lists: Record<ListKey, string[]> = {
         categorias: cat.categorias, sedes: cat.sedes, areas: cat.areas, centros: cat.centros,
-        propiedad: OWNERSHIP, ramTypes: RAM_TYPES, diskTypes: DISK_TYPES, sistemas: OPERATING_SYSTEMS, mantenimientos: cat.mantenimientos
+        propiedad: OWNERSHIP, ramTypes: RAM_TYPES, diskTypes: DISK_TYPES, sistemas: OPERATING_SYSTEMS, mantenimientos: cat.mantenimientos, ipAsignacion: IP_ASSIGNMENT
       };
       const listTitles: Record<ListKey, string> = {
         categorias: 'Categorias', sedes: 'Sedes', areas: 'Areas', centros: 'Centros de Costo',
-        propiedad: 'Propiedad', ramTypes: 'Tipo RAM', diskTypes: 'Tipo Disco', sistemas: 'Sistema Operativo', mantenimientos: 'Tipos de Mantenimiento'
+        propiedad: 'Propiedad', ramTypes: 'Tipo RAM', diskTypes: 'Tipo Disco', sistemas: 'Sistema Operativo', mantenimientos: 'Tipos de Mantenimiento', ipAsignacion: 'Asignacion IP'
       };
       const listRef: Partial<Record<ListKey, string>> = {};
       (Object.keys(lists) as ListKey[]).forEach((k, i) => {
@@ -414,7 +422,9 @@ export class EquipmentImportComponent {
         '6. Si el equipo es ALQUILADO, diligencie los datos del alquiler (empresa, contrato, fechas y valor mensual).',
         '7. El cronograma de mantenimiento se calcula desde la Fecha Ultimo Mantenimiento: si se informa, se registra ese mantenimiento y se programa el proximo automaticamente.',
         '8. Sistema Operativo es opcional y debe ser uno de: ' + OPERATING_SYSTEMS.join(', ') + ' (use la lista desplegable). En "Distribucion / Version" puede escribir el detalle, por ejemplo WINDOWS 11 PRO 23H2.',
-        '9. Maximo ' + MAX_ROWS + ' filas por archivo. Antes de importar se muestra una vista previa con los errores de cada fila.',
+        '9. Datos del responsable (opcionales): Cargo, Documento, Celular (10 digitos, solo numeros) y Correo. En la red puede indicar la Direccion IP (IPv4) y la Asignacion IP (DHCP o FIJA, use la lista desplegable).',
+        '10. Los monitores se registran como cualquier equipo: pueden ser PROPIOS o ALQUILADOS (con empresa, contrato, fechas y valor mensual). Para asociarlos a un PC escriba en "PC Asociado (N Inventario)" el N Inventario Interno del PC (el PC debe estar registrado en THOTH).',
+        '11. Maximo ' + MAX_ROWS + ' filas por archivo. Antes de importar se muestra una vista previa con los errores de cada fila.',
       ].forEach(t => { const r = wi.addRow([t]); wi.mergeCells(`A${r.number}:C${r.number}`); r.alignment = { wrapText: true }; r.height = 30; });
       wi.addRow([]);
       this.styleHeader(wi.addRow(['Columna', 'Obligatorio', 'Descripcion']));
@@ -531,7 +541,7 @@ export class EquipmentImportComponent {
           if (def.type === 'date') val = this.toDateString(raw);
           else if (def.type === 'number') val = this.toNumber(raw);
           else val = this.toText(raw);
-          if ((def.key === 'ownershipType' || def.key === 'operatingSystem') && typeof val === 'string') val = val.trim().toUpperCase();
+          if ((def.key === 'ownershipType' || def.key === 'operatingSystem' || def.key === 'ipAssignment') && typeof val === 'string') val = val.trim().toUpperCase();
           data[def.key] = val ?? null;
           if (val !== null && val !== undefined && val !== '') hasValue = true;
         });

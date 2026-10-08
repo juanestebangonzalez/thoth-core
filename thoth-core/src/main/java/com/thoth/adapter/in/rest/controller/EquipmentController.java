@@ -19,6 +19,7 @@ import com.thoth.application.port.input.ListEquipmentUseCase;
 import com.thoth.application.port.input.RegisterEquipmentUseCase;
 import com.thoth.application.port.input.UpdateEquipmentUseCase;
 import com.thoth.application.service.AuditService;
+import com.thoth.application.service.EquipmentMonitorService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -43,6 +44,17 @@ public class EquipmentController {
     private final UpdateEquipmentUseCase updateEquipmentUseCase;
     private final ChangeEquipmentStatusUseCase changeEquipmentStatusUseCase;
     private final AuditService auditService;
+    private final EquipmentMonitorService equipmentMonitorService;
+
+    /** UUID opcional: vacio -> null; formato invalido -> 400. */
+    private static UUID parseOptionalUuid(String value) {
+        if (value == null || value.isBlank()) return null;
+        try {
+            return UUID.fromString(value.trim());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("El identificador del equipo asociado no es valido: " + value);
+        }
+    }
 
     @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN')")
     @PostMapping
@@ -88,7 +100,14 @@ public class EquipmentController {
             request.getCostCenter(),
             rental != null ? rental.getMonthlyValue() : null,
             request.getOperatingSystem(),
-            request.getOsVersion()
+            request.getOsVersion(),
+            request.getResponsiblePosition(),
+            request.getResponsibleDocument(),
+            request.getResponsiblePhone(),
+            request.getResponsibleEmail(),
+            request.getIpAddress(),
+            request.getIpAssignment(),
+            parseOptionalUuid(request.getAssociatedEquipmentId())
         );
         EquipmentResponseDTO response = registerEquipmentUseCase.register(command);
         auditService.log("CREATE", "EQUIPMENT", response.equipmentId().toString(), request.getName(),
@@ -159,7 +178,14 @@ public class EquipmentController {
               request.getCostCenter(),
               rental != null ? rental.getMonthlyValue() : null,
               request.getOperatingSystem(),
-              request.getOsVersion()
+              request.getOsVersion(),
+              request.getResponsiblePosition(),
+              request.getResponsibleDocument(),
+              request.getResponsiblePhone(),
+              request.getResponsibleEmail(),
+              request.getIpAddress(),
+              request.getIpAssignment(),
+              request.getAssociatedEquipmentId()
           );
         EquipmentResponseDTO updated = updateEquipmentUseCase.update(command);
         auditService.log("UPDATE", "EQUIPMENT", id.toString(), request.getName(),
@@ -176,9 +202,15 @@ public class EquipmentController {
             @Valid @RequestBody ChangeStatusRequest request, Principal principal) {
         ChangeStatusCommand command = new ChangeStatusCommand(id, request.getStatus(), principal != null ? principal.getName() : "SYSTEM");
         EquipmentResponseDTO result = changeEquipmentStatusUseCase.changeStatus(command);
-        auditService.log("CHANGE_STATUS", "EQUIPMENT", id.toString(), "",
-                "Estado cambiado a: " + request.getStatus(),
+        String reason = request.getReason() != null && !request.getReason().isBlank()
+                ? ". Motivo: " + request.getReason().trim() : "";
+        auditService.log("CHANGE_STATUS", "EQUIPMENT", id.toString(), result.name() != null ? result.name() : "",
+                "Estado cambiado a: " + request.getStatus() + reason,
                 principal != null ? principal.getName() : "SYSTEM");
+        // Al dar de baja un equipo se desasocian sus monitores
+        if ("RETIRED".equalsIgnoreCase(result.status())) {
+            equipmentMonitorService.detachMonitors(id, principal != null ? principal.getName() : "SYSTEM");
+        }
         return ResponseEntity.ok(result);
     }
 
@@ -191,6 +223,7 @@ public class EquipmentController {
         auditService.log("DELETE", "EQUIPMENT", id.toString(), "",
                 "Equipo retirado (soft delete)",
                 principal != null ? principal.getName() : "SYSTEM");
+        equipmentMonitorService.detachMonitors(id, principal != null ? principal.getName() : "SYSTEM");
         return ResponseEntity.noContent().build();
     }
 }

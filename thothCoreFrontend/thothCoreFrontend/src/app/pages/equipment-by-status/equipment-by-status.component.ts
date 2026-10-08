@@ -115,7 +115,7 @@ export class EquipmentByStatusComponent implements OnInit {
         this.icon.set('build');
         break;
       case 'inactive':
-        this.statusLabel.set('Inactivos');
+        this.statusLabel.set('Inactivos / En bodega');
         this.icon.set('block');
         break;
       case 'retired':

@@ -39,6 +39,9 @@ public interface EquipmentJpaRepository extends JpaRepository<EquipmentEntity, U
 
     Optional<EquipmentEntity> findByInventoryNumber(String inventoryNumber);
 
+    /** Monitores asociados a un equipo. */
+    List<EquipmentEntity> findByAssociatedEquipmentId(UUID associatedEquipmentId);
+
     // DT-19: Alertas por consulta en DB en lugar de cargar toda la tabla
     @Query("SELECT e FROM EquipmentEntity e WHERE e.nextMaintenanceDate IS NOT NULL " +
            "AND e.nextMaintenanceDate <= :limit " +

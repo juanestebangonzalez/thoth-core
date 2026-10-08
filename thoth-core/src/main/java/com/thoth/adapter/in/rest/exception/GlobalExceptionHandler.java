@@ -3,6 +3,7 @@ package com.thoth.adapter.in.rest.exception;
 import com.thoth.application.exception.BusinessException;
 import com.thoth.application.exception.EquipmentNotFoundException;
 import com.thoth.application.exception.InvalidStatusTransitionException;
+import com.thoth.application.exception.NotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -20,9 +21,9 @@ public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-    @ExceptionHandler(EquipmentNotFoundException.class)
+    @ExceptionHandler({EquipmentNotFoundException.class, NotFoundException.class})
     public ResponseEntity<ApiErrorResponse> handleEquipmentNotFound(
-            EquipmentNotFoundException ex, WebRequest request) {
+            BusinessException ex, WebRequest request) {
         ApiErrorResponse error = ApiErrorResponse.builder()
             .status(HttpStatus.NOT_FOUND.value())
             .error("NOT_FOUND")

@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -46,6 +47,22 @@ public class UpdateEquipmentUseCaseImpl implements UpdateEquipmentUseCase {
         // Sistema operativo: null = sin cambio, "" = limpiar
         if (command.operatingSystem() != null) equipment.updateOperatingSystem(command.operatingSystem());
         if (command.osVersion() != null) equipment.updateOsVersion(command.osVersion());
+        // Responsable y red: null = sin cambio, "" = limpiar
+        if (command.responsiblePosition() != null) equipment.updateResponsiblePosition(command.responsiblePosition());
+        if (command.responsibleDocument() != null) equipment.updateResponsibleDocument(command.responsibleDocument());
+        if (command.responsiblePhone() != null) equipment.updateResponsiblePhone(command.responsiblePhone());
+        if (command.responsibleEmail() != null) equipment.updateResponsibleEmail(command.responsibleEmail());
+        if (command.ipAddress() != null) equipment.updateIpAddress(command.ipAddress());
+        if (command.ipAssignment() != null) equipment.updateIpAssignment(command.ipAssignment());
+        // Monitor asociado: null = sin cambio, "" = desasociar, UUID = asociar (valida reglas)
+        if (command.associatedEquipmentId() != null) {
+            if (command.associatedEquipmentId().isBlank()) {
+                equipment.clearAssociation();
+            } else {
+                UUID targetId = parseUuid(command.associatedEquipmentId());
+                equipment.associateTo(equipmentRepository.findById(targetId).orElse(null));
+            }
+        }
         if (command.macAddress() != null) equipment.setMacAddress(command.macAddress() != null ? command.macAddress().toUpperCase().trim() : null);
 
         if (command.ownershipType() != null && !command.ownershipType().isBlank()) {
@@ -97,7 +114,17 @@ public class UpdateEquipmentUseCaseImpl implements UpdateEquipmentUseCase {
         }
 
         Equipment saved = equipmentRepository.save(equipment);
-        return mapper.toResponseDTO(saved);
+        Equipment associated = saved != null && saved.getAssociatedEquipmentId() != null
+            ? equipmentRepository.findById(saved.getAssociatedEquipmentId()).orElse(null) : null;
+        return mapper.toResponseDTO(saved, associated);
+    }
+
+    private static UUID parseUuid(String value) {
+        try {
+            return UUID.fromString(value.trim());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("El identificador del equipo asociado no es valido: " + value);
+        }
     }
 
     private boolean hasRentalData(UpdateEquipmentCommand cmd) {

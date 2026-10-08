@@ -57,9 +57,28 @@ public class LocationHistoryController {
         String toOffice = body.toOffice();
         String reason = body.reason();
 
-        // Save history entry
+        transferOne(equipment, toBuilding, toFloor, toOffice, reason, principal.getName(), null);
+
+        // Monitores asociados: se trasladan con el equipo (mismo destino y motivo) salvo includeMonitors=false
+        int monitors = 0;
+        if (body.shouldIncludeMonitors()) {
+            for (EquipmentEntity monitor : equipmentRepository.findByAssociatedEquipmentId(equipmentId)) {
+                transferOne(monitor, toBuilding, toFloor, toOffice, reason, principal.getName(), equipment.getName());
+                monitors++;
+            }
+        }
+
+        String message = monitors > 0
+                ? "Equipo trasladado exitosamente junto con " + monitors + (monitors == 1 ? " monitor asociado" : " monitores asociados")
+                : "Equipo trasladado exitosamente";
+        return ResponseEntity.ok(Map.of("message", message, "monitorsTransferred", monitors));
+    }
+
+    /** Registra el historial, actualiza la ubicacion y deja la auditoria de un equipo. */
+    private void transferOne(EquipmentEntity equipment, String toBuilding, String toFloor, String toOffice,
+                             String reason, String user, String withEquipmentName) {
         LocationHistoryEntity history = LocationHistoryEntity.builder()
-                .equipmentId(equipmentId)
+                .equipmentId(equipment.getEquipmentId())
                 .fromBuilding(equipment.getLocationBuilding())
                 .fromFloor(equipment.getLocationFloor())
                 .fromOffice(equipment.getLocationOffice())
@@ -67,24 +86,21 @@ public class LocationHistoryController {
                 .toFloor(toFloor != null ? toFloor : "")
                 .toOffice(toOffice != null ? toOffice : "")
                 .reason(reason)
-                .performedBy(principal.getName())
+                .performedBy(user)
                 .transferredAt(LocalDateTime.now())
                 .build();
         locationHistoryRepository.save(history);
 
-        // Update equipment location
         equipment.setLocationBuilding(toBuilding);
         equipment.setLocationFloor(toFloor != null ? toFloor : "");
         equipment.setLocationOffice(toOffice != null ? toOffice : "");
         equipment.setUpdatedAt(LocalDateTime.now());
-        equipment.setUpdatedBy(principal.getName());
+        equipment.setUpdatedBy(user);
         equipmentRepository.save(equipment);
 
-        // Audit log
-        auditService.log("TRANSFER", "LOCATION", equipmentId.toString(), equipment.getName(),
-                "De: " + history.getFromBuilding() + " A: " + toBuilding + " - " + reason,
-                principal.getName());
-
-        return ResponseEntity.ok(Map.of("message", "Equipo trasladado exitosamente"));
+        auditService.log("TRANSFER", "LOCATION", equipment.getEquipmentId().toString(), equipment.getName(),
+                "De: " + history.getFromBuilding() + " A: " + toBuilding + " - " + reason
+                        + (withEquipmentName != null ? " (monitor trasladado con el equipo " + withEquipmentName + ")" : ""),
+                user);
     }
 }

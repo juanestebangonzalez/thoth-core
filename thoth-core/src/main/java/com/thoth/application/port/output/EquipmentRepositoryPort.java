@@ -14,4 +14,6 @@ public interface EquipmentRepositoryPort {
     List<Equipment> findByStatus(EquipmentStatus status);
     Optional<Equipment> findByInventoryNumber(String inventoryNumber);
     void deleteById(UUID equipmentId);
+    /** Monitores asociados al equipo indicado. */
+    List<Equipment> findByAssociatedEquipmentId(UUID associatedEquipmentId);
 }

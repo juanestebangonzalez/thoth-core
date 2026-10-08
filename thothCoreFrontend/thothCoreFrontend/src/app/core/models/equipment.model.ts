@@ -22,6 +22,82 @@ export interface Equipment {
   /** WINDOWS | LINUX | MACOS | CHROMEOS | ANDROID | IOS | OTRO | N/A */
   operatingSystem?: string;
   osVersion?: string;
+  responsiblePosition?: string;
+  responsibleDocument?: string;
+  responsiblePhone?: string;
+  responsibleEmail?: string;
+  ipAddress?: string;
+  /** DHCP | FIJA */
+  ipAssignment?: string;
+  associatedEquipmentId?: string;
+  associatedEquipmentName?: string;
+  associatedEquipmentInventory?: string;
+  usefulLife?: UsefulLife;
+  /** ALTA | MEDIA | BAJA */
+  criticality?: string;
+  createdAt?: string;
+}
+
+export interface UsefulLife {
+  years?: number;
+  ageYears?: number;
+  consumedPercent?: number;
+  remainingYears?: number;
+  estimated?: boolean;
+}
+
+/** Monitor asociado a un PC (GET /equipment/{id}/monitors). */
+export interface MonitorSummary {
+  equipmentId: string;
+  name: string;
+  inventoryNumber?: string;
+  brand?: string;
+  model?: string;
+  serialNumber?: string;
+  status?: string;
+  ownershipType?: string;
+  rentalCompany?: string;
+  monthlyValue?: number;
+}
+
+/** Periferico de un equipo (GET /equipment/{id}/peripherals). */
+export interface Peripheral {
+  id: string;
+  type: string;
+  brand?: string;
+  createdAt?: string;
+  createdBy?: string;
+}
+
+/** Respuesta de GET /equipment/{id}/hoja-vida. */
+export interface HojaVida {
+  generatedAt: string;
+  equipment: Equipment;
+  peripherals: Peripheral[];
+  monitors: MonitorSummary[];
+  maintenances: {
+    performedDate?: string; maintenanceType?: string; reason?: string; description?: string;
+    technicianName?: string; signedBy?: string;
+    parts?: { partName?: string; partSerialNumber?: string; reason?: string }[];
+  }[];
+  transfers: {
+    date?: string; fromBuilding?: string; fromOffice?: string; toBuilding?: string; toOffice?: string;
+    reason?: string; performedBy?: string;
+  }[];
+  documents: { fileName?: string; documentType?: string; uploadedAt?: string; uploadedBy?: string }[];
+  baja: null | { date?: string; reason?: string };
+}
+
+/** True si la categoria corresponde a un monitor. */
+export function esMonitor(category: string | null | undefined): boolean {
+  return (category || '').toUpperCase().includes('MONITOR');
+}
+
+/** Texto de vida util: "X anos · consumida Y% · restan Z anos (estimada)". */
+export function textoVidaUtil(u: UsefulLife | null | undefined): string {
+  if (!u || u.years == null) return '-';
+  const n = (v: number | undefined) => v == null ? '-' : String(Math.round(Number(v) * 10) / 10);
+  return `${n(u.years)} anos · consumida ${n(u.consumedPercent)}% · restan ${n(u.remainingYears)} anos` + (u.estimated ? ' (estimada)' : '');
 }
 
 /** Valores de sistema operativo aceptados por el backend. */
@@ -100,4 +176,11 @@ export interface CreateEquipmentRequest {
   nextMaintenanceDate?: string;
   operatingSystem?: string;
   osVersion?: string;
+  responsiblePosition?: string;
+  responsibleDocument?: string;
+  responsiblePhone?: string;
+  responsibleEmail?: string;
+  ipAddress?: string;
+  ipAssignment?: string;
+  associatedEquipmentId?: string;
 }

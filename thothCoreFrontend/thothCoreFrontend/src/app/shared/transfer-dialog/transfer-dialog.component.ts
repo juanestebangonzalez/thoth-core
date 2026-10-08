@@ -8,6 +8,8 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { EquipmentService } from '../../core/services/equipment.service';
 import { LocationHistoryService } from '../../core/services/location-history.service';
 import { SedeService } from '../../core/services/sede.service';
 import { AreaService, Area } from '../../core/services/area.service';
@@ -15,7 +17,7 @@ import { AreaService, Area } from '../../core/services/area.service';
 @Component({
   selector: 'app-transfer-dialog',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatDialogModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatButtonModule, MatIconModule, MatSnackBarModule],
+  imports: [CommonModule, FormsModule, MatDialogModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatButtonModule, MatIconModule, MatSnackBarModule, MatCheckboxModule],
   template: `
     <div class="dialog-container">
       <div class="dialog-header">
@@ -55,6 +57,12 @@ import { AreaService, Area } from '../../core/services/area.service';
         </mat-form-field>
       </div>
 
+      @if (monitorCount > 0) {
+        <mat-checkbox [(ngModel)]="includeMonitors" class="monitors-check">
+          Trasladar tambien los monitores asociados ({{ monitorCount }})
+        </mat-checkbox>
+      }
+
       <div class="actions">
         <button mat-button (click)="cancel()">Cancelar</button>
         <button mat-raised-button color="primary" (click)="transfer()" [disabled]="loading">
@@ -79,6 +87,7 @@ import { AreaService, Area } from '../../core/services/area.service';
     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
     .full-col { grid-column: 1 / -1; }
     .actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 16px; }
+    .monitors-check { display: block; margin-bottom: 8px; }
   `]
 })
 export class TransferDialogComponent {
@@ -88,6 +97,8 @@ export class TransferDialogComponent {
   loading = false;
   sedes: any[] = [];
   areas: Area[] = [];
+  includeMonitors = true;
+  monitorCount = 0;
 
   constructor(
     @Inject(MAT_DIALOG_DATA) public data: { equipmentId: string, equipmentName: string, currentBuilding: string, currentOffice: string },
@@ -96,8 +107,13 @@ export class TransferDialogComponent {
     private sedeService: SedeService,
     private areaService: AreaService,
     private snackBar: MatSnackBar,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private equipmentService: EquipmentService
   ) {
+    this.equipmentService.getMonitors(this.data.equipmentId).subscribe({
+      next: (m) => { this.monitorCount = (m || []).length; this.cdr.markForCheck(); },
+      error: () => { this.monitorCount = 0; }
+    });
     this.sedeService.listActive().subscribe({
       next: (s) => { this.sedes = s; this.cdr.markForCheck(); },
       error: () => {}
@@ -118,7 +134,8 @@ export class TransferDialogComponent {
       toBuilding: this.toBuilding,
       toFloor: '',
       toOffice: this.toOffice,
-      reason: this.reason
+      reason: this.reason,
+      includeMonitors: this.monitorCount > 0 ? this.includeMonitors : true
     }).subscribe({
       next: () => this.dialogRef.close('transferred'),
       error: (err) => {

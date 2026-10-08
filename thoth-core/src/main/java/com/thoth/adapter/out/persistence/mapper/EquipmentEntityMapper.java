@@ -33,7 +33,14 @@ public class EquipmentEntityMapper {
             .nextMaintenanceDate(equipment.getNextMaintenanceDate())
             .costCenter(equipment.getCostCenter())
             .operatingSystem(equipment.getOperatingSystem())
-            .osVersion(equipment.getOsVersion());
+            .osVersion(equipment.getOsVersion())
+            .responsiblePosition(equipment.getResponsiblePosition())
+            .responsibleDocument(equipment.getResponsibleDocument())
+            .responsiblePhone(equipment.getResponsiblePhone())
+            .responsibleEmail(equipment.getResponsibleEmail())
+            .ipAddress(equipment.getIpAddress())
+            .ipAssignment(equipment.getIpAssignment())
+            .associatedEquipmentId(equipment.getAssociatedEquipmentId());
 
         if (equipment.getLocation() != null) {
             builder.locationBuilding(equipment.getLocation().getBuilding())
@@ -135,6 +142,13 @@ public class EquipmentEntityMapper {
             .costCenter(entity.getCostCenter())
             .operatingSystem(entity.getOperatingSystem())
             .osVersion(entity.getOsVersion())
+            .responsiblePosition(entity.getResponsiblePosition())
+            .responsibleDocument(entity.getResponsibleDocument())
+            .responsiblePhone(entity.getResponsiblePhone())
+            .responsibleEmail(entity.getResponsibleEmail())
+            .ipAddress(entity.getIpAddress())
+            .ipAssignment(entity.getIpAssignment())
+            .associatedEquipmentId(entity.getAssociatedEquipmentId())
             .rentalInfo(rentalInfo)
             .hardware(hardware)
             .build();

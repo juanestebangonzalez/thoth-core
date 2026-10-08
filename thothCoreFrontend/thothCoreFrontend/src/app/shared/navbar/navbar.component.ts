@@ -112,6 +112,9 @@ import { AlertService } from '../../core/services/alert.service';
           <a class="nav-item" routerLink="/device-types" routerLinkActive="active" (click)="closeMobile()">
             <mat-icon>devices</mat-icon><span>Tipos Dispositivo</span>
           </a>
+          <a class="nav-item" routerLink="/peripheral-types" routerLinkActive="active" (click)="closeMobile()">
+            <mat-icon>keyboard</mat-icon><span>Tipos Periferico</span>
+          </a>
           <a class="nav-item" routerLink="/maintenance-categories" routerLinkActive="active" (click)="closeMobile()">
             <mat-icon>handyman</mat-icon><span>Tipos Mantenim.</span>
           </a>

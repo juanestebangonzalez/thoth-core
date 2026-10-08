@@ -5,9 +5,11 @@ import com.thoth.application.port.output.EquipmentRepositoryPort;
 import com.thoth.application.port.output.MaintenanceHistoryRepositoryPort;
 import com.thoth.domain.model.Equipment;
 import com.thoth.domain.model.MaintenanceHistory;
+import com.thoth.domain.valueobject.Criticality;
 import com.thoth.domain.valueobject.DiskType;
 import com.thoth.domain.valueobject.Hardware;
 import com.thoth.domain.valueobject.MaintenanceType;
+import com.thoth.domain.valueobject.UsefulLife;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -78,6 +80,7 @@ public class AIAgentAdapter implements AIAgentPort {
         double anos;
         boolean antiguedadEstimada;
         boolean antiguedadDesconocida;
+        UsefulLife vidaUtil;
         int totalMantenimientos;
         int correctivosUltimoAno;
         Long diasDesdeUltimo;
@@ -100,19 +103,16 @@ public class AIAgentAdapter implements AIAgentPort {
         c.hw = equipo.getHardware();
         c.alquilado = equipo.isRented();
 
-        // Antiguedad: compra -> inicio del alquiler -> fecha de registro
-        LocalDate inicio = null;
-        if (equipo.getPurchaseDate() != null) {
-            inicio = equipo.getPurchaseDate();
-        } else if (equipo.getRentalInfo() != null && equipo.getRentalInfo().getStartDate() != null) {
-            inicio = equipo.getRentalInfo().getStartDate();
-            c.antiguedadEstimada = true;
-        } else if (equipo.getCreatedAt() != null) {
-            inicio = equipo.getCreatedAt().toLocalDate();
-            c.antiguedadEstimada = true;
-        }
+        // Antiguedad: compra -> inicio del alquiler -> fecha de registro (misma regla que la vida util del dominio)
+        LocalDate inicio = UsefulLife.startDate(equipo.getPurchaseDate(),
+            equipo.getRentalInfo() != null ? equipo.getRentalInfo().getStartDate() : null,
+            equipo.getCreatedAt());
+        c.antiguedadEstimada = equipo.getPurchaseDate() == null;
+        c.vidaUtil = UsefulLife.calculate(equipo.getCategory(), equipo.getPurchaseDate(),
+            equipo.getRentalInfo() != null ? equipo.getRentalInfo().getStartDate() : null,
+            equipo.getCreatedAt(), hoy);
         if (inicio != null && !inicio.isAfter(hoy)) {
-            c.anos = ChronoUnit.DAYS.between(inicio, hoy) / 365.0;
+            c.anos = UsefulLife.ageInYears(inicio, hoy);
         } else {
             c.anos = 0;
             c.antiguedadEstimada = true;
@@ -253,10 +253,11 @@ public class AIAgentAdapter implements AIAgentPort {
 
         // --- Reglas por antiguedad ---
         String riesgo;
-        if (c.anos >= 5) {
+        int vidaUtilAnos = c.vidaUtil != null ? c.vidaUtil.getYears() : UsefulLife.DEFAULT_YEARS;
+        if (c.anos >= vidaUtilAnos) {
             recs.add(new Recomendacion(c.alquilado ? PROGRAMAR : URGENTE, c.alquilado
-                ? "El equipo supera 5 anos de uso. Solicitar al arrendador la renovacion del equipo."
-                : "El equipo excede el ciclo de vida recomendado (5 anos). Planificar su reemplazo."));
+                ? "El equipo supera su vida util (" + vidaUtilAnos + " anos de uso). Solicitar al arrendador la renovacion del equipo."
+                : "El equipo excede el ciclo de vida recomendado (" + vidaUtilAnos + " anos). Planificar su reemplazo."));
             riesgo = "ALTO";
         } else if (c.anos >= 3) {
             recs.add(new Recomendacion(PROGRAMAR, "Equipo con mas de 3 anos: limpieza profunda, cambio de pasta termica y revision de bateria."));
@@ -529,6 +530,12 @@ public class AIAgentAdapter implements AIAgentPort {
             if (c.antiguedadEstimada) sb.append(" (antiguedad estimada)");
             sb.append("\n");
         }
+        if (c.vidaUtil != null) {
+            sb.append("Vida util: ").append(c.vidaUtil.getYears()).append(" anos (")
+              .append(c.vidaUtil.getConsumedPercent()).append("% consumido, ")
+              .append(String.format(Locale.ROOT, "%.1f", c.vidaUtil.getRemainingYears())).append(" anos restantes)\n");
+        }
+        sb.append("Criticidad: ").append(Criticality.fromCostCenter(eq.getCostCenter())).append("\n");
         sb.append("Estado: ").append(eq.getStatus() != null ? traducirEstado(eq.getStatus().name()) : "DESCONOCIDO").append("\n");
         sb.append("Propiedad: ").append(c.alquilado ? "ALQUILADO" : "PROPIO");
         if (c.alquilado && eq.getRentalInfo() != null && eq.getRentalInfo().getRentalCompany() != null) {

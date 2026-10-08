@@ -124,6 +124,28 @@ public class EquipmentEntity {
     @Column(name = "os_version", length = 100)
     private String osVersion;
 
+    @Column(name = "responsible_position", length = 100)
+    private String responsiblePosition;
+
+    @Column(name = "responsible_document", length = 30)
+    private String responsibleDocument;
+
+    @Column(name = "responsible_phone", length = 10)
+    private String responsiblePhone;
+
+    @Column(name = "responsible_email", length = 150)
+    private String responsibleEmail;
+
+    @Column(name = "ip_address", length = 45)
+    private String ipAddress;
+
+    @Column(name = "ip_assignment", length = 10)
+    private String ipAssignment;
+
+    /** Equipo al que esta asociado (solo monitores). FK con ON DELETE SET NULL en la migracion V16. */
+    @Column(name = "associated_equipment_id")
+    private UUID associatedEquipmentId;
+
     @Column(name = "hardware_processor")
     private String hardwareProcessor;
 

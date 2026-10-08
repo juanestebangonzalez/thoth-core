@@ -48,6 +48,21 @@ public class Equipment {
     /** Version del sistema operativo (texto libre, max. 100). Opcional. */
     private String osVersion;
 
+    /** Cargo del responsable (mayusculas, max. 100). Opcional. */
+    private String responsiblePosition;
+    /** Documento de identidad del responsable (mayusculas, max. 30). Opcional. */
+    private String responsibleDocument;
+    /** Celular del responsable (exactamente 10 digitos). Opcional. */
+    private String responsiblePhone;
+    /** Correo del responsable (minusculas, max. 150). Opcional. */
+    private String responsibleEmail;
+    /** Direccion IPv4 del equipo. Opcional. */
+    private String ipAddress;
+    /** Asignacion de la IP: DHCP | FIJA. Opcional. */
+    private String ipAssignment;
+    /** Equipo (PC) al que esta asociado este monitor. Solo aplica a monitores. */
+    private UUID associatedEquipmentId;
+
     public static Equipment create(
             String name,
             String category,
@@ -235,6 +250,127 @@ public class Equipment {
         }
         this.osVersion = normalized;
         this.updatedAt = LocalDateTime.now();
+    }
+
+    // ===================== Responsable =====================
+
+    /** Cargo del responsable (mayusculas). Cadena vacia o null lo limpia. */
+    public void updateResponsiblePosition(String value) {
+        requireValid(EquipmentFieldRules.validateResponsiblePosition(value));
+        this.responsiblePosition = EquipmentFieldRules.upper(value);
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    /** Documento del responsable (mayusculas). Cadena vacia o null lo limpia. */
+    public void updateResponsibleDocument(String value) {
+        requireValid(EquipmentFieldRules.validateResponsibleDocument(value));
+        this.responsibleDocument = EquipmentFieldRules.upper(value);
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    /** Celular del responsable (10 digitos). Cadena vacia o null lo limpia. */
+    public void updateResponsiblePhone(String value) {
+        requireValid(EquipmentFieldRules.validatePhone(value));
+        this.responsiblePhone = EquipmentFieldRules.clean(value);
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    /** Correo del responsable (minusculas). Cadena vacia o null lo limpia. */
+    public void updateResponsibleEmail(String value) {
+        requireValid(EquipmentFieldRules.validateEmail(value));
+        String v = EquipmentFieldRules.clean(value);
+        this.responsibleEmail = v != null ? v.toLowerCase(Locale.ROOT) : null;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    // ===================== Red =====================
+
+    /** Direccion IPv4. Cadena vacia o null la limpia. */
+    public void updateIpAddress(String value) {
+        requireValid(EquipmentFieldRules.validateIpAddress(value));
+        this.ipAddress = EquipmentFieldRules.clean(value);
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    /** Asignacion de IP (DHCP | FIJA). Cadena vacia o null la limpia. */
+    public void updateIpAssignment(String value) {
+        requireValid(EquipmentFieldRules.validateIpAssignment(value));
+        this.ipAssignment = EquipmentFieldRules.normalizeIpAssignment(value);
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    // ===================== Monitores asociados =====================
+
+    /** true si la categoria del equipo contiene MONITOR. */
+    public boolean isMonitor() {
+        return isMonitorCategory(this.category);
+    }
+
+    public static boolean isMonitorCategory(String category) {
+        return category != null && category.toUpperCase(Locale.ROOT).contains("MONITOR");
+    }
+
+    /**
+     * Valida la asociacion de un monitor a otro equipo. Devuelve el mensaje de error en espanol
+     * o null si es valida. Reglas: el equipo debe ser monitor; el destino debe existir, no ser
+     * monitor, no estar retirado y no ser el mismo equipo.
+     */
+    public static String validateAssociation(String monitorCategory, UUID monitorId,
+                                             UUID targetId, String targetCategory, EquipmentStatus targetStatus,
+                                             boolean targetExists) {
+        if (!isMonitorCategory(monitorCategory)) {
+            return "Solo los monitores pueden asociarse a otro equipo";
+        }
+        if (!targetExists || targetId == null) {
+            return "El equipo al que se desea asociar el monitor no existe";
+        }
+        if (monitorId != null && monitorId.equals(targetId)) {
+            return "Un monitor no puede asociarse a si mismo";
+        }
+        if (isMonitorCategory(targetCategory)) {
+            return "Un monitor no puede asociarse a otro monitor";
+        }
+        if (targetStatus == EquipmentStatus.RETIRED) {
+            return "No se puede asociar el monitor a un equipo dado de baja (RETIRED)";
+        }
+        return null;
+    }
+
+    /** Asocia este monitor al equipo indicado (valida las reglas; lanza IllegalArgumentException). */
+    public void associateTo(Equipment target) {
+        requireValid(validateAssociation(this.category, this.equipmentId,
+            target != null ? target.getEquipmentId() : null,
+            target != null ? target.getCategory() : null,
+            target != null ? target.getStatus() : null,
+            target != null));
+        this.associatedEquipmentId = target.getEquipmentId();
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    /** Quita la asociacion del monitor. */
+    public void clearAssociation() {
+        this.associatedEquipmentId = null;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    // ===================== Calculados =====================
+
+    /** Vida util calculada a la fecha de hoy (no se persiste). */
+    public UsefulLife calculateUsefulLife() {
+        return UsefulLife.calculate(this.category, this.purchaseDate,
+            this.rentalInfo != null ? this.rentalInfo.getStartDate() : null,
+            this.createdAt, LocalDate.now());
+    }
+
+    /** Criticidad segun el centro de costo (ALTA | MEDIA | BAJA). */
+    public String calculateCriticality() {
+        return Criticality.fromCostCenter(this.costCenter);
+    }
+
+    private static void requireValid(String error) {
+        if (error != null) {
+            throw new IllegalArgumentException(error);
+        }
     }
 
     /** Asigna la segunda MAC (WiFi) normalizandola y validando su formato. */

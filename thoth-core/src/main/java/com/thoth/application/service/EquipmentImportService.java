@@ -15,7 +15,10 @@ import com.thoth.application.dto.EquipmentImportResultDTO;
 import com.thoth.application.dto.EquipmentImportRowDTO;
 import com.thoth.application.dto.EquipmentImportRowResultDTO;
 import com.thoth.application.port.output.EquipmentRepositoryPort;
+import com.thoth.domain.model.Equipment;
 import com.thoth.domain.valueobject.DiskType;
+import com.thoth.domain.valueobject.EquipmentFieldRules;
+import com.thoth.domain.valueobject.EquipmentStatus;
 import com.thoth.domain.valueobject.OperatingSystemCatalog;
 import com.thoth.domain.valueobject.RamType;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +33,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Importacion masiva de equipos desde la plantilla (JSON ya parseado por el frontend).
@@ -98,6 +102,13 @@ public class EquipmentImportService {
         String lastMaintenanceTechnician;
         String lastMaintenanceDescription;
         LocalDate nextMaintenanceDate;
+        String responsiblePosition;
+        String responsibleDocument;
+        String responsiblePhone;
+        String responsibleEmail;
+        String ipAddress;
+        String ipAssignment;
+        String associatedInventoryNumber;
         final List<String> errors = new ArrayList<>();
         final List<String> warnings = new ArrayList<>();
         String status = STATUS_OK;
@@ -127,12 +138,18 @@ public class EquipmentImportService {
 
         Map<String, Integer> seenInventory = new HashMap<>();
         Map<String, Integer> seenSerial = new HashMap<>();
+        // Inventario -> categoria de las filas previas validas (para asociar monitores a equipos del mismo archivo)
+        Map<String, String> validInventoryCategories = new HashMap<>();
         List<ParsedRow> parsed = new ArrayList<>();
         int index = 0;
         for (EquipmentImportRowDTO raw : rows) {
             index++;
             ParsedRow row = validate(raw != null ? raw : new EquipmentImportRowDTO(), index,
                 deviceTypes, sedes, areas, costCenters, maintenanceTypes, seenInventory, seenSerial);
+            validateAssociation(row, validInventoryCategories);
+            if (row.errors.isEmpty() && row.inventoryNumber != null) {
+                validInventoryCategories.put(row.inventoryNumber, row.category);
+            }
             parsed.add(row);
         }
 
@@ -141,7 +158,8 @@ public class EquipmentImportService {
             for (ParsedRow row : parsed) {
                 if (!row.errors.isEmpty()) continue;
                 try {
-                    rowProcessor.importRow(toCommand(row, performedBy), row.lastMaintenanceDate,
+                    UUID associatedId = resolveAssociatedId(row);
+                    rowProcessor.importRow(toCommand(row, performedBy, associatedId), row.lastMaintenanceDate,
                         row.lastMaintenanceType, row.lastMaintenanceTechnician,
                         row.lastMaintenanceDescription, performedBy);
                     row.status = STATUS_IMPORTED;
@@ -339,11 +357,80 @@ public class EquipmentImportService {
                 row.category, hasLastMaintenance ? row.lastMaintenanceDate : today);
         }
 
+        // Responsable (mismas reglas que el formulario)
+        row.responsiblePosition = upper(str(raw.getResponsiblePosition()));
+        addIfError(errors, EquipmentFieldRules.validateResponsiblePosition(row.responsiblePosition));
+        row.responsibleDocument = upper(str(raw.getResponsibleDocument()));
+        addIfError(errors, EquipmentFieldRules.validateResponsibleDocument(row.responsibleDocument));
+        row.responsiblePhone = str(raw.getResponsiblePhone());
+        addIfError(errors, EquipmentFieldRules.validatePhone(row.responsiblePhone));
+        String email = str(raw.getResponsibleEmail());
+        row.responsibleEmail = email != null ? email.toLowerCase(Locale.ROOT) : null;
+        addIfError(errors, EquipmentFieldRules.validateEmail(row.responsibleEmail));
+
+        // Red
+        row.ipAddress = str(raw.getIpAddress());
+        addIfError(errors, EquipmentFieldRules.validateIpAddress(row.ipAddress));
+        String ipAssignment = str(raw.getIpAssignment());
+        String ipError = EquipmentFieldRules.validateIpAssignment(ipAssignment);
+        addIfError(errors, ipError);
+        row.ipAssignment = ipError == null ? EquipmentFieldRules.normalizeIpAssignment(ipAssignment) : null;
+
+        // Monitor asociado (se valida contra BD y filas previas en validateAssociation)
+        row.associatedInventoryNumber = upper(str(raw.getAssociatedInventoryNumber()));
+
         row.status = errors.isEmpty() ? STATUS_OK : STATUS_ERROR;
         return row;
     }
 
-    private RegisterEquipmentCommand toCommand(ParsedRow r, String user) {
+    /**
+     * Reglas de asociacion de monitores (iguales al formulario): el equipo debe ser monitor y el destino
+     * (por inventario) debe existir en THOTH o en una fila previa valida del archivo, no ser monitor,
+     * no estar retirado y no ser el mismo equipo.
+     */
+    private void validateAssociation(ParsedRow row, Map<String, String> validInventoryCategories) {
+        String target = row.associatedInventoryNumber;
+        if (target == null) return;
+        String error;
+        if (target.equals(row.inventoryNumber)) {
+            error = "Un monitor no puede asociarse a si mismo";
+        } else if (validInventoryCategories.containsKey(target)) {
+            error = Equipment.validateAssociation(row.category != null ? row.category : "", null,
+                UUID.randomUUID(), validInventoryCategories.get(target), EquipmentStatus.ACTIVE, true);
+        } else {
+            Equipment existing = equipmentRepository.findByInventoryNumber(target).orElse(null);
+            error = Equipment.validateAssociation(row.category != null ? row.category : "", null,
+                existing != null ? existing.getEquipmentId() : null,
+                existing != null ? existing.getCategory() : null,
+                existing != null ? existing.getStatus() : null,
+                existing != null);
+            if (existing == null) {
+                error = "El equipo con inventario '" + target + "' al que se asocia el monitor no existe en THOTH ni en filas previas validas del archivo";
+            }
+        }
+        if (error != null && row.category == null) {
+            return; // la categoria ya tiene su propio error
+        }
+        if (error != null) {
+            row.errors.add(error);
+            row.status = STATUS_ERROR;
+        }
+    }
+
+    /** Al importar, el equipo destino ya existe (en BD o importado en una fila anterior). */
+    private UUID resolveAssociatedId(ParsedRow row) {
+        if (row.associatedInventoryNumber == null) return null;
+        return equipmentRepository.findByInventoryNumber(row.associatedInventoryNumber)
+            .map(Equipment::getEquipmentId)
+            .orElseThrow(() -> new IllegalArgumentException("El equipo con inventario '"
+                + row.associatedInventoryNumber + "' al que se asocia el monitor no fue importado"));
+    }
+
+    private static void addIfError(List<String> errors, String error) {
+        if (error != null) errors.add(error);
+    }
+
+    private RegisterEquipmentCommand toCommand(ParsedRow r, String user, UUID associatedId) {
         boolean rented = "RENTED".equals(r.ownershipType);
         return new RegisterEquipmentCommand(
             r.name,
@@ -381,7 +468,14 @@ public class EquipmentImportService {
             r.costCenter,
             rented ? r.rentalMonthlyValue : null,
             r.operatingSystem,
-            r.osVersion
+            r.osVersion,
+            r.responsiblePosition,
+            r.responsibleDocument,
+            r.responsiblePhone,
+            r.responsibleEmail,
+            r.ipAddress,
+            r.ipAssignment,
+            associatedId
         );
     }
 

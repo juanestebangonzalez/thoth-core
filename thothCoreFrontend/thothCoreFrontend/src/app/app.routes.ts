@@ -28,6 +28,7 @@ export const routes: Routes = [
   { path: 'areas', loadComponent: () => import('./pages/areas/areas.component').then(m => m.AreasComponent), canActivate: [permissionGuard('CATALOGS')] },
   { path: 'cost-centers', loadComponent: () => import('./pages/cost-centers/cost-centers.component').then(m => m.CostCentersComponent), canActivate: [permissionGuard('CATALOGS')] },
   { path: 'device-types', loadComponent: () => import('./pages/device-types/device-types.component').then(m => m.DeviceTypesComponent), canActivate: [permissionGuard('CATALOGS')] },
+  { path: 'peripheral-types', loadComponent: () => import('./pages/peripheral-types/peripheral-types.component').then(m => m.PeripheralTypesComponent), canActivate: [permissionGuard('CATALOGS')] },
   { path: 'maintenance-categories', loadComponent: () => import('./pages/maintenance-categories/maintenance-categories.component').then(m => m.MaintenanceCategoriesComponent), canActivate: [permissionGuard('CATALOGS')] },
   { path: 'users', loadComponent: () => import('./pages/user-list/user-list.component').then(m => m.UserListComponent), canActivate: [adminGuard] },
   // Publica: enlace del correo de recuperacion de contrasena (sin sesion)

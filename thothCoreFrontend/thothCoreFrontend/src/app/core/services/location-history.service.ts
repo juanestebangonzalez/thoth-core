@@ -22,6 +22,8 @@ export interface TransferRequest {
   toFloor?: string;
   toOffice?: string;
   reason: string;
+  /** Si es true (por defecto en el backend) tambien se trasladan los monitores asociados. */
+  includeMonitors?: boolean;
 }
 
 @Injectable({ providedIn: 'root' })

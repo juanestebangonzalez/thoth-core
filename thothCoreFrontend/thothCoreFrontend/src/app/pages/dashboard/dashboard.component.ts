@@ -67,7 +67,7 @@ import { codigoEstado } from '../../core/pipes/etiqueta.pipe';
           </a>
           <a class="stat-card" routerLink="/equipment/status/inactive">
             <div class="stat-icon-wrapper red-gradient"><mat-icon>block</mat-icon></div>
-            <div class="stat-content"><span class="stat-number">{{ inactiveCount() }}</span><span class="stat-label">Inactivos</span></div>
+            <div class="stat-content"><span class="stat-number">{{ inactiveCount() }}</span><span class="stat-label">Inactivos / En bodega</span></div>
             <div class="stat-bar red-bar"></div>
           </a>
           <a class="stat-card" routerLink="/equipment/status/retired">

@@ -57,6 +57,23 @@ public class RegisterEquipmentUseCaseImpl implements RegisterEquipmentUseCase {
             equipment.updateOsVersion(command.osVersion());
         }
 
+        // Responsable (cargo, documento, celular y correo) - opcionales, validados en el dominio
+        applyIfPresent(command.responsiblePosition(), equipment::updateResponsiblePosition);
+        applyIfPresent(command.responsibleDocument(), equipment::updateResponsibleDocument);
+        applyIfPresent(command.responsiblePhone(), equipment::updateResponsiblePhone);
+        applyIfPresent(command.responsibleEmail(), equipment::updateResponsibleEmail);
+
+        // Red: IP (IPv4) y asignacion (DHCP | FIJA) - opcionales
+        applyIfPresent(command.ipAddress(), equipment::updateIpAddress);
+        applyIfPresent(command.ipAssignment(), equipment::updateIpAssignment);
+
+        // Monitor asociado a un equipo (solo monitores; el destino debe existir y no ser monitor ni retirado)
+        Equipment associated = null;
+        if (command.associatedEquipmentId() != null) {
+            associated = equipmentRepository.findById(command.associatedEquipmentId()).orElse(null);
+            equipment.associateTo(associated);
+        }
+
         // Inventory number - validar unicidad
         if (command.inventoryNumber() != null && !command.inventoryNumber().isBlank()) {
             String invNum = command.inventoryNumber().toUpperCase().trim();
@@ -110,7 +127,11 @@ public class RegisterEquipmentUseCaseImpl implements RegisterEquipmentUseCase {
             equipment.setNextMaintenanceDate(nextDate);
         }
         Equipment saved = equipmentRepository.save(equipment);
-        return mapper.toResponseDTO(saved);
+        return mapper.toResponseDTO(saved, associated);
+    }
+
+    private static void applyIfPresent(String value, java.util.function.Consumer<String> setter) {
+        if (value != null && !value.isBlank()) setter.accept(value);
     }
 
     /** Cualquier campo de hardware informado hace que se guarde el bloque. */

@@ -60,6 +60,14 @@ public class EquipmentRepositoryAdapter implements EquipmentRepositoryPort {
     }
 
     @Override
+    public List<Equipment> findByAssociatedEquipmentId(UUID associatedEquipmentId) {
+        if (associatedEquipmentId == null) return List.of();
+        return jpaRepository.findByAssociatedEquipmentId(associatedEquipmentId).stream()
+            .map(mapper::toDomain)
+            .toList();
+    }
+
+    @Override
     public void deleteById(UUID equipmentId) {
         jpaRepository.deleteById(equipmentId);
     }

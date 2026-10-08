@@ -16,5 +16,18 @@ public record TransferEquipmentRequest(
 
     @NotBlank(message = "El motivo del traslado es obligatorio")
     @Size(max = 500, message = "El motivo no puede exceder 500 caracteres")
-    String reason
-) {}
+    String reason,
+
+    /** Trasladar tambien los monitores asociados (null = true). */
+    Boolean includeMonitors
+) {
+    /** Constructor de compatibilidad (sin includeMonitors: se trasladan los monitores). */
+    public TransferEquipmentRequest(String toBuilding, String toFloor, String toOffice, String reason) {
+        this(toBuilding, toFloor, toOffice, reason, null);
+    }
+
+    /** true salvo que se indique explicitamente false. */
+    public boolean shouldIncludeMonitors() {
+        return includeMonitors == null || includeMonitors;
+    }
+}

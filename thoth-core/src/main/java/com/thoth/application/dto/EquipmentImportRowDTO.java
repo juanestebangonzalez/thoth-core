@@ -47,4 +47,12 @@ public class EquipmentImportRowDTO {
     private Object lastMaintenanceType;
     private Object lastMaintenanceTechnician;
     private Object lastMaintenanceDescription;
+    private Object responsiblePosition;
+    private Object responsibleDocument;
+    private Object responsiblePhone;
+    private Object responsibleEmail;
+    private Object ipAddress;
+    private Object ipAssignment;
+    /** Inventario del equipo (PC) al que se asocia este monitor. */
+    private Object associatedInventoryNumber;
 }

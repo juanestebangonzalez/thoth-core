@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Equipment, CreateEquipmentRequest, PageResponse } from '../models/equipment.model';
+import { Equipment, CreateEquipmentRequest, PageResponse, MonitorSummary, Peripheral, HojaVida } from '../models/equipment.model';
 
 @Injectable({ providedIn: 'root' })
 export class EquipmentService {
@@ -33,5 +33,31 @@ export class EquipmentService {
 
   delete(id: string): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  }
+
+  /** Monitores asociados a un PC. */
+  getMonitors(id: string): Observable<MonitorSummary[]> {
+    return this.http.get<MonitorSummary[]>(`${this.apiUrl}/${id}/monitors`);
+  }
+
+  /** Datos consolidados para generar la hoja de vida en PDF. */
+  getHojaVida(id: string): Observable<HojaVida> {
+    return this.http.get<HojaVida>(`${this.apiUrl}/${id}/hoja-vida`);
+  }
+
+  getPeripherals(id: string): Observable<Peripheral[]> {
+    return this.http.get<Peripheral[]>(`${this.apiUrl}/${id}/peripherals`);
+  }
+
+  addPeripheral(id: string, data: { type: string; brand: string }): Observable<Peripheral> {
+    return this.http.post<Peripheral>(`${this.apiUrl}/${id}/peripherals`, data);
+  }
+
+  updatePeripheral(id: string, peripheralId: string, data: { type: string; brand: string }): Observable<Peripheral> {
+    return this.http.put<Peripheral>(`${this.apiUrl}/${id}/peripherals/${peripheralId}`, data);
+  }
+
+  deletePeripheral(id: string, peripheralId: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${id}/peripherals/${peripheralId}`);
   }
 }

@@ -36,4 +36,10 @@ public interface AuditLogRepository extends JpaRepository<AuditLogEntity, UUID> 
     );
 
     List<AuditLogEntity> findByPerformedAtBefore(LocalDateTime date);
+
+    /** Registros de baja de un equipo (cambio de estado a RETIRED o retiro logico), del mas reciente al mas antiguo. */
+    @Query("SELECT a FROM AuditLogEntity a WHERE a.module = 'EQUIPMENT' AND a.entityId = :entityId AND " +
+           "((a.action = 'CHANGE_STATUS' AND UPPER(a.details) LIKE '%RETIRED%') OR a.action = 'DELETE') " +
+           "ORDER BY a.performedAt DESC")
+    List<AuditLogEntity> findRetirementEntries(@Param("entityId") String entityId);
 }
