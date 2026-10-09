@@ -124,6 +124,12 @@ public class EquipmentEntity {
     @Column(name = "os_version", length = 100)
     private String osVersion;
 
+    @Column(name = "os_edition", length = 30)
+    private String osEdition;
+
+    @Column(name = "os_license_type", length = 20)
+    private String osLicenseType;
+
     @Column(name = "responsible_position", length = 100)
     private String responsiblePosition;
 

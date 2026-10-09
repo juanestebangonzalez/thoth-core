@@ -56,6 +56,14 @@ public class RegisterEquipmentUseCaseImpl implements RegisterEquipmentUseCase {
         if (command.osVersion() != null && !command.osVersion().isBlank()) {
             equipment.updateOsVersion(command.osVersion());
         }
+        // Licenciamiento del SO: edicion (WINDOWS 10/11) y tipo de licencia (OEM/RETAIL/VOLUMEN)
+        if (command.osEdition() != null && !command.osEdition().isBlank()) {
+            equipment.updateOsEdition(command.osEdition());
+        }
+        if (command.osLicenseType() != null && !command.osLicenseType().isBlank()) {
+            equipment.updateOsLicenseType(command.osLicenseType());
+        }
+        equipment.validateOperatingSystemData(true);
 
         // Responsable (cargo, documento, celular y correo) - opcionales, validados en el dominio
         applyIfPresent(command.responsiblePosition(), equipment::updateResponsiblePosition);

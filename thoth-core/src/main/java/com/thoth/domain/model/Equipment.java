@@ -47,6 +47,10 @@ public class Equipment {
     private String operatingSystem;
     /** Version del sistema operativo (texto libre, max. 100). Opcional. */
     private String osVersion;
+    /** Edicion/software del SO (WINDOWS 10 | WINDOWS 11). Solo aplica si operatingSystem = WINDOWS. Opcional. */
+    private String osEdition;
+    /** Tipo de licencia del SO (OEM | RETAIL | VOLUMEN). Opcional. */
+    private String osLicenseType;
 
     /** Cargo del responsable (mayusculas, max. 100). Opcional. */
     private String responsiblePosition;
@@ -250,6 +254,31 @@ public class Equipment {
         }
         this.osVersion = normalized;
         this.updatedAt = LocalDateTime.now();
+    }
+
+    /** Asigna la edicion del SO (WINDOWS 10 | WINDOWS 11). Cadena vacia o null la limpia. */
+    public void updateOsEdition(String newOsEdition) {
+        requireValid(OperatingSystemCatalog.validateEdition(newOsEdition));
+        this.osEdition = OperatingSystemCatalog.normalizeEdition(newOsEdition);
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    /** Asigna el tipo de licencia del SO (OEM | RETAIL | VOLUMEN). Cadena vacia o null lo limpia. */
+    public void updateOsLicenseType(String newOsLicenseType) {
+        requireValid(OperatingSystemCatalog.validateLicenseType(newOsLicenseType));
+        this.osLicenseType = OperatingSystemCatalog.normalize(newOsLicenseType);
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    /**
+     * Valida la coherencia del sistema operativo: la edicion solo aplica a WINDOWS y,
+     * si validateVersion es true, la version de WINDOWS debe ser del catalogo (26H2, 26H1, 25H2, 24H2, 23H2).
+     */
+    public void validateOperatingSystemData(boolean validateVersion) {
+        requireValid(OperatingSystemCatalog.validateEditionForOs(operatingSystem, osEdition));
+        if (validateVersion) {
+            requireValid(OperatingSystemCatalog.validateVersionForOs(operatingSystem, osVersion));
+        }
     }
 
     // ===================== Responsable =====================

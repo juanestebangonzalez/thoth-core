@@ -141,7 +141,7 @@ public class AIAgentAdapter implements AIAgentPort {
         Hardware hw = c.hw;
         c.ramInsuficiente = hw != null && hw.getRamSizeGb() != null && hw.getRamSizeGb() < RAM_MINIMA_GB;
         c.discoHdd = hw != null && hw.getDiskType() == DiskType.HDD;
-        c.soSinSoporte = esSistemaOperativoSinSoporte(equipo.getOperatingSystem(), equipo.getOsVersion());
+        c.soSinSoporte = esSistemaOperativoSinSoporte(equipo.getOperatingSystem(), equipo.getOsVersion(), equipo.getOsEdition());
         return c;
     }
 
@@ -150,6 +150,26 @@ public class AIAgentAdapter implements AIAgentPort {
         if (sistemaOperativo == null || version == null) return false;
         if (!"WINDOWS".equals(sistemaOperativo.trim().toUpperCase(Locale.ROOT))) return false;
         return WINDOWS_SIN_SOPORTE.matcher(version).find();
+    }
+
+    /**
+     * Regla con licenciamiento: si hay edicion, WINDOWS 10 = sin soporte (WINDOWS 11 = con soporte);
+     * sin edicion (datos antiguos) aplica la regla por texto de la version.
+     */
+    static boolean esSistemaOperativoSinSoporte(String sistemaOperativo, String version, String edicion) {
+        if (sistemaOperativo == null || !"WINDOWS".equals(sistemaOperativo.trim().toUpperCase(Locale.ROOT))) return false;
+        if (edicion != null && !edicion.isBlank()) {
+            return "WINDOWS 10".equals(edicion.trim().toUpperCase(Locale.ROOT).replaceAll("\\s+", " "));
+        }
+        return esSistemaOperativoSinSoporte(sistemaOperativo, version);
+    }
+
+    /** Descripcion del SO para los mensajes: edicion + version, o 'WINDOWS version' en datos antiguos. */
+    private static String describirSo(Equipment eq) {
+        if (eq.getOsEdition() != null && !eq.getOsEdition().isBlank()) {
+            return eq.getOsEdition() + (eq.getOsVersion() != null ? " " + eq.getOsVersion() : "");
+        }
+        return "WINDOWS" + (eq.getOsVersion() != null ? " " + eq.getOsVersion() : "");
     }
 
     private Equipment recargar(Equipment recibido) {
@@ -225,7 +245,7 @@ public class AIAgentAdapter implements AIAgentPort {
                 + (c.alquilado ? "Solicitar al arrendador el cambio a SSD." : "Migrar a SSD/NVMe mejora el rendimiento y reduce fallos.")));
         }
         if (c.soSinSoporte) {
-            recs.add(new Recomendacion(PROGRAMAR, "Sistema operativo sin soporte (WINDOWS " + eq.getOsVersion()
+            recs.add(new Recomendacion(PROGRAMAR, "Sistema operativo sin soporte (" + describirSo(eq)
                 + "). Actualizar a una version con soporte de seguridad."));
         }
 
@@ -360,7 +380,7 @@ public class AIAgentAdapter implements AIAgentPort {
             factores.add("RAM de " + hw.getRamSizeGb() + " GB (bajo rendimiento, no aumenta el riesgo de fallo fisico)");
         }
         if (c.soSinSoporte) {
-            factores.add("Sistema operativo sin soporte (WINDOWS " + eq.getOsVersion() + "): riesgo de seguridad");
+            factores.add("Sistema operativo sin soporte (" + describirSo(eq) + "): riesgo de seguridad");
         }
         probabilidad = Math.min(probabilidad, 99.0);
 
@@ -448,7 +468,7 @@ public class AIAgentAdapter implements AIAgentPort {
         List<String> menores = new ArrayList<>();
         if (c.ramInsuficiente && (hw.getRamSizeGb() >= 4)) menores.add("RAM de " + hw.getRamSizeGb() + " GB (menos de 8 GB)");
         if (c.discoHdd) menores.add("Disco HDD (lento y con mayor tasa de fallo)");
-        if (c.soSinSoporte) menores.add("Sistema operativo sin soporte (WINDOWS " + eq.getOsVersion() + ")");
+        if (c.soSinSoporte) menores.add("Sistema operativo sin soporte (" + describirSo(eq) + ")");
         if (c.partesReemplazadas >= 3) menores.add(c.partesReemplazadas + " partes reemplazadas en su historial");
         if (c.correctivosUltimoAno == 2) menores.add("2 correctivos en los ultimos 12 meses");
 
@@ -544,7 +564,9 @@ public class AIAgentAdapter implements AIAgentPort {
         sb.append("\n");
         if (eq.getOperatingSystem() != null) {
             sb.append("Sistema operativo: ").append(eq.getOperatingSystem());
+            if (eq.getOsEdition() != null) sb.append(" / ").append(eq.getOsEdition());
             if (eq.getOsVersion() != null) sb.append(" ").append(eq.getOsVersion());
+            if (eq.getOsLicenseType() != null) sb.append(" (licencia ").append(eq.getOsLicenseType()).append(")");
             if (c.soSinSoporte) sb.append(" (SIN SOPORTE)");
             sb.append("\n");
         }

@@ -56,6 +56,14 @@ public class CreateEquipmentRequest {
     /** Version del sistema operativo (texto libre). */
     @Size(max = 100, message = "La version del sistema operativo no puede superar 100 caracteres")
     private String osVersion;
+    /** Software/edicion del SO: WINDOWS 10 | WINDOWS 11 (solo con SO WINDOWS). null = sin cambio, "" = limpiar. */
+    @Pattern(regexp = "(?i)^\\s*(WINDOWS\\s*10|WINDOWS\\s*11)?\\s*$",
+             message = "Software invalido. Valores permitidos: WINDOWS 10, WINDOWS 11")
+    private String osEdition;
+    /** Tipo de licencia del SO: OEM | RETAIL | VOLUMEN. null = sin cambio, "" = limpiar. */
+    @Pattern(regexp = "(?i)^\\s*(OEM|RETAIL|VOLUMEN)?\\s*$",
+             message = "Tipo de licencia invalido. Valores permitidos: OEM, RETAIL, VOLUMEN")
+    private String osLicenseType;
     // ---- Responsable ----
     /** Cargo del responsable (max. 100). */
     @Size(max = 100, message = "El cargo del responsable no puede superar 100 caracteres")

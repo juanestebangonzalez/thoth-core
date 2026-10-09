@@ -97,6 +97,8 @@ public class EquipmentImportService {
         Integer diskSizeGb;
         String operatingSystem;
         String osVersion;
+        String osEdition;
+        String osLicenseType;
         LocalDate lastMaintenanceDate;
         String lastMaintenanceType;
         String lastMaintenanceTechnician;
@@ -324,6 +326,26 @@ public class EquipmentImportService {
                 + OperatingSystemCatalog.OS_VERSION_MAX_LENGTH + " caracteres");
             row.osVersion = null;
         }
+        // Version de WINDOWS: debe ser del catalogo (26H2, 26H1, 25H2, 24H2, 23H2)
+        String versionError = OperatingSystemCatalog.validateVersionForOs(row.operatingSystem, row.osVersion);
+        if (versionError != null) {
+            errors.add(versionError);
+            row.osVersion = null;
+        }
+        // Licenciamiento del SO: edicion (WINDOWS 10/11, solo con SO WINDOWS) y tipo de licencia
+        String edition = str(raw.getOsEdition());
+        if (edition != null) {
+            String editionError = OperatingSystemCatalog.validateEdition(edition);
+            if (editionError == null) editionError = OperatingSystemCatalog.validateEditionForOs(row.operatingSystem, edition);
+            if (editionError != null) errors.add(editionError);
+            else row.osEdition = OperatingSystemCatalog.normalizeEdition(edition);
+        }
+        String licenseType = str(raw.getOsLicenseType());
+        if (licenseType != null) {
+            String licenseError = OperatingSystemCatalog.validateLicenseType(licenseType);
+            if (licenseError != null) errors.add(licenseError);
+            else row.osLicenseType = OperatingSystemCatalog.normalize(licenseType);
+        }
 
         // Ultimo mantenimiento
         row.lastMaintenanceDate = parseDate(str(raw.getLastMaintenanceDate()), "fecha del ultimo mantenimiento", errors);
@@ -475,7 +497,9 @@ public class EquipmentImportService {
             r.responsibleEmail,
             r.ipAddress,
             r.ipAssignment,
-            associatedId
+            associatedId,
+            r.osEdition,
+            r.osLicenseType
         );
     }
 

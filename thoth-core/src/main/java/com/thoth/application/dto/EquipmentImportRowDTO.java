@@ -43,6 +43,10 @@ public class EquipmentImportRowDTO {
     private Object diskSizeGb;
     private Object operatingSystem;
     private Object osVersion;
+    /** Software/edicion del SO: WINDOWS 10 | WINDOWS 11 (solo con SO WINDOWS). */
+    private Object osEdition;
+    /** Tipo de licencia del SO: OEM | RETAIL | VOLUMEN. */
+    private Object osLicenseType;
     private Object lastMaintenanceDate;
     private Object lastMaintenanceType;
     private Object lastMaintenanceTechnician;

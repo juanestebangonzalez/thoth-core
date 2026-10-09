@@ -56,7 +56,9 @@ public class EquipmentDtoMapper {
             associatedName(equipment, associated),
             associatedInventory(equipment, associated),
             mapUsefulLife(equipment),
-            equipment.calculateCriticality()
+            equipment.calculateCriticality(),
+            equipment.getOsEdition(),
+            equipment.getOsLicenseType()
         );
     }
 
@@ -100,7 +102,9 @@ public class EquipmentDtoMapper {
             associatedName(equipment, associated),
             associatedInventory(equipment, associated),
             mapUsefulLife(equipment),
-            equipment.calculateCriticality()
+            equipment.calculateCriticality(),
+            equipment.getOsEdition(),
+            equipment.getOsLicenseType()
         );
     }
 

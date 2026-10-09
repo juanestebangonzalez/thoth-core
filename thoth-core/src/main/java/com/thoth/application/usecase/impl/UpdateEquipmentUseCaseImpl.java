@@ -45,8 +45,20 @@ public class UpdateEquipmentUseCaseImpl implements UpdateEquipmentUseCase {
         if (command.macAddress2() != null) equipment.updateMacAddress2(command.macAddress2());
         if (command.costCenter() != null) equipment.updateCostCenter(command.costCenter());
         // Sistema operativo: null = sin cambio, "" = limpiar
+        String previousOsVersion = equipment.getOsVersion();
         if (command.operatingSystem() != null) equipment.updateOperatingSystem(command.operatingSystem());
         if (command.osVersion() != null) equipment.updateOsVersion(command.osVersion());
+        if (command.osEdition() != null) equipment.updateOsEdition(command.osEdition());
+        if (command.osLicenseType() != null) equipment.updateOsLicenseType(command.osLicenseType());
+        // Si el SO deja de ser WINDOWS y no se envio la edicion, la edicion deja de aplicar y se limpia
+        if (command.operatingSystem() != null && command.osEdition() == null && equipment.getOsEdition() != null
+                && !OperatingSystemCatalog.WINDOWS.equals(equipment.getOperatingSystem())) {
+            equipment.updateOsEdition(null);
+        }
+        // La version solo se valida si cambia (no se rompen datos antiguos con texto libre)
+        boolean osVersionChanged = command.osVersion() != null
+            && !java.util.Objects.equals(equipment.getOsVersion(), previousOsVersion);
+        equipment.validateOperatingSystemData(osVersionChanged);
         // Responsable y red: null = sin cambio, "" = limpiar
         if (command.responsiblePosition() != null) equipment.updateResponsiblePosition(command.responsiblePosition());
         if (command.responsibleDocument() != null) equipment.updateResponsibleDocument(command.responsibleDocument());

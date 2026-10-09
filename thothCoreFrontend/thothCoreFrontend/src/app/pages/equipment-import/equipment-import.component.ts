@@ -20,7 +20,7 @@ import { MaintenanceCategoryService } from '../../core/services/maintenance-cate
 
 /** Tipo de dato de cada columna de la plantilla. */
 type ColType = 'text' | 'number' | 'date';
-type ListKey = 'categorias' | 'sedes' | 'areas' | 'centros' | 'propiedad' | 'ramTypes' | 'diskTypes' | 'sistemas' | 'mantenimientos' | 'ipAsignacion';
+type ListKey = 'categorias' | 'sedes' | 'areas' | 'centros' | 'propiedad' | 'ramTypes' | 'diskTypes' | 'sistemas' | 'mantenimientos' | 'ipAsignacion' | 'osEdiciones' | 'osVersiones' | 'osLicencias';
 
 interface ColumnDef {
   key: string;
@@ -28,6 +28,8 @@ interface ColumnDef {
   type: ColType;
   width: number;
   list?: ListKey;
+  /** false: la lista desplegable es solo sugerencia (admite texto libre). */
+  strict?: boolean;
   example: string | number;
   help: string;
 }
@@ -66,7 +68,9 @@ const COLUMNS: ColumnDef[] = [
   { key: 'diskType', label: 'Tipo Disco', type: 'text', width: 12, list: 'diskTypes', example: 'SSD', help: 'Opcional. HDD, SSD o NVME.' },
   { key: 'diskSizeGb', label: 'Disco (GB)', type: 'number', width: 12, example: 512, help: 'Opcional. Numero entero.' },
   { key: 'operatingSystem', label: 'Sistema Operativo', type: 'text', width: 18, list: 'sistemas', example: 'WINDOWS', help: 'Opcional. WINDOWS, LINUX, MACOS, CHROMEOS, ANDROID, IOS, OTRO o N/A.' },
-  { key: 'osVersion', label: 'Distribucion / Version', type: 'text', width: 24, example: 'WINDOWS 11 PRO 23H2', help: 'Opcional. Texto libre con la distribucion o version del sistema operativo.' },
+  { key: 'osEdition', label: 'Software SO (Windows 10/11)', type: 'text', width: 26, list: 'osEdiciones', example: 'WINDOWS 11', help: 'Opcional. Solo si el Sistema Operativo es WINDOWS: WINDOWS 10 o WINDOWS 11.' },
+  { key: 'osVersion', label: 'Distribucion / Version', type: 'text', width: 24, list: 'osVersiones', strict: false, example: '24H2', help: 'Opcional. Si es WINDOWS: 26H2, 26H1, 25H2, 24H2 o 23H2. Para otros sistemas, texto libre (ej: UBUNTU 24.04).' },
+  { key: 'osLicenseType', label: 'Tipo de Licencia', type: 'text', width: 18, list: 'osLicencias', example: 'OEM', help: 'Opcional. Tipo de licencia del sistema operativo: OEM, RETAIL o VOLUMEN.' },
   { key: 'lastMaintenanceDate', label: 'Fecha Ultimo Mantenimiento', type: 'date', width: 26, example: '2026-06-10', help: 'Opcional. Con esta fecha se calcula el cronograma (proximo mantenimiento).' },
   { key: 'lastMaintenanceType', label: 'Tipo Ultimo Mantenimiento', type: 'text', width: 26, list: 'mantenimientos', example: '', help: 'Opcional. Debe existir en Tipos de Mantenimiento.' },
   { key: 'lastMaintenanceTechnician', label: 'Tecnico Ultimo Mantenimiento', type: 'text', width: 26, example: '', help: 'Opcional. Nombre del tecnico.' },
@@ -80,6 +84,9 @@ const DISK_TYPES = ['HDD', 'SSD', 'NVME'];
 const OPERATING_SYSTEMS = ['WINDOWS', 'LINUX', 'MACOS', 'CHROMEOS', 'ANDROID', 'IOS', 'OTRO', 'N/A'];
 const OWNERSHIP = ['PROPIO', 'ALQUILADO'];
 const IP_ASSIGNMENT = ['DHCP', 'FIJA'];
+const OS_EDITIONS = ['WINDOWS 10', 'WINDOWS 11'];
+const OS_VERSIONS_WINDOWS = ['26H2', '26H1', '25H2', '24H2', '23H2'];
+const OS_LICENSES = ['OEM', 'RETAIL', 'VOLUMEN'];
 const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
 interface ImportRowResult {
@@ -359,11 +366,13 @@ export class EquipmentImportComponent {
       // Hoja de listas (oculta): una columna por catalogo
       const lists: Record<ListKey, string[]> = {
         categorias: cat.categorias, sedes: cat.sedes, areas: cat.areas, centros: cat.centros,
-        propiedad: OWNERSHIP, ramTypes: RAM_TYPES, diskTypes: DISK_TYPES, sistemas: OPERATING_SYSTEMS, mantenimientos: cat.mantenimientos, ipAsignacion: IP_ASSIGNMENT
+        propiedad: OWNERSHIP, ramTypes: RAM_TYPES, diskTypes: DISK_TYPES, sistemas: OPERATING_SYSTEMS, mantenimientos: cat.mantenimientos, ipAsignacion: IP_ASSIGNMENT,
+        osEdiciones: OS_EDITIONS, osVersiones: OS_VERSIONS_WINDOWS, osLicencias: OS_LICENSES
       };
       const listTitles: Record<ListKey, string> = {
         categorias: 'Categorias', sedes: 'Sedes', areas: 'Areas', centros: 'Centros de Costo',
-        propiedad: 'Propiedad', ramTypes: 'Tipo RAM', diskTypes: 'Tipo Disco', sistemas: 'Sistema Operativo', mantenimientos: 'Tipos de Mantenimiento', ipAsignacion: 'Asignacion IP'
+        propiedad: 'Propiedad', ramTypes: 'Tipo RAM', diskTypes: 'Tipo Disco', sistemas: 'Sistema Operativo', mantenimientos: 'Tipos de Mantenimiento', ipAsignacion: 'Asignacion IP',
+        osEdiciones: 'Software SO', osVersiones: 'Version Windows', osLicencias: 'Tipo de Licencia'
       };
       const listRef: Partial<Record<ListKey, string>> = {};
       (Object.keys(lists) as ListKey[]).forEach((k, i) => {
@@ -398,7 +407,7 @@ export class EquipmentImportComponent {
         const letter = colLetter(i + 1);
         const validation = {
           type: 'list', allowBlank: true, formulae: [ref],
-          showErrorMessage: true, errorStyle: 'warning', errorTitle: 'Valor no valido',
+          showErrorMessage: c.strict !== false, errorStyle: 'warning', errorTitle: 'Valor no valido',
           error: 'Seleccione un valor de la lista (' + listTitles[c.list] + ').'
         };
         const dv: any = (ws as any).dataValidations;
@@ -421,7 +430,7 @@ export class EquipmentImportComponent {
         '5. Los valores en pesos van solo con numeros, sin puntos, comas ni simbolos.',
         '6. Si el equipo es ALQUILADO, diligencie los datos del alquiler (empresa, contrato, fechas y valor mensual).',
         '7. El cronograma de mantenimiento se calcula desde la Fecha Ultimo Mantenimiento: si se informa, se registra ese mantenimiento y se programa el proximo automaticamente.',
-        '8. Sistema Operativo es opcional y debe ser uno de: ' + OPERATING_SYSTEMS.join(', ') + ' (use la lista desplegable). En "Distribucion / Version" puede escribir el detalle, por ejemplo WINDOWS 11 PRO 23H2.',
+        '8. Sistema Operativo es opcional y debe ser uno de: ' + OPERATING_SYSTEMS.join(', ') + ' (use la lista desplegable). Si es WINDOWS: en "Software SO" elija ' + OS_EDITIONS.join(' o ') + ' y en "Distribucion / Version" use una de las versiones validas: ' + OS_VERSIONS_WINDOWS.join(', ') + '. Para otros sistemas "Distribucion / Version" es texto libre (ej: UBUNTU 24.04). "Tipo de Licencia": ' + OS_LICENSES.join(', ') + '.',
         '9. Datos del responsable (opcionales): Cargo, Documento, Celular (10 digitos, solo numeros) y Correo. En la red puede indicar la Direccion IP (IPv4) y la Asignacion IP (DHCP o FIJA, use la lista desplegable).',
         '10. Los monitores se registran como cualquier equipo: pueden ser PROPIOS o ALQUILADOS (con empresa, contrato, fechas y valor mensual). Para asociarlos a un PC escriba en "PC Asociado (N Inventario)" el N Inventario Interno del PC (el PC debe estar registrado en THOTH).',
         '11. Maximo ' + MAX_ROWS + ' filas por archivo. Antes de importar se muestra una vista previa con los errores de cada fila.',
@@ -541,12 +550,14 @@ export class EquipmentImportComponent {
           if (def.type === 'date') val = this.toDateString(raw);
           else if (def.type === 'number') val = this.toNumber(raw);
           else val = this.toText(raw);
-          if ((def.key === 'ownershipType' || def.key === 'operatingSystem' || def.key === 'ipAssignment') && typeof val === 'string') val = val.trim().toUpperCase();
+          if ((def.key === 'ownershipType' || def.key === 'operatingSystem' || def.key === 'ipAssignment' || def.key === 'osEdition' || def.key === 'osLicenseType') && typeof val === 'string') val = val.trim().toUpperCase();
           data[def.key] = val ?? null;
           if (val !== null && val !== undefined && val !== '') hasValue = true;
         });
         if (!hasValue) continue;
         COLUMNS.forEach(c => { if (!(c.key in data)) data[c.key] = null; });
+        // Version de Windows en mayusculas (ej: 24h2 -> 24H2); otros SO conservan el texto libre
+        if (data['operatingSystem'] === 'WINDOWS' && typeof data['osVersion'] === 'string') data['osVersion'] = data['osVersion'].trim().toUpperCase();
         rows.push(data);
       }
     } catch (e: any) {

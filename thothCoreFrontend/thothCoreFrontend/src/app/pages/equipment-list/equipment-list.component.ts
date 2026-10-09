@@ -11,7 +11,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { EquipmentService } from '../../core/services/equipment.service';
-import { Equipment } from '../../core/models/equipment.model';
+import { Equipment, etiquetaSoftware } from '../../core/models/equipment.model';
 import { DeviceTypeService, DeviceType } from '../../core/services/device-type.service';
 import { AuthService } from '../../core/services/auth.service';
 import { EtiquetaPipe, etiqueta, codigoEstado } from '../../core/pipes/etiqueta.pipe';
@@ -301,7 +301,7 @@ export class EquipmentListComponent implements OnInit {
       return;
     }
 
-    const headers = ['Nombre', 'N Inventario', 'Categoria', 'Serial', 'MAC', 'MAC WiFi', 'Direccion IP', 'Asignacion IP', 'Marca', 'Modelo', 'Estado', 'Fecha Compra', 'Valor', 'Asignado a', 'Cargo Responsable', 'Documento Responsable', 'Celular Responsable', 'Correo Responsable', 'Sede', 'Area', 'Centro de Costo', 'Propiedad', 'Procesador', 'RAM (GB)', 'Tipo RAM', 'Tipo Disco', 'Disco (GB)', 'Sistema Operativo', 'Distribucion / Version', 'Salud Disco', 'Temp Disco', 'PC Asociado'];
+    const headers = ['Nombre', 'N Inventario', 'Categoria', 'Serial', 'MAC', 'MAC WiFi', 'Direccion IP', 'Asignacion IP', 'Marca', 'Modelo', 'Estado', 'Fecha Compra', 'Valor', 'Asignado a', 'Cargo Responsable', 'Documento Responsable', 'Celular Responsable', 'Correo Responsable', 'Sede', 'Area', 'Centro de Costo', 'Propiedad', 'Procesador', 'RAM (GB)', 'Tipo RAM', 'Tipo Disco', 'Disco (GB)', 'Sistema Operativo', 'Software SO', 'Distribucion / Version', 'Tipo de licencia', 'Salud Disco', 'Temp Disco', 'PC Asociado'];
     const rows = data.map(e => [
       e.name, e.inventoryNumber || '', e.category, e.serialNumber || '', e.macAddress || '', e.macAddress2 || '', e.ipAddress || '', e.ipAssignment || '', e.brand || '', e.model || '',
       etiqueta(e.status, 'estado'), e.purchaseDate, e.purchaseValue,
@@ -310,7 +310,7 @@ export class EquipmentListComponent implements OnInit {
       etiqueta(e.ownershipType || 'OWNED', 'propiedad'),
       e.hardware?.processor || '', e.hardware?.ramSizeGb || '', e.hardware?.ramType || '',
       e.hardware?.diskType || '', e.hardware?.diskSizeGb || '',
-      e.operatingSystem ? etiqueta(e.operatingSystem, 'so') : '', e.osVersion || '',
+      e.operatingSystem ? etiqueta(e.operatingSystem, 'so') : '', etiquetaSoftware(e.osEdition), e.osVersion || '', etiquetaSoftware(e.osLicenseType),
       e.hardware?.diskHealthPercent || '',
       e.hardware?.diskTemperatureCelsius || '',
       e.associatedEquipmentName ? e.associatedEquipmentName + (e.associatedEquipmentInventory ? ' (' + e.associatedEquipmentInventory + ')' : '') : ''

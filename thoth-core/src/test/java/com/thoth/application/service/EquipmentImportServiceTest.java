@@ -193,4 +193,42 @@ class EquipmentImportServiceTest {
         assertThatThrownBy(() -> service.importRows(rows, true, "admin"))
             .isInstanceOf(IllegalArgumentException.class);
     }
+
+    @Test
+    @DisplayName("Licenciamiento SO: edicion, version y licencia validas se normalizan")
+    void osLicensing_valid() {
+        EquipmentImportRowDTO row = validRow(2, "INV-SO1");
+        row.setOperatingSystem("windows");
+        row.setOsEdition("windows 11");
+        row.setOsVersion("24h2");
+        row.setOsLicenseType("oem");
+        EquipmentImportRowResultDTO r = service.importRows(List.of(row), true, "admin").rows().get(0);
+        assertThat(r.status()).isEqualTo("OK");
+    }
+
+    @Test
+    @DisplayName("Licenciamiento SO: edicion sin SO WINDOWS es ERROR")
+    void osLicensing_editionWithoutWindows_isError() {
+        EquipmentImportRowDTO row = validRow(2, "INV-SO2");
+        row.setOperatingSystem("LINUX");
+        row.setOsEdition("WINDOWS 10");
+        EquipmentImportRowResultDTO r = service.importRows(List.of(row), true, "admin").rows().get(0);
+        assertThat(r.status()).isEqualTo("ERROR");
+        assertThat(r.errors()).anyMatch(e -> e.contains("solo aplica cuando el sistema operativo es WINDOWS"));
+    }
+
+    @Test
+    @DisplayName("Licenciamiento SO: version de WINDOWS, edicion o licencia fuera de catalogo son ERROR")
+    void osLicensing_invalidValues_areErrors() {
+        EquipmentImportRowDTO row = validRow(2, "INV-SO3");
+        row.setOperatingSystem("WINDOWS");
+        row.setOsVersion("22H2");
+        row.setOsEdition("WINDOWS 8");
+        row.setOsLicenseType("PIRATA");
+        EquipmentImportRowResultDTO r = service.importRows(List.of(row), true, "admin").rows().get(0);
+        assertThat(r.status()).isEqualTo("ERROR");
+        assertThat(r.errors()).anyMatch(e -> e.contains("Version de WINDOWS invalida"));
+        assertThat(r.errors()).anyMatch(e -> e.contains("Software (edicion del sistema operativo) invalido"));
+        assertThat(r.errors()).anyMatch(e -> e.contains("Tipo de licencia invalido"));
+    }
 }

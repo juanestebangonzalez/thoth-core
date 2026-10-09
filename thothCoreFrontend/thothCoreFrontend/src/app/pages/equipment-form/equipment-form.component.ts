@@ -17,7 +17,7 @@ import { AreaService, Area } from '../../core/services/area.service';
 import { DeviceTypeService, DeviceType } from '../../core/services/device-type.service';
 import { CostCenterService, CostCenter } from '../../core/services/cost-center.service';
 import { EquipmentService } from '../../core/services/equipment.service';
-import { CreateEquipmentRequest, SISTEMAS_OPERATIVOS, Equipment, esMonitor } from '../../core/models/equipment.model';
+import { CreateEquipmentRequest, SISTEMAS_OPERATIVOS, OS_EDITIONS, OS_VERSIONES_WINDOWS, OS_LICENSE_TYPES, Equipment, esMonitor } from '../../core/models/equipment.model';
 import { HardwareThresholdsService } from '../../core/services/hardware-thresholds.service';
 
 @Component({
@@ -330,18 +330,49 @@ import { HardwareThresholdsService } from '../../core/services/hardware-threshol
               <input matInput [(ngModel)]="equipment.hardware!.diskTemperatureCelsius" type="number" min="0" max="120">
               <mat-hint>{{ hintTemp() }}</mat-hint>
             </mat-form-field>
+            <h4 class="subsection-title full-column"><mat-icon>apps</mat-icon> Software y licenciamiento</h4>
             <mat-form-field appearance="outline">
               <mat-label>Sistema Operativo</mat-label>
-              <mat-select [(ngModel)]="equipment.operatingSystem">
+              <mat-select [(ngModel)]="equipment.operatingSystem" (selectionChange)="onOsChange()">
                 <mat-option value="">-- Sin especificar --</mat-option>
                 @for (so of sistemasOperativos; track so.value) {
                   <mat-option [value]="so.value">{{ so.label }}</mat-option>
                 }
               </mat-select>
             </mat-form-field>
+            @if (esWindows()) {
+              <mat-form-field appearance="outline">
+                <mat-label>Software</mat-label>
+                <mat-select [(ngModel)]="equipment.osEdition">
+                  <mat-option value="">-- Sin especificar --</mat-option>
+                  @for (ed of osEditions; track ed.value) {
+                    <mat-option [value]="ed.value">{{ ed.label }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Version</mat-label>
+                <mat-select [(ngModel)]="equipment.osVersion">
+                  <mat-option value="">-- Sin especificar --</mat-option>
+                  @for (v of versionesWindows(); track v) {
+                    <mat-option [value]="v">{{ v }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+            } @else {
+              <mat-form-field appearance="outline">
+                <mat-label>Distribucion / Version</mat-label>
+                <input matInput [(ngModel)]="equipment.osVersion" placeholder="Ej: UBUNTU 24.04">
+              </mat-form-field>
+            }
             <mat-form-field appearance="outline">
-              <mat-label>Distribucion / Version</mat-label>
-              <input matInput [(ngModel)]="equipment.osVersion" placeholder="Ej: WINDOWS 11 PRO 23H2">
+              <mat-label>Tipo de licencia</mat-label>
+              <mat-select [(ngModel)]="equipment.osLicenseType">
+                <mat-option value="">-- Sin especificar --</mat-option>
+                @for (lt of osLicenseTypes; track lt.value) {
+                  <mat-option [value]="lt.value">{{ lt.label }}</mat-option>
+                }
+              </mat-select>
             </mat-form-field>
           </div>
         </mat-expansion-panel>
@@ -411,6 +442,8 @@ import { HardwareThresholdsService } from '../../core/services/hardware-threshol
     input:not([type="date"]):not([type="number"]):not([type="email"]) { text-transform: uppercase; }
     textarea { text-transform: uppercase; }
     .hint-error { color: #F87171; }
+    .subsection-title { display: flex; align-items: center; gap: 6px; margin: 8px 0 0; color: #93C5FD; font-size: 14px; font-weight: 600; }
+    .subsection-title mat-icon { font-size: 18px; width: 18px; height: 18px; }
   `]
 })
 export class EquipmentFormComponent implements OnInit {
@@ -422,6 +455,8 @@ export class EquipmentFormComponent implements OnInit {
     hardware: { processor: '', ramSizeGb: undefined, ramType: '', diskType: '', diskSizeGb: undefined, diskHealthPercent: undefined, diskTemperatureCelsius: undefined },
     operatingSystem: '',
     osVersion: '',
+    osEdition: '',
+    osLicenseType: '',
     responsiblePosition: '', responsibleDocument: '', responsiblePhone: '', responsibleEmail: '',
     ipAddress: '', ipAssignment: '', associatedEquipmentId: ''
   };
@@ -436,6 +471,36 @@ export class EquipmentFormComponent implements OnInit {
     return filtered.slice(0, 50);
   });
   readonly sistemasOperativos = SISTEMAS_OPERATIVOS;
+  readonly osEditions = OS_EDITIONS;
+  readonly osLicenseTypes = OS_LICENSE_TYPES;
+  /** Valor de osVersion cargado que no esta en la lista de Windows (para no perderlo). */
+  private legacyOsVersion = '';
+
+  esWindows(): boolean {
+    return this.equipment.operatingSystem === 'WINDOWS';
+  }
+
+  /** Versiones de Windows + el valor antiguo si no esta en la lista. */
+  versionesWindows(): string[] {
+    const v = this.legacyOsVersion;
+    return v && !OS_VERSIONES_WINDOWS.includes(v) ? [...OS_VERSIONES_WINDOWS, v] : OS_VERSIONES_WINDOWS;
+  }
+
+  /** Al cambiar de sistema operativo limpia los campos que no aplican. */
+  onOsChange() {
+    if (this.esWindows()) {
+      const v = this.equipment.osVersion || '';
+      if (v && !this.versionesWindows().includes(v)) this.equipment.osVersion = '';
+    } else {
+      this.equipment.osEdition = '';
+      const v = this.equipment.osVersion || '';
+      if (v && OS_VERSIONES_WINDOWS.includes(v)) this.equipment.osVersion = '';
+    }
+    if (!this.equipment.operatingSystem || this.equipment.operatingSystem === 'N/A') {
+      this.equipment.osVersion = '';
+      this.equipment.osLicenseType = '';
+    }
+  }
   isEditMode = signal(false);
   sedes = signal<Sede[]>([]);
   deviceTypes = signal<DeviceType[]>([]);
@@ -613,6 +678,7 @@ export class EquipmentFormComponent implements OnInit {
   loadEquipment() {
     this.equipmentService.getById(this.equipmentId).subscribe({
       next: (e: any) => {
+        this.legacyOsVersion = e.operatingSystem === 'WINDOWS' ? (e.osVersion || '') : '';
         this.equipment = {
           name: e.name,
           category: e.category,
@@ -649,6 +715,8 @@ export class EquipmentFormComponent implements OnInit {
           },
           operatingSystem: e.operatingSystem || '',
           osVersion: e.osVersion || '',
+          osEdition: e.osEdition || '',
+          osLicenseType: e.osLicenseType || '',
           responsiblePosition: e.responsiblePosition || '',
           responsibleDocument: e.responsibleDocument || '',
           responsiblePhone: e.responsiblePhone || '',
@@ -729,6 +797,8 @@ export class EquipmentFormComponent implements OnInit {
         // En edicion se envia '' para permitir limpiar el sistema operativo
         operatingSystem: this.equipment.operatingSystem || '',
         osVersion: (this.equipment.osVersion || '').trim(),
+        osEdition: this.esWindows() ? (this.equipment.osEdition || '') : '',
+        osLicenseType: this.equipment.osLicenseType || '',
         // En edicion se envia '' para permitir limpiar responsable, red y PC asociado
         responsiblePosition: t(this.equipment.responsiblePosition),
         responsibleDocument: t(this.equipment.responsibleDocument),
@@ -768,6 +838,8 @@ export class EquipmentFormComponent implements OnInit {
         hardware: cleanHardware,
         operatingSystem: this.equipment.operatingSystem || undefined,
         osVersion: (this.equipment.osVersion || '').trim() || undefined,
+        osEdition: this.esWindows() ? (this.equipment.osEdition || undefined) : undefined,
+        osLicenseType: this.equipment.osLicenseType || undefined,
         responsiblePosition: t(this.equipment.responsiblePosition) || undefined,
         responsibleDocument: t(this.equipment.responsibleDocument) || undefined,
         responsiblePhone: t(this.equipment.responsiblePhone) || undefined,

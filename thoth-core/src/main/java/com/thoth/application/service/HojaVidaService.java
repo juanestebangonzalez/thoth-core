@@ -12,6 +12,7 @@ import com.thoth.adapter.out.persistence.repository.MaintenanceHistoryJpaReposit
 import com.thoth.application.dto.EquipmentDTO;
 import com.thoth.application.port.input.GetEquipmentUseCase;
 import com.thoth.application.port.output.EquipmentRepositoryPort;
+import com.thoth.domain.valueobject.OperatingSystemCatalog;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,6 +52,7 @@ public class HojaVidaService {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("generatedAt", LocalDateTime.now());
         result.put("equipment", equipment);
+        result.put("software", software(equipment));
         // Fecha de registro del equipo (no viaja en EquipmentDTO)
         result.put("registeredAt", equipmentRepositoryPort.findById(equipmentId)
             .map(eq -> eq.getCreatedAt()).orElse(null));
@@ -61,6 +63,23 @@ public class HojaVidaService {
         result.put("documents", documents(equipmentId));
         result.put("baja", "RETIRED".equals(equipment.status()) ? baja(equipmentId) : null);
         return result;
+    }
+
+    /** Software y licenciamiento: por ahora solo el sistema operativo (lista vacia si no tiene SO). */
+    static List<Map<String, Object>> software(EquipmentDTO equipment) {
+        List<Map<String, Object>> list = new ArrayList<>();
+        if (equipment == null || equipment.operatingSystem() == null || equipment.operatingSystem().isBlank()) {
+            return list;
+        }
+        Map<String, Object> item = new LinkedHashMap<>();
+        item.put("software", equipment.osEdition() != null && !equipment.osEdition().isBlank()
+            ? equipment.osEdition() : equipment.operatingSystem());
+        item.put("version", equipment.osVersion());
+        item.put("licenseType", equipment.osLicenseType());
+        item.put("licenseKey", null);
+        item.put("expiration", OperatingSystemCatalog.licenseExpiration(equipment.osLicenseType()));
+        list.add(item);
+        return list;
     }
 
     private List<Map<String, Object>> maintenances(UUID equipmentId) {

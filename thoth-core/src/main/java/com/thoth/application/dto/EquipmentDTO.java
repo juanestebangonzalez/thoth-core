@@ -37,8 +37,16 @@ public record EquipmentDTO(
     String associatedEquipmentName,
     String associatedEquipmentInventory,
     UsefulLifeDTO usefulLife,
-    String criticality
+    String criticality,
+    String osEdition,
+    String osLicenseType
 ) {
+    /** Constructor de compatibilidad (sin licenciamiento del sistema operativo). */
+    public EquipmentDTO(UUID equipmentId, String name, String category, String serialNumber, String inventoryNumber, String macAddress, String brand, String model, String status, LocalDate purchaseDate, BigDecimal purchaseValue, LocationDTO location, String assignedTo, String createdBy, String ownershipType, RentalInfoDTO rentalInfo, HardwareDTO hardware, LocalDate nextMaintenanceDate, String macAddress2, String costCenter, String operatingSystem, String osVersion, String responsiblePosition, String responsibleDocument, String responsiblePhone, String responsibleEmail, String ipAddress, String ipAssignment, UUID associatedEquipmentId, String associatedEquipmentName, String associatedEquipmentInventory, UsefulLifeDTO usefulLife, String criticality) {
+        this(equipmentId, name, category, serialNumber, inventoryNumber, macAddress, brand, model, status, purchaseDate, purchaseValue, location, assignedTo, createdBy, ownershipType, rentalInfo, hardware, nextMaintenanceDate, macAddress2, costCenter, operatingSystem, osVersion, responsiblePosition, responsibleDocument, responsiblePhone, responsibleEmail, ipAddress, ipAssignment, associatedEquipmentId, associatedEquipmentName, associatedEquipmentInventory, usefulLife, criticality,
+             null, null);
+    }
+
     /** Constructor de compatibilidad (sin responsable, red, monitor asociado ni calculados). */
     public EquipmentDTO(UUID equipmentId, String name, String category, String serialNumber,
                         String inventoryNumber, String macAddress, String brand, String model,

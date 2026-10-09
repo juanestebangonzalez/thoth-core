@@ -14,7 +14,7 @@ import { EquipmentService } from '../../core/services/equipment.service';
 import { LocationHistoryService, LocationHistory } from '../../core/services/location-history.service';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { TransferDialogComponent } from '../../shared/transfer-dialog/transfer-dialog.component';
-import { Equipment } from '../../core/models/equipment.model';
+import { Equipment, etiquetaSoftware } from '../../core/models/equipment.model';
 import { EtiquetaPipe, etiqueta, codigoEstado } from '../../core/pipes/etiqueta.pipe';
 import { HardwareThresholdsService } from '../../core/services/hardware-thresholds.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -140,7 +140,7 @@ import { EquipmentPeripheralsComponent } from './equipment-peripherals.component
 
           <app-equipment-extra-info [equipment]="equipment()!"></app-equipment-extra-info>
 
-          @if (equipment()?.hardware || equipment()?.operatingSystem || equipment()?.osVersion) {
+          @if (equipment()?.hardware || equipment()?.operatingSystem || equipment()?.osVersion || equipment()?.osEdition || equipment()?.osLicenseType) {
             <mat-divider></mat-divider>
             <p class="section-heading"><mat-icon>memory</mat-icon> HARDWARE</p>
             <div class="info-grid">
@@ -152,10 +152,24 @@ import { EquipmentPeripheralsComponent } from './equipment-peripherals.component
                 </div>
               </div>
               <div class="info-item">
+                <mat-icon>apps</mat-icon>
+                <div>
+                  <span class="label">Software</span>
+                  <span class="value">{{ softwareSo() }}</span>
+                </div>
+              </div>
+              <div class="info-item">
                 <mat-icon>info</mat-icon>
                 <div>
-                  <span class="label">Distribucion / Version</span>
+                  <span class="label">{{ equipment()?.operatingSystem === 'WINDOWS' ? 'Version' : 'Distribucion / Version' }}</span>
                   <span class="value">{{ equipment()?.osVersion || '-' }}</span>
+                </div>
+              </div>
+              <div class="info-item">
+                <mat-icon>verified</mat-icon>
+                <div>
+                  <span class="label">Tipo de licencia</span>
+                  <span class="value">{{ licenciaSo() }}</span>
                 </div>
               </div>
               <div class="info-item">
@@ -454,6 +468,18 @@ import { EquipmentPeripheralsComponent } from './equipment-peripherals.component
   `]
 })
 export class EquipmentDetailComponent implements OnInit {
+  /** Software del SO: edicion de Windows o etiqueta del sistema operativo. */
+  softwareSo(): string {
+    const e = this.equipment();
+    if (!e) return '-';
+    if (e.osEdition) return etiquetaSoftware(e.osEdition);
+    return e.operatingSystem ? etiqueta(e.operatingSystem, 'so') : '-';
+  }
+
+  licenciaSo(): string {
+    return etiquetaSoftware(this.equipment()?.osLicenseType) || '-';
+  }
+
   private copFormatter = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 });
   /** Formatea un valor como moneda COP sin decimales; '-' si no hay valor. */
   formatCop(v: number | null | undefined): string {

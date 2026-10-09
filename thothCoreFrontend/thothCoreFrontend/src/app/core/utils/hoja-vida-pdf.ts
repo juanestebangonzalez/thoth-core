@@ -1,4 +1,4 @@
-import { HojaVida, textoVidaUtil } from '../models/equipment.model';
+import { HojaVida, SoftwareLicencia, textoVidaUtil, etiquetaSoftware } from '../models/equipment.model';
 import { etiqueta } from '../pipes/etiqueta.pipe';
 import { LOGO_BASE64 } from './hoja-vida-logo';
 
@@ -216,12 +216,23 @@ function construirDefinicion(hv: HojaVida): any {
   // 6. Software (para diligenciar a mano)
   content.push(seccion(6, 'SOFTWARE Y LICENCIAMIENTO'));
   const blanco = () => [1, 2, 3, 4, 5].map(() => ({ text: ' ', margin: [0, 4, 0, 4] }));
+  let swList: SoftwareLicencia[] = Array.isArray(hv.software) ? hv.software : [];
+  if (!Array.isArray(hv.software) && (e.osEdition || e.operatingSystem || e.osVersion || e.osLicenseType)) {
+    swList = [{
+      software: e.osEdition || (e.operatingSystem ? etiqueta(e.operatingSystem, 'so') : ''),
+      version: e.osVersion || '', licenseType: e.osLicenseType || '', licenseKey: '', expiration: ''
+    }];
+  }
+  const swRows: any[] = swList.map(sw => [
+    txt(etiquetaSoftware(sw.software)), txt(sw.version), txt(etiquetaSoftware(sw.licenseType)), txt(sw.licenseKey), fecha(sw.expiration)
+  ].map(t => ({ text: t, margin: [0, 4, 0, 4] })));
+  while (swRows.length < 3) swRows.push(blanco());
   content.push({
     table: {
       headerRows: 1, widths: ['26%', '14%', '20%', '24%', '16%'],
       body: [
         ['Software', 'Version', 'Tipo de licencia', 'N licencia / Clave', 'Vencimiento'].map(h => ({ text: h, bold: true, fillColor: GRIS_CLARO })),
-        blanco(), blanco(), blanco()
+        ...swRows
       ]
     },
     layout: layoutTabla, fontSize: 8

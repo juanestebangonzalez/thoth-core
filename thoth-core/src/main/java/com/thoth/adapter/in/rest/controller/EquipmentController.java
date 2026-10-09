@@ -107,7 +107,9 @@ public class EquipmentController {
             request.getResponsibleEmail(),
             request.getIpAddress(),
             request.getIpAssignment(),
-            parseOptionalUuid(request.getAssociatedEquipmentId())
+            parseOptionalUuid(request.getAssociatedEquipmentId()),
+            request.getOsEdition(),
+            request.getOsLicenseType()
         );
         EquipmentResponseDTO response = registerEquipmentUseCase.register(command);
         auditService.log("CREATE", "EQUIPMENT", response.equipmentId().toString(), request.getName(),
@@ -185,7 +187,9 @@ public class EquipmentController {
               request.getResponsibleEmail(),
               request.getIpAddress(),
               request.getIpAssignment(),
-              request.getAssociatedEquipmentId()
+              request.getAssociatedEquipmentId(),
+              request.getOsEdition(),
+              request.getOsLicenseType()
           );
         EquipmentResponseDTO updated = updateEquipmentUseCase.update(command);
         auditService.log("UPDATE", "EQUIPMENT", id.toString(), request.getName(),

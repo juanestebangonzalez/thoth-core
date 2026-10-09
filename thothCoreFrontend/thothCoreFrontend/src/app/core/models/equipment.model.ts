@@ -22,6 +22,10 @@ export interface Equipment {
   /** WINDOWS | LINUX | MACOS | CHROMEOS | ANDROID | IOS | OTRO | N/A */
   operatingSystem?: string;
   osVersion?: string;
+  /** WINDOWS 10 | WINDOWS 11 (solo si operatingSystem = WINDOWS) */
+  osEdition?: string;
+  /** OEM | RETAIL | VOLUMEN */
+  osLicenseType?: string;
   responsiblePosition?: string;
   responsibleDocument?: string;
   responsiblePhone?: string;
@@ -86,6 +90,12 @@ export interface HojaVida {
   }[];
   documents: { fileName?: string; documentType?: string; uploadedAt?: string; uploadedBy?: string }[];
   baja: null | { date?: string; reason?: string };
+  software?: SoftwareLicencia[];
+}
+
+/** Fila de software y licenciamiento de la hoja de vida. */
+export interface SoftwareLicencia {
+  software?: string; version?: string; licenseType?: string; licenseKey?: string; expiration?: string;
 }
 
 /** True si la categoria corresponde a un monitor. */
@@ -111,6 +121,29 @@ export const SISTEMAS_OPERATIVOS: { value: string; label: string }[] = [
   { value: 'OTRO', label: 'Otro' },
   { value: 'N/A', label: 'N/A' }
 ];
+
+/** Ediciones de Windows aceptadas por el backend (osEdition). */
+export const OS_EDITIONS: { value: string; label: string }[] = [
+  { value: 'WINDOWS 10', label: 'Windows 10' },
+  { value: 'WINDOWS 11', label: 'Windows 11' }
+];
+
+/** Versiones de Windows aceptadas por el backend (osVersion cuando operatingSystem = WINDOWS). */
+export const OS_VERSIONES_WINDOWS: string[] = ['26H2', '26H1', '25H2', '24H2', '23H2'];
+
+/** Tipos de licencia del sistema operativo (osLicenseType). */
+export const OS_LICENSE_TYPES: { value: string; label: string }[] = [
+  { value: 'OEM', label: 'OEM' },
+  { value: 'RETAIL', label: 'Retail' },
+  { value: 'VOLUMEN', label: 'Volumen' }
+];
+
+/** Etiqueta legible de un valor de osEdition / osLicenseType. */
+export function etiquetaSoftware(v: string | null | undefined): string {
+  if (!v) return '';
+  const all = [...OS_EDITIONS, ...OS_LICENSE_TYPES];
+  return all.find(o => o.value === v)?.label || v;
+}
 
 export interface Location {
   building: string;
@@ -176,6 +209,10 @@ export interface CreateEquipmentRequest {
   nextMaintenanceDate?: string;
   operatingSystem?: string;
   osVersion?: string;
+  /** WINDOWS 10 | WINDOWS 11 (solo si operatingSystem = WINDOWS) */
+  osEdition?: string;
+  /** OEM | RETAIL | VOLUMEN */
+  osLicenseType?: string;
   responsiblePosition?: string;
   responsibleDocument?: string;
   responsiblePhone?: string;
